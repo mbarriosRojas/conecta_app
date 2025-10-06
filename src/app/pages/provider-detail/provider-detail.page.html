@@ -1,0 +1,566 @@
+<ion-header [translucent]="true">
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/tabs/home"></ion-back-button>
+    </ion-buttons>
+    <ion-title>{{ provider?.name || 'Detalle del Negocio' }}</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="shareProvider()">
+        <ion-icon name="share-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="provider-detail-content">
+  
+  <!-- Slider de imágenes del negocio -->
+  <div class="images-section" *ngIf="hasImages()">
+    <div class="images-slider" #imagesSlider>
+      <div class="swiper-wrapper">
+        <div class="swiper-slide" *ngFor="let image of provider?.images">
+          <div class="image-container" (click)="openGallery()">
+            <img [src]="image" [alt]="provider?.name" loading="lazy">
+            <div class="image-overlay">
+              <ion-icon name="expand-outline"></ion-icon>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Paginación -->
+      <div class="swiper-pagination"></div>
+      <!-- Navegación -->
+      <div class="swiper-button-next"></div>
+      <div class="swiper-button-prev"></div>
+    </div>
+  </div>
+
+  <!-- Imagen por defecto si no hay imágenes -->
+  <div class="default-image" *ngIf="hasNoImages()">
+    <img src="assets/images/default-provider.png" [alt]="provider?.name">
+  </div>
+
+  <!-- Información principal del negocio -->
+  <div class="business-info" *ngIf="provider">
+    <div class="business-header">
+      <h1 class="business-name">{{ provider.name }}</h1>
+      <div class="business-rating">
+        <ion-icon name="star" color="warning"></ion-icon>
+        <span class="rating-value">{{ provider.rating || 'N/A' }}</span>
+        <span class="rating-count">({{ provider.views || 0 }} vistas)</span>
+      </div>
+    </div>
+
+    <div class="business-category">
+      <ion-icon name="business-outline"></ion-icon>
+      <span>{{ getCategoryName(provider.categoryId) }}</span>
+    </div>
+
+    <div class="business-description" *ngIf="provider.description">
+      <p>{{ provider.description }}</p>
+    </div>
+
+    <div class="business-distance" *ngIf="currentLocation">
+      <ion-icon name="location-outline" color="primary"></ion-icon>
+      <span>{{ getDistance() }} de distancia</span>
+    </div>
+  </div>
+
+  <!-- Navegación por secciones -->
+  <div class="sections-nav">
+    <div class="nav-item" 
+         [class.active]="activeSection === 'info'"
+         (click)="setActiveSection('info')">
+      <ion-icon name="information-circle-outline"></ion-icon>
+      <span>Información</span>
+    </div>
+    <div class="nav-item" 
+         [class.active]="activeSection === 'catalog'"
+         (click)="setActiveSection('catalog')">
+      <ion-icon name="grid-outline"></ion-icon>
+      <span>Catálogo</span>
+    </div>
+    <div class="nav-item" 
+         [class.active]="activeSection === 'share'"
+         (click)="setActiveSection('share')">
+      <ion-icon name="share-outline"></ion-icon>
+      <span>Compartir</span>
+    </div>
+  </div>
+
+  <!-- Sección de Información -->
+  <div class="section-content" *ngIf="activeSection === 'info'">
+    
+    <!-- Información de contacto -->
+    <ion-card class="contact-card">
+      <ion-card-header>
+        <ion-card-title>
+          <ion-icon name="call-outline" color="primary"></ion-icon>
+          Contacto
+        </ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <div class="contact-item" *ngIf="provider?.phone_contact || provider?.phone_number">
+          <ion-button 
+            expand="block" 
+            fill="outline" 
+            color="primary"
+            (click)="callProvider()">
+            <ion-icon name="call" slot="start"></ion-icon>
+            {{ provider?.phone_contact || provider?.phone_number }}
+          </ion-button>
+        </div>
+        
+        <div class="contact-item" *ngIf="provider?.phone_contact || provider?.phone_number">
+          <ion-button 
+            expand="block" 
+            fill="solid" 
+            color="success"
+            (click)="callProvider()">
+            <ion-icon name="logo-whatsapp" slot="start"></ion-icon>
+            WhatsApp
+          </ion-button>
+        </div>
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Horarios de atención -->
+    <ion-card class="schedule-card" *ngIf="provider?.schedule">
+      <ion-card-header>
+        <ion-card-title>
+          <ion-icon name="time-outline" color="primary"></ion-icon>
+          Horarios de Atención
+        </ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <div class="schedule-item" *ngFor="let schedule of provider?.schedule">
+          <span class="day">{{ schedule.day }}</span>
+          <span class="hours">{{ schedule.start }} - {{ schedule.end }}</span>
+        </div>
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Ubicación y mapa -->
+    <ion-card class="location-card">
+      <ion-card-header>
+        <ion-card-title>
+          <ion-icon name="location-outline" color="primary"></ion-icon>
+          Ubicación
+        </ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <div class="address-info">
+          <p><strong>{{ provider?.address?.street }}</strong></p>
+          <p>{{ provider?.address?.city }}, {{ provider?.address?.departament }}</p>
+          <p>{{ provider?.address?.country }}</p>
+        </div>
+        
+        <!-- Mapa con ruta -->
+        <div class="map-container" *ngIf="mapUrl">
+          <div class="map-wrapper">
+            <iframe
+              [src]="mapUrl"
+              width="100%"
+              height="300"
+              style="border:0; border-radius: 12px;"
+              allowfullscreen=""
+              loading="lazy"
+              referrerpolicy="no-referrer-when-downgrade"
+              class="interactive-map">
+            </iframe>
+            <div class="map-overlay" (click)="openFullScreenMap()">
+              <ion-icon name="expand-outline"></ion-icon>
+              <span>Ampliar mapa</span>
+            </div>
+          </div>
+          <div class="map-info">
+            <div class="distance-info">
+              <ion-icon name="navigate-outline"></ion-icon>
+              <span><strong>Distancia:</strong> {{ getDistance() }}</span>
+            </div>
+            <div class="route-info" *ngIf="currentLocation">
+              <ion-icon name="location-outline"></ion-icon>
+              <span>Ruta desde tu ubicación</span>
+            </div>
+            <!--<div class="navigation-buttons">
+              <ion-button 
+                fill="outline" 
+                size="small" 
+                color="primary"
+                (click)="showNavigationInfo()"
+                *ngIf="provider?.address?.location">
+                <ion-icon name="information-circle" slot="start"></ion-icon>
+                Info Ubicación
+              </ion-button>
+            </div>-->
+          </div>
+        </div>
+      </ion-card-content>
+    </ion-card>
+  </div>
+
+  <!-- Sección de Catálogo -->
+  <div class="section-content" *ngIf="activeSection === 'catalog'">
+    
+    <!-- Filtros de productos con slider -->
+    <div class="product-filters" *ngIf="productCategories.length > 0">
+      <div class="category-slider-container">
+        <div class="category-slider" #categorySlider>
+          <div class="swiper-wrapper">
+            <div class="swiper-slide" *ngFor="let category of productCategories">
+              <ion-button 
+                [fill]="selectedCategory === category ? 'solid' : 'outline'"
+                [color]="selectedCategory === category ? 'primary' : 'medium'"
+                (click)="onProductCategoryChange(category)"
+                class="category-button">
+                {{ formatCategoryLabel(category) }}
+              </ion-button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Lista de productos agrupada por categoría (estilo WhatsApp Business) -->
+    <div class="products-list-container" *ngIf="products.length > 0">
+      <div class="products-by-category" *ngFor="let category of getCategoriesWithProducts()">
+        <!-- Header de categoría -->
+        <div class="category-header">
+          <h3>{{ formatCategoryLabel(category) }}</h3>
+          <span class="product-count">{{ getProductsByCategory(category).length }} productos</span>
+        </div>
+        
+        <!-- Lista de productos de esta categoría -->
+        <div class="products-list">
+          <div class="product-item" *ngFor="let product of getProductsByCategory(category)" (click)="openProductModal(product)">
+            <div class="product-content">
+              <!-- Imagen del producto -->
+              <div class="product-image-container">
+                <div class="product-image" *ngIf="product.images && product.images.length > 0">
+                  <img [src]="product.images[0]" [alt]="product.name" loading="lazy">
+                  <div class="featured-badge" *ngIf="product.featured">
+                    <ion-icon name="star" color="warning"></ion-icon>
+                  </div>
+                </div>
+                <div class="product-image default" *ngIf="!product.images || product.images.length === 0">
+                  <ion-icon name="image-outline"></ion-icon>
+                </div>
+              </div>
+              
+              <!-- Información del producto -->
+              <div class="product-info">
+                <div class="product-header">
+                  <h4 class="product-name">{{ product.name }}</h4>
+                  <div class="product-price">
+                    <span class="price" *ngIf="product.price">{{ formatPrice(product.price) }}</span>
+                    <span class="no-price" *ngIf="!product.price">Consultar precio</span>
+                  </div>
+                </div>
+                
+                <p class="product-description">{{ product.description }}</p>
+                
+                <div class="product-details">
+                  <div class="product-stock" *ngIf="product.stock !== null && product.stock !== undefined">
+                    <ion-icon name="cube-outline" color="medium"></ion-icon>
+                    <span>{{ product.stock }} disponibles</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mensaje cuando no hay productos -->
+    <div class="no-products" *ngIf="products.length === 0 && !isLoadingProducts">
+      <ion-icon name="grid-outline"></ion-icon>
+      <h3>No hay productos disponibles</h3>
+      <p>Este negocio aún no ha agregado productos a su catálogo.</p>
+    </div>
+
+    <!-- Loading de productos -->
+    <div class="loading-products" *ngIf="isLoadingProducts">
+      <ion-spinner name="crescent"></ion-spinner>
+      <p>Cargando productos...</p>
+    </div>
+
+    <!-- Botón para cargar más productos -->
+    <div class="load-more" *ngIf="hasMoreProducts && !isLoadingProducts">
+      <ion-button 
+        expand="block" 
+        fill="outline" 
+        (click)="loadProducts()">
+        <ion-icon name="add" slot="start"></ion-icon>
+        Cargar más productos
+      </ion-button>
+    </div>
+  </div>
+
+  <!-- Sección de Compartir -->
+  <div class="section-content" *ngIf="activeSection === 'share'">
+    
+    <ion-card class="share-card">
+      <ion-card-header>
+        <ion-card-title>
+          <ion-icon name="share-outline" color="primary"></ion-icon>
+          Compartir este negocio
+        </ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <p>Ayuda a otros a descubrir este negocio compartiendo la información.</p>
+        
+        <div class="share-options">
+          <ion-button 
+            expand="block" 
+            fill="solid" 
+            color="success"
+            (click)="shareProvider()">
+            <ion-icon name="logo-whatsapp" slot="start"></ion-icon>
+            Compartir en WhatsApp
+          </ion-button>
+          
+          <ion-button 
+            expand="block" 
+            fill="solid" 
+            color="primary"
+            (click)="shareProvider()">
+            <ion-icon name="logo-facebook" slot="start"></ion-icon>
+            Compartir en Facebook
+          </ion-button>
+          
+          <ion-button 
+            expand="block" 
+            fill="solid" 
+            color="secondary"
+            (click)="shareProvider()">
+            <ion-icon name="logo-twitter" slot="start"></ion-icon>
+            Compartir en Twitter
+          </ion-button>
+          
+          <ion-button 
+            expand="block" 
+            fill="outline" 
+            color="medium"
+            (click)="shareProvider()">
+            <ion-icon name="copy-outline" slot="start"></ion-icon>
+            Copiar enlace
+          </ion-button>
+        </div>
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Información del negocio para compartir -->
+    <ion-card class="business-summary" *ngIf="provider">
+      <ion-card-header>
+        <ion-card-title>Resumen del negocio</ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <div class="summary-item">
+          <ion-icon name="business-outline"></ion-icon>
+          <span><strong>Nombre:</strong> {{ provider.name }}</span>
+        </div>
+        <div class="summary-item">
+          <ion-icon name="star-outline"></ion-icon>
+          <span><strong>Calificación:</strong> {{ provider.rating || 'N/A' }}</span>
+        </div>
+        <div class="summary-item">
+          <ion-icon name="location-outline"></ion-icon>
+          <span><strong>Ubicación:</strong> {{ provider.address.city }}, {{ provider.address.departament }}</span>
+        </div>
+        <div class="summary-item" *ngIf="currentLocation">
+          <ion-icon name="navigate-outline"></ion-icon>
+          <span><strong>Distancia:</strong> {{ getDistance() }}</span>
+        </div>
+      </ion-card-content>
+    </ion-card>
+  </div>
+
+</ion-content>
+
+<!-- Modal de detalles del producto -->
+<ion-modal [isOpen]="isProductModalOpen" (didDismiss)="closeProductModal()">
+  <ng-template>
+    <ion-header>
+      <ion-toolbar>
+        <ion-title>Detalles del Producto</ion-title>
+        <ion-buttons slot="end">
+          <ion-button (click)="closeProductModal()">
+            <ion-icon name="close"></ion-icon>
+          </ion-button>
+        </ion-buttons>
+      </ion-toolbar>
+    </ion-header>
+    
+    <ion-content *ngIf="selectedProduct">
+      <div class="product-modal-content">
+        <!-- Imagen grande del producto -->
+        <div class="product-modal-image">
+          <div class="product-image-large" *ngIf="selectedProduct.images && selectedProduct.images.length > 0">
+            <img [src]="selectedProduct.images[0]" [alt]="selectedProduct.name">
+            <div class="featured-badge-large" *ngIf="selectedProduct.featured">
+              <ion-icon name="star" color="warning"></ion-icon>
+              <span>Destacado</span>
+            </div>
+          </div>
+          <div class="product-image-large default" *ngIf="!selectedProduct.images || selectedProduct.images.length === 0">
+            <ion-icon name="image-outline"></ion-icon>
+            <p>Sin imagen</p>
+          </div>
+        </div>
+        
+        <!-- Información del producto -->
+        <div class="product-modal-info">
+          <div class="product-modal-header">
+            <h1 class="product-modal-name">{{ selectedProduct.name }}</h1>
+            <div class="product-modal-price">
+              <span class="price-large" *ngIf="selectedProduct.price">{{ formatPrice(selectedProduct.price) }}</span>
+              <span class="no-price-large" *ngIf="!selectedProduct.price">Consultar precio</span>
+            </div>
+          </div>
+          
+          <div class="product-modal-description">
+            <h3>Descripción</h3>
+            <p>{{ selectedProduct.description }}</p>
+          </div>
+          
+          <div class="product-modal-details">
+            <div class="detail-item" *ngIf="selectedProduct.category">
+              <ion-icon name="pricetag-outline" color="primary"></ion-icon>
+              <div class="detail-content">
+                <span class="detail-label">Categoría</span>
+                <span class="detail-value">{{ formatCategoryLabel(selectedProduct.category) }}</span>
+              </div>
+            </div>
+            
+            <div class="detail-item" *ngIf="selectedProduct.stock !== null && selectedProduct.stock !== undefined">
+              <ion-icon name="cube-outline" color="primary"></ion-icon>
+              <div class="detail-content">
+                <span class="detail-label">Disponibilidad</span>
+                <span class="detail-value">{{ selectedProduct.stock }} disponibles</span>
+              </div>
+            </div>
+            
+            <div class="detail-item" *ngIf="selectedProduct.tags && selectedProduct.tags.length > 0">
+              <ion-icon name="bookmark-outline" color="primary"></ion-icon>
+              <div class="detail-content">
+                <span class="detail-label">Etiquetas</span>
+                <div class="tags-container">
+                  <ion-chip *ngFor="let tag of selectedProduct.tags" color="light">
+                    <ion-label>{{ tag }}</ion-label>
+                  </ion-chip>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </ion-content>
+    
+    <ion-footer>
+      <ion-toolbar>
+        <div class="modal-footer-content">
+          <ion-button 
+            expand="block" 
+            color="success" 
+            size="large"
+            (click)="openWhatsAppForProduct()">
+            <ion-icon name="logo-whatsapp" slot="start"></ion-icon>
+            Solicitar por WhatsApp
+          </ion-button>
+        </div>
+      </ion-toolbar>
+    </ion-footer>
+  </ng-template>
+</ion-modal>
+
+<!-- Modal de mapa en pantalla completa -->
+<ion-modal [isOpen]="isMapModalOpen" (didDismiss)="closeMapModal()">
+  <ng-template>
+    <ion-header>
+      <ion-toolbar>
+        <ion-title>Ubicación del Negocio</ion-title>
+        <ion-buttons slot="end">
+          <ion-button (click)="closeMapModal()">
+            <ion-icon name="close"></ion-icon>
+          </ion-button>
+        </ion-buttons>
+      </ion-toolbar>
+    </ion-header>
+    
+    <ion-content>
+      <div class="fullscreen-map-container" *ngIf="mapUrl">
+        <iframe
+          [src]="mapUrl"
+          width="100%"
+          height="100%"
+          style="border:0;"
+          allowfullscreen=""
+          loading="lazy"
+          referrerpolicy="no-referrer-when-downgrade"
+          class="fullscreen-map">
+        </iframe>
+        
+        <!-- Botones de acción flotantes -->
+        <div class="map-actions" *ngIf="provider?.address?.location">
+          <ion-button 
+            fill="solid" 
+            color="primary" 
+            class="navigation-btn"
+            (click)="showNavigationInfo()">
+            <ion-icon name="information-circle" slot="start"></ion-icon>
+            Info Ubicación
+          </ion-button>
+        </div>
+        
+        <!-- Información del negocio -->
+        <div class="map-business-info" *ngIf="provider">
+          <div class="business-card">
+            <h3>{{ provider.name }}</h3>
+            <p *ngIf="provider.address?.street">{{ provider.address.street }}</p>
+            <p *ngIf="getDistance() !== 'Distancia no disponible'">
+              <ion-icon name="navigate-outline"></ion-icon>
+              {{ getDistance() }}
+            </p>
+          </div>
+        </div>
+      </div>
+    </ion-content>
+  </ng-template>
+</ion-modal>
+
+<!-- Modal de galería de imágenes - Estilo Tinder -->
+<ion-modal [isOpen]="isGalleryModalOpen" (didDismiss)="closeGalleryModal()" [presentingElement]="null">
+  <ng-template>
+    <!-- Header flotante transparente -->
+    <ion-header [translucent]="true" class="gallery-header">
+      <ion-toolbar transparent>
+        <ion-buttons slot="end">
+          <ion-button (click)="closeGalleryModal()" fill="clear" class="close-button">
+            <ion-icon name="close" color="light"></ion-icon>
+          </ion-button>
+        </ion-buttons>
+      </ion-toolbar>
+    </ion-header>
+    
+    <!-- Contenido de pantalla completa -->
+    <div class="gallery-container" *ngIf="provider?.images?.length">
+      <div class="swiper gallery-swiper" #gallerySlider>
+        <div class="swiper-wrapper">
+          <div class="swiper-slide" *ngFor="let image of provider?.images; let i = index">
+            <div class="gallery-image-container">
+              <img [src]="image" [alt]="'Imagen ' + (i + 1)" class="gallery-image">
+            </div>
+          </div>
+        </div>
+        
+        <!-- Navegación discreta -->
+        <div class="swiper-button-next"></div>
+        <div class="swiper-button-prev"></div>
+        
+        <!-- Contador de imágenes -->
+        <div class="swiper-pagination"></div>
+      </div>
+    </div>
+  </ng-template>
+</ion-modal>

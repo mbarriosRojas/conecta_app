@@ -1,0 +1,482 @@
+<ion-header [translucent]="true">
+  <ion-toolbar color="primary">
+    <div class="header-content">
+      <div class="search-container">
+        <ion-searchbar
+          [(ngModel)]="searchQuery"
+          (ionInput)="onSearch($event)"
+          placeholder="Buscar proveedores..."
+          show-clear-button="focus"
+          debounce="300"
+          class="header-searchbar">
+        </ion-searchbar>
+      </div>
+      <ion-button (click)="openFilterModal()" class="filter-button">
+        <ion-icon name="funnel-outline"></ion-icon>
+      </ion-button>
+    </div>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="home-content">
+
+  <!-- Banner promocional -->
+  <div class="promotional-banner" [style.background-image]="banners.length > 0 ? 'url(' + banners[0].image + ')' : ''">
+    <div class="banner-overlay">
+      <div class="banner-content">
+        <div class="banner-image">
+          <!-- Banners dinámicos del API -->
+          <div class="banners-slider" #bannersSlider *ngIf="banners.length > 0">
+            <div class="swiper-wrapper">
+              <div class="swiper-slide" *ngFor="let banner of banners">
+                <div class="banner-item" [style.background-image]="'url(' + banner.image + ')'">
+                  <div class="banner-overlay" *ngIf="banner.link">
+                    <div class="banner-content">
+                      <div class="banner-actions">
+                        <ion-button fill="solid" color="light" size="small" (click)="openBannerLink(banner.link)">
+                          Ver más
+                        </ion-button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <!-- Paginación -->
+            <div class="swiper-pagination"></div>
+          </div>
+          <!-- Ícono por defecto si no hay banners -->
+          <img src="assets/images/service-icon.svg" alt="Servicios" class="service-icon" *ngIf="banners.length === 0">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Categorías en swiper -->
+  <div class="categories-section">
+    <div class="categories-slider" #categoriesSlider>
+      <div class="swiper-wrapper">
+        <!-- Categoría "Todos" -->
+        <div class="swiper-slide">
+          <div class="category-item" 
+               [class.selected]="!selectedCategory" 
+               (click)="selectCategory(null)">
+            <div class="category-icon">
+              <ion-icon name="grid-outline"></ion-icon>
+            </div>
+            <span class="category-name">Todos</span>
+          </div>
+        </div>
+        
+        <!-- Categorías del API -->
+        <div class="swiper-slide" *ngFor="let category of categories">
+          <div class="category-item" 
+               [class.selected]="selectedCategory?._id === category._id" 
+               (click)="selectCategory(category)">
+            <div class="category-icon">
+              <img 
+                [src]="category.image || 'assets/images/default-category.png'" 
+                [alt]="category.name"
+                class="category-image"
+                loading="lazy"
+                (error)="onImageError($event)">
+            </div>
+            <span class="category-name">{{ category.name }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sección "Visto recientemente" -->
+  <div class="recent-section" *ngIf="recentProviders.length > 0">
+    <h3 class="section-title">Visto recientemente</h3>
+    <ion-card class="recent-card" *ngFor="let provider of recentProviders.slice(0, 3)" (click)="onProviderClick(provider)">
+      <div class="recent-content">
+        <img [src]="provider.logo || provider.images[0] || 'assets/images/default-provider.png'" 
+             [alt]="provider.name" class="recent-image">
+        <div class="recent-info">
+          <h4>{{ provider.name }}</h4>
+          <p>{{ provider.description | slice:0:50 }}...</p>
+          <span class="recent-price">{{ formatDistance(provider.distance || 0) }}</span>
+        </div>
+      </div>
+    </ion-card>
+  </div>
+
+  <!-- Proveedores cercanos -->
+  <div class="providers-section" *ngIf="providers.length > 0">
+    <h3 class="section-title">Proveedores cercanos a ti</h3>
+    <div class="providers-list">
+      <ion-card 
+        *ngFor="let provider of providers; trackBy: trackByProviderId" 
+        class="provider-card"
+        (click)="onProviderClick(provider)">
+        
+        <div class="provider-image-container">
+          <img 
+            [src]="provider.logo || provider.images[0] || 'assets/images/default-provider.png'" 
+            [alt]="provider.name"
+            class="provider-image"
+            loading="lazy">
+          
+          <ion-badge *ngIf="provider.verified" class="verified-badge" color="success">
+            <ion-icon name="checkmark-circle"></ion-icon>
+            Verificado
+          </ion-badge>
+          
+          <ion-badge *ngIf="provider.stand_out" class="featured-badge" color="warning">
+            <ion-icon name="star"></ion-icon>
+            Destacado
+          </ion-badge>
+        </div>
+
+        <ion-card-content>
+          <div class="provider-header">
+            <h2 class="provider-name">{{ provider.name }}</h2>
+            <div class="provider-rating" *ngIf="provider.rating > 0">
+              <ion-icon 
+                *ngFor="let star of getStarRating(provider.rating)" 
+                [name]="star" 
+                class="star-icon">
+              </ion-icon>
+              <span class="rating-text">{{ provider.rating | number:'1.1-1' }}</span>
+              <span class="rating-count">({{ provider.count_rating }})</span>
+            </div>
+          </div>
+
+          <p class="provider-description">{{ provider.description }}</p>
+
+          <div class="provider-info">
+            <div class="info-item" *ngIf="provider.distance">
+              <ion-icon name="location-outline"></ion-icon>
+              <span>{{ formatDistance(provider.distance) }}</span>
+            </div>
+
+            <div class="info-item" *ngIf="provider.address?.city">
+              <ion-icon name="business-outline"></ion-icon>
+              <span>{{ provider.address.city }}</span>
+            </div>
+
+            <div class="info-item">
+              <ion-icon name="eye-outline"></ion-icon>
+              <span>{{ provider.views }} vistas</span>
+            </div>
+          </div>
+
+          <ion-button 
+            expand="block" 
+            fill="outline" 
+            size="small"
+            class="contact-button"
+            (click)="onProviderClick(provider); $event.stopPropagation()">
+            <ion-icon name="call-outline" slot="start"></ion-icon>
+            Contactar
+          </ion-button>
+        </ion-card-content>
+      </ion-card>
+    </div>
+  </div>
+
+  <!-- Sección "Inspirado en lo último que viste" -->
+  <div class="inspired-section" *ngIf="providers.length > 0">
+    <h3 class="section-title">Inspirado en lo último que viste</h3>
+    <div class="providers-grid">
+      <ion-card 
+        *ngFor="let provider of providers.slice(0, 6); trackBy: trackByProviderId" 
+        class="provider-card"
+        (click)="onProviderClick(provider)">
+        
+        <div class="provider-image-container">
+          <img 
+            [src]="provider.logo || provider.images[0] || 'assets/images/default-provider.png'" 
+            [alt]="provider.name"
+            class="provider-image"
+            loading="lazy">
+          
+          <ion-badge *ngIf="provider.verified" class="verified-badge" color="success">
+            <ion-icon name="checkmark-circle"></ion-icon>
+          </ion-badge>
+        </div>
+
+        <ion-card-content>
+          <h4 class="provider-name">{{ provider.name }}</h4>
+          <div class="provider-rating" *ngIf="provider.rating > 0">
+            <ion-icon 
+              *ngFor="let star of getStarRating(provider.rating)" 
+              [name]="star" 
+              class="star-icon">
+            </ion-icon>
+            <span class="rating-text">{{ provider.rating | number:'1.1-1' }}</span>
+          </div>
+          <p class="provider-description">{{ provider.description | slice:0:60 }}...</p>
+          <div class="provider-info">
+            <span class="distance" *ngIf="provider.distance">
+              {{ formatDistance(provider.distance) }}
+            </span>
+            <span class="views">{{ provider.views }} vistas</span>
+          </div>
+        </ion-card-content>
+      </ion-card>
+    </div>
+  </div>
+
+  <!-- Infinite Scroll -->
+  <ion-infinite-scroll 
+    threshold="100px" 
+    (ionInfinite)="loadMore($event)"
+    [disabled]="!hasMoreData || isLoadingMore">
+    <ion-infinite-scroll-content
+      loadingSpinner="bubbles"
+      loadingText="Cargando más proveedores...">
+    </ion-infinite-scroll-content>
+  </ion-infinite-scroll>
+
+  <!-- Pull to Refresh -->
+  <ion-refresher slot="fixed" (ionRefresh)="refresh($event)">
+    <ion-refresher-content
+      pullingIcon="chevron-down-circle-outline"
+      pullingText="Desliza para actualizar"
+      refreshingSpinner="circles"
+      refreshingText="Actualizando...">
+    </ion-refresher-content>
+  </ion-refresher>
+
+  <!-- Modal de filtros -->
+  <ion-modal [isOpen]="showFilterModal" (didDismiss)="closeFilterModal()">
+    <ng-template>
+      <ion-header>
+        <ion-toolbar>
+          <ion-title>Filtros</ion-title>
+          <ion-buttons slot="end">
+            <ion-button (click)="closeFilterModal()">
+              <ion-icon name="close"></ion-icon>
+            </ion-button>
+          </ion-buttons>
+        </ion-toolbar>
+      </ion-header>
+      
+      <ion-content>
+        <div class="filter-modal-content">
+          <!-- Category Filter -->
+          <ion-item>
+            <ion-label>Categoría</ion-label>
+            <ion-select 
+              [(ngModel)]="tempSelectedCategory" 
+              placeholder="Todas las categorías"
+              interface="popover">
+              <ion-select-option [value]="null">Todos</ion-select-option>
+              <ion-select-option *ngFor="let category of categories" [value]="category">
+                {{ category.name }}
+              </ion-select-option>
+            </ion-select>
+          </ion-item>
+
+          <!-- City Filter -->
+          <ion-item>
+            <ion-label>Ciudad</ion-label>
+            <ion-select 
+              [(ngModel)]="tempSelectedCity" 
+              placeholder="Todas las ciudades"
+              interface="popover">
+              <ion-select-option value="">Todas las ciudades</ion-select-option>
+              <ion-select-option *ngFor="let city of cities" [value]="city">
+                {{ city }}
+              </ion-select-option>
+            </ion-select>
+          </ion-item>
+
+          <!-- Radius Filter -->
+          <ion-item>
+            <ion-label>Radio de búsqueda</ion-label>
+            <ion-range 
+              [(ngModel)]="tempSelectedRadius" 
+              min="1000" 
+              max="50000" 
+              step="1000"
+              color="primary">
+              <ion-label slot="start">1km</ion-label>
+              <ion-label slot="end">{{ (tempSelectedRadius / 1000) }}km</ion-label>
+            </ion-range>
+          </ion-item>
+
+          <!-- Location Filter Button -->
+          <ion-item button (click)="openLocationModal()">
+            <ion-icon name="location-outline" slot="start" color="primary"></ion-icon>
+            <ion-label>
+              <h3>Ubicación</h3>
+              <p>{{ tempSelectedLocationName || 'Usar ubicación actual' }}</p>
+            </ion-label>
+            <ion-icon name="chevron-forward" slot="end"></ion-icon>
+          </ion-item>
+
+          <!-- Clear Filters -->
+          <ion-button 
+            expand="block" 
+            fill="outline" 
+            (click)="clearFilters()"
+            class="clear-filters-btn">
+            <ion-icon name="refresh-outline" slot="start"></ion-icon>
+            Limpiar Filtros
+          </ion-button>
+
+          <!-- Apply Filters Button -->
+          <ion-button 
+            expand="block" 
+            fill="solid" 
+            color="primary"
+            (click)="applyFilters()"
+            class="apply-filters-btn">
+            <ion-icon name="checkmark" slot="start"></ion-icon>
+            Aplicar Filtros
+          </ion-button>
+        </div>
+      </ion-content>
+    </ng-template>
+  </ion-modal>
+
+  <!-- Modal de selección de ubicación -->
+  <ion-modal [isOpen]="showLocationModal" (didDismiss)="closeLocationModal()">
+    <ng-template>
+      <ion-header>
+        <ion-toolbar>
+          <ion-title>Cambiar ubicación</ion-title>
+          <ion-buttons slot="end">
+            <ion-button (click)="closeLocationModal()">
+              <ion-icon name="close"></ion-icon>
+            </ion-button>
+          </ion-buttons>
+        </ion-toolbar>
+      </ion-header>
+      
+      <ion-content>
+        <div class="location-modal-content">
+          <!-- Búsqueda de ubicación -->
+          <div class="location-search">
+            <ion-item>
+              <ion-label position="stacked">Buscar por ciudad, localidad o código postal</ion-label>
+              <ion-input 
+                [(ngModel)]="locationSearchQuery" 
+                placeholder="Ej: Mérida, Venezuela"
+                (ionInput)="onLocationSearch($event)">
+              </ion-input>
+            </ion-item>
+            
+            <!-- Sugerencias de ubicación -->
+            <div class="location-suggestions" *ngIf="locationSuggestions.length > 0">
+              <ion-item 
+                *ngFor="let suggestion of locationSuggestions" 
+                button 
+                (click)="selectLocation(suggestion)"
+                class="suggestion-item">
+                <ion-icon name="location-outline" slot="start" color="primary"></ion-icon>
+                <ion-label>
+                  <h3>{{ suggestion.name }}</h3>
+                  <p>{{ suggestion.formatted_address }}</p>
+                </ion-label>
+              </ion-item>
+            </div>
+            
+            <ion-item>
+              <ion-icon name="location-outline" slot="start"></ion-icon>
+              <ion-label>Ubicación seleccionada</ion-label>
+              <ion-note slot="end">{{ selectedLocationName || 'Ninguna' }}</ion-note>
+            </ion-item>
+          </div>
+
+          <!-- Selector de radio -->
+          <div class="radius-selector">
+            <ion-item>
+              <ion-label>Radio</ion-label>
+              <ion-select 
+                [(ngModel)]="tempSelectedRadius" 
+                interface="popover">
+                <ion-select-option value="1000">1 kilómetro</ion-select-option>
+                <ion-select-option value="2000">2 kilómetros</ion-select-option>
+                <ion-select-option value="5000">5 kilómetros</ion-select-option>
+                <ion-select-option value="10000">10 kilómetros</ion-select-option>
+                <ion-select-option value="15000">15 kilómetros</ion-select-option>
+                <ion-select-option value="20000">20 kilómetros</ion-select-option>
+                <ion-select-option value="30000">30 kilómetros</ion-select-option>
+                <ion-select-option value="50000">50 kilómetros</ion-select-option>
+              </ion-select>
+            </ion-item>
+          </div>
+
+          <!-- Mapa con radar -->
+          <div class="map-container">
+            <div class="map-header">
+              <h3>Área de cobertura</h3>
+              <p>{{ formatDistance(selectedRadius) }} de radio</p>
+            </div>
+            
+            <div class="map-wrapper">
+              <!-- Mapa principal -->
+              <div class="map-container-main">
+                <iframe
+                  [src]="getLocationMapUrl()"
+                  width="100%"
+                  height="300"
+                  style="border:0; border-radius: 12px;"
+                  allowfullscreen=""
+                  loading="lazy"
+                  referrerpolicy="no-referrer-when-downgrade"
+                  (error)="onMapError($event)">
+                </iframe>
+                
+                <!-- Overlay con información del radar -->
+                <div class="radar-overlay">
+                  <div class="radar-info">
+                    <ion-icon name="radio-outline"></ion-icon>
+                    <span>Radio: {{ formatDistance(selectedRadius) }}</span>
+                  </div>
+                </div>
+                
+                <!-- Indicador de radio en el mapa -->
+                <div class="radius-indicator" *ngIf="selectedLocation">
+                  <div class="radius-circle" [style.width.px]="getMapRadiusSize()" [style.height.px]="getMapRadiusSize()">
+                    <div class="radius-center">
+                      <ion-icon name="location" color="danger"></ion-icon>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Información de ubicación -->
+              <div class="location-info-card" *ngIf="selectedLocation">
+                <div class="location-details">
+                  <ion-icon name="location-outline" color="primary"></ion-icon>
+                  <div class="location-text">
+                    <h4>{{ selectedLocation.name }}</h4>
+                    <p>Área de cobertura: {{ formatDistance(selectedRadius) }}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Botones de acción -->
+          <div class="location-actions">
+            <ion-button 
+              expand="block" 
+              fill="outline" 
+              (click)="useCurrentLocation()"
+              [disabled]="!currentLocation">
+              <ion-icon name="locate" slot="start"></ion-icon>
+              Usar mi ubicación actual
+            </ion-button>
+            
+            <ion-button 
+              expand="block" 
+              fill="solid" 
+              color="primary"
+              (click)="applyLocationFilter()">
+              <ion-icon name="checkmark" slot="start"></ion-icon>
+              Aplicar
+            </ion-button>
+          </div>
+        </div>
+      </ion-content>
+    </ng-template>
+  </ion-modal>
+</ion-content>
