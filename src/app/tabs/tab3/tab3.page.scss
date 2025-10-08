@@ -1,0 +1,380 @@
+.profile-container {
+  padding: 16px;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.user-info-card {
+  margin-bottom: 24px;
+  border-radius: 16px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+.user-info-card ion-card-content {
+  display: flex;
+  align-items: center;
+  padding: 20px;
+}
+
+.user-avatar {
+  margin-right: 16px;
+  position: relative;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.user-avatar:hover {
+  transform: scale(1.05);
+}
+
+.user-avatar ion-icon {
+  font-size: 4rem;
+  color: var(--ion-color-primary);
+}
+
+.profile-image {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid var(--ion-color-primary);
+}
+
+.avatar-overlay {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  background: var(--ion-color-primary);
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  border: 2px solid white;
+}
+
+.edit-profile-btn {
+  --color: var(--ion-color-primary);
+  margin: 0;
+}
+
+.user-details {
+  flex: 1;
+}
+
+.user-details h2 {
+  margin: 0 0 4px 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--ion-color-dark);
+}
+
+.user-details p {
+  margin: 0;
+  color: var(--ion-color-medium);
+  font-size: 0.95rem;
+}
+
+.actions-section {
+  margin-bottom: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.action-button {
+  --border-radius: 12px;
+  height: 48px;
+  font-weight: 600;
+}
+
+.menu-section {
+  margin-bottom: 24px;
+}
+
+.menu-section ion-list {
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.menu-section ion-item {
+  --padding-start: 16px;
+  --padding-end: 16px;
+  --min-height: 56px;
+}
+
+.menu-section ion-label {
+  font-weight: 500;
+  color: var(--ion-color-dark);
+}
+
+.logout-section {
+  margin-top: 32px;
+}
+
+.logout-button {
+  --border-radius: 12px;
+  height: 48px;
+  font-weight: 600;
+}
+
+// Responsive
+@media (max-width: 480px) {
+  .profile-container {
+    padding: 12px;
+  }
+  
+  .user-info-card ion-card-content {
+    padding: 16px;
+  }
+  
+  .user-avatar ion-icon {
+    font-size: 3.5rem;
+  }
+  
+  .user-details h2 {
+    font-size: 1.3rem;
+  }
+}
+
+// Animaciones
+.user-info-card,
+.actions-section,
+.menu-section,
+.logout-section {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// Estilos para la sección de login/registro
+.login-card {
+  margin-bottom: 24px;
+  border-radius: 16px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+.login-content {
+  text-align: center;
+  padding: 20px;
+}
+
+.login-content ion-icon {
+  font-size: 4rem;
+  margin-bottom: 16px;
+}
+
+.login-content h2 {
+  margin: 0 0 8px 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--ion-color-dark);
+}
+
+.login-content p {
+  margin: 0 0 24px 0;
+  color: var(--ion-color-medium);
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+
+.login-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.login-button,
+.register-button {
+  --border-radius: 12px;
+  height: 48px;
+  font-weight: 600;
+}
+
+.info-section {
+  margin-top: 24px;
+}
+
+.info-section h3 {
+  color: var(--ion-color-dark);
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin: 0 0 16px 0;
+  text-align: center;
+}
+
+.info-section ion-list {
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.info-section ion-item {
+  --padding-start: 16px;
+  --padding-end: 16px;
+  --min-height: 64px;
+}
+
+.info-section ion-item ion-icon {
+  font-size: 1.5rem;
+  margin-right: 8px;
+}
+
+.info-section ion-label h4 {
+  margin: 0 0 4px 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--ion-color-dark);
+}
+
+.info-section ion-label p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--ion-color-medium);
+  line-height: 1.3;
+}
+
+// Estilos para autenticación
+.auth-toggle {
+  margin-bottom: 20px;
+}
+
+.auth-toggle ion-segment {
+  --background: var(--ion-color-light);
+  border-radius: 12px;
+  padding: 4px;
+}
+
+.auth-toggle ion-segment-button {
+  --color: var(--ion-color-medium);
+  --color-checked: var(--ion-color-primary);
+  --background-checked: white;
+  border-radius: 8px;
+  margin: 2px;
+  font-weight: 500;
+}
+
+.auth-card {
+  margin-bottom: 20px;
+  border-radius: 16px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+.auth-form {
+  padding: 0;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group ion-item {
+  --background: var(--ion-color-light);
+  --border-radius: 12px;
+  --padding-start: 16px;
+  --padding-end: 16px;
+  --inner-padding-end: 0;
+  margin-bottom: 8px;
+}
+
+.form-group ion-label {
+  font-weight: 500;
+  color: var(--ion-color-dark);
+  margin-bottom: 8px;
+}
+
+.form-group ion-input {
+  --color: var(--ion-color-dark);
+}
+
+.password-toggle {
+  --color: var(--ion-color-medium);
+  margin: 0;
+}
+
+.checkbox-label {
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.checkbox-label a {
+  color: var(--ion-color-primary);
+  text-decoration: none;
+}
+
+.error-message {
+  margin-top: 4px;
+  margin-left: 16px;
+}
+
+.error-message p {
+  margin: 0;
+  color: var(--ion-color-danger);
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.auth-button {
+  margin-top: 20px;
+  --border-radius: 12px;
+  height: 48px;
+  font-weight: 600;
+  text-transform: none;
+}
+
+.auth-button ion-spinner {
+  margin-right: 8px;
+}
+
+// Estilos para modal de edición de perfil
+.modal-content {
+  --padding-start: 20px;
+  --padding-end: 20px;
+  --padding-top: 20px;
+  --padding-bottom: 20px;
+}
+
+.edit-form {
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.update-button {
+  margin-top: 20px;
+  --border-radius: 12px;
+  height: 48px;
+  font-weight: 600;
+  text-transform: none;
+}
+
+.update-button ion-spinner {
+  margin-right: 8px;
+}
+
+// Efectos hover para web
+@media (hover: hover) {
+  .action-button:hover:not([disabled]),
+  .logout-button:hover:not([disabled]),
+  .login-button:hover:not([disabled]),
+  .register-button:hover:not([disabled]),
+  .auth-button:hover:not([disabled]) {
+    transform: translateY(-2px);
+    transition: transform 0.2s ease;
+  }
+  
+  .menu-section ion-item:hover,
+  .info-section ion-item:hover {
+    --background: var(--ion-color-light);
+    transition: background-color 0.2s ease;
+  }
+}

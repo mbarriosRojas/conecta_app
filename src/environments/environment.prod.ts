@@ -1,7 +1,7 @@
 export const environment = {
   production: true,
-  apiUrl: 'https://infinity-backend-develop.imagineapps.co', // Cambiar por tu URL de producción cuando esté lista
-  appName: 'Infinity Providers',
+  apiUrl: 'http://localhost:8080', // Cambiar por tu URL de producción cuando esté lista
+  appName: 'Providers',
   version: '1.0.0',
   defaultRadius: 10000, // 10km en metros
   itemsPerPage: 20,

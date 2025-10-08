@@ -1,24 +1,35 @@
 <ion-header [translucent]="true">
-  <ion-toolbar color="primary">
-    <div class="header-content">
-      <div class="search-container">
-        <ion-searchbar
-          [(ngModel)]="searchQuery"
-          (ionInput)="onSearch($event)"
-          placeholder="Buscar proveedores..."
-          show-clear-button="focus"
-          debounce="300"
-          class="header-searchbar">
-        </ion-searchbar>
+  <ion-toolbar>
+    <div class="whatsapp-header">
+      <div class="header-title">
+        <h1>Servicios</h1>
       </div>
-      <ion-button (click)="openFilterModal()" class="filter-button">
-        <ion-icon name="funnel-outline"></ion-icon>
-      </ion-button>
+      <div class="header-actions">
+        <ion-button fill="clear" (click)="openFilterModal()" class="filter-button">
+          <ion-icon name="funnel-outline"></ion-icon>
+        </ion-button>
+      </div>
+    </div>
+    <div class="search-filter-container">
+      <ion-searchbar
+        [(ngModel)]="searchQuery"
+        (ionInput)="onSearch($event)"
+        placeholder="Buscar servicios..."
+        show-clear-button="focus"
+        debounce="300"
+        class="whatsapp-searchbar">
+      </ion-searchbar>
     </div>
   </ion-toolbar>
 </ion-header>
 
 <ion-content [fullscreen]="true" class="home-content">
+
+  <!-- Componente de permisos de geolocalización -->
+  <app-location-permission 
+    (locationGranted)="onLocationGranted()"
+    (locationDenied)="onLocationDenied()">
+  </app-location-permission>
 
   <!-- Banner promocional -->
   <div class="promotional-banner" [style.background-image]="banners.length > 0 ? 'url(' + banners[0].image + ')' : ''">
@@ -29,7 +40,7 @@
           <div class="banners-slider" #bannersSlider *ngIf="banners.length > 0">
             <div class="swiper-wrapper">
               <div class="swiper-slide" *ngFor="let banner of banners">
-                <div class="banner-item" [style.background-image]="'url(' + banner.image + ')'">
+                <!--<div class="banner-item" [style.background-image]="'url(' + banner.image + ')'">
                   <div class="banner-overlay" *ngIf="banner.link">
                     <div class="banner-content">
                       <div class="banner-actions">
@@ -39,7 +50,7 @@
                       </div>
                     </div>
                   </div>
-                </div>
+                </div>-->
               </div>
             </div>
             <!-- Paginación -->
@@ -52,38 +63,29 @@
     </div>
   </div>
 
-  <!-- Categorías en swiper -->
+  <!-- Categorías estilo WhatsApp -->
   <div class="categories-section">
-    <div class="categories-slider" #categoriesSlider>
-      <div class="swiper-wrapper">
-        <!-- Categoría "Todos" -->
-        <div class="swiper-slide">
-          <div class="category-item" 
-               [class.selected]="!selectedCategory" 
-               (click)="selectCategory(null)">
-            <div class="category-icon">
-              <ion-icon name="grid-outline"></ion-icon>
-            </div>
-            <span class="category-name">Todos</span>
-          </div>
-        </div>
-        
-        <!-- Categorías del API -->
-        <div class="swiper-slide" *ngFor="let category of categories">
-          <div class="category-item" 
-               [class.selected]="selectedCategory?._id === category._id" 
-               (click)="selectCategory(category)">
-            <div class="category-icon">
-              <img 
-                [src]="category.image || 'assets/images/default-category.png'" 
-                [alt]="category.name"
-                class="category-image"
-                loading="lazy"
-                (error)="onImageError($event)">
-            </div>
-            <span class="category-name">{{ category.name }}</span>
-          </div>
-        </div>
+    <div class="categories-container">
+      <!-- Categoría "Todos" -->
+      <div class="whatsapp-category-pill" 
+           [class.selected]="!selectedCategory" 
+           (click)="selectCategory(null)">
+        <ion-icon name="grid-outline" class="category-icon"></ion-icon>
+        <span class="category-name">Todos</span>
+      </div>
+      
+      <!-- Categorías del API -->
+      <div class="whatsapp-category-pill" 
+           *ngFor="let category of categories"
+           [class.selected]="selectedCategory?._id === category._id" 
+           (click)="selectCategory(category)">
+        <img 
+          [src]="category.image || 'assets/images/default-category.png'" 
+          [alt]="category.name"
+          class="category-icon category-image"
+          loading="lazy"
+          (error)="onImageError($event)">
+        <span class="category-name">{{ category.name }}</span>
       </div>
     </div>
   </div>
@@ -104,123 +106,66 @@
     </ion-card>
   </div>
 
-  <!-- Proveedores cercanos -->
-  <div class="providers-section" *ngIf="providers.length > 0">
-    <h3 class="section-title">Proveedores cercanos a ti</h3>
-    <div class="providers-list">
-      <ion-card 
-        *ngFor="let provider of providers; trackBy: trackByProviderId" 
-        class="provider-card"
-        (click)="onProviderClick(provider)">
+  <!-- Lista de servicios estilo WhatsApp -->
+  <div class="whatsapp-services-container" *ngIf="providers.length > 0">
+    <div class="whatsapp-service-item" 
+         *ngFor="let provider of providers; trackBy: trackByProviderId" 
+         (click)="onProviderClick(provider)">
+      
+      <!-- Avatar del servicio -->
+      <div class="service-avatar">
+        <img 
+          [src]="provider.logo || provider.images[0] || 'assets/images/default-provider.png'" 
+          [alt]="provider.name"
+          class="avatar-image"
+          loading="lazy">
         
-        <div class="provider-image-container">
-          <img 
-            [src]="provider.logo || provider.images[0] || 'assets/images/default-provider.png'" 
-            [alt]="provider.name"
-            class="provider-image"
-            loading="lazy">
-          
+        <!-- Badges -->
+        <div class="avatar-badges">
           <ion-badge *ngIf="provider.verified" class="verified-badge" color="success">
             <ion-icon name="checkmark-circle"></ion-icon>
-            Verificado
           </ion-badge>
-          
           <ion-badge *ngIf="provider.stand_out" class="featured-badge" color="warning">
             <ion-icon name="star"></ion-icon>
-            Destacado
           </ion-badge>
         </div>
+      </div>
 
-        <ion-card-content>
-          <div class="provider-header">
-            <h2 class="provider-name">{{ provider.name }}</h2>
-            <div class="provider-rating" *ngIf="provider.rating > 0">
-              <ion-icon 
-                *ngFor="let star of getStarRating(provider.rating)" 
-                [name]="star" 
-                class="star-icon">
-              </ion-icon>
-              <span class="rating-text">{{ provider.rating | number:'1.1-1' }}</span>
-              <span class="rating-count">({{ provider.count_rating }})</span>
-            </div>
-          </div>
-
-          <p class="provider-description">{{ provider.description }}</p>
-
-          <div class="provider-info">
-            <div class="info-item" *ngIf="provider.distance">
-              <ion-icon name="location-outline"></ion-icon>
-              <span>{{ formatDistance(provider.distance) }}</span>
-            </div>
-
-            <div class="info-item" *ngIf="provider.address?.city">
-              <ion-icon name="business-outline"></ion-icon>
-              <span>{{ provider.address.city }}</span>
-            </div>
-
-            <div class="info-item">
-              <ion-icon name="eye-outline"></ion-icon>
-              <span>{{ provider.views }} vistas</span>
-            </div>
-          </div>
-
-          <ion-button 
-            expand="block" 
-            fill="outline" 
-            size="small"
-            class="contact-button"
-            (click)="onProviderClick(provider); $event.stopPropagation()">
-            <ion-icon name="call-outline" slot="start"></ion-icon>
-            Contactar
-          </ion-button>
-        </ion-card-content>
-      </ion-card>
-    </div>
-  </div>
-
-  <!-- Sección "Inspirado en lo último que viste" -->
-  <div class="inspired-section" *ngIf="providers.length > 0">
-    <h3 class="section-title">Inspirado en lo último que viste</h3>
-    <div class="providers-grid">
-      <ion-card 
-        *ngFor="let provider of providers.slice(0, 6); trackBy: trackByProviderId" 
-        class="provider-card"
-        (click)="onProviderClick(provider)">
+      <!-- Información del servicio -->
+      <div class="service-info">
+        <div class="service-header">
+          <h3 class="service-name">{{ provider.name }}</h3>
+          <span class="service-time" *ngIf="provider.distance">{{ formatDistance(provider.distance) }}</span>
+        </div>
         
-        <div class="provider-image-container">
-          <img 
-            [src]="provider.logo || provider.images[0] || 'assets/images/default-provider.png'" 
-            [alt]="provider.name"
-            class="provider-image"
-            loading="lazy">
-          
-          <ion-badge *ngIf="provider.verified" class="verified-badge" color="success">
-            <ion-icon name="checkmark-circle"></ion-icon>
-          </ion-badge>
+        <div class="service-message">
+          <p class="service-description">{{ provider.description | slice:0:60 }}{{ provider.description.length > 60 ? '...' : '' }}</p>
         </div>
+        
+        <div class="service-meta">
+          <div class="meta-item" *ngIf="provider.address?.city">
+            <ion-icon name="location-outline"></ion-icon>
+            <span>{{ provider.address.city }}</span>
+          </div>
+          
+          <div class="meta-item" *ngIf="provider.rating > 0">
+            <ion-icon name="star"></ion-icon>
+            <span>{{ provider.rating | number:'1.1-1' }}</span>
+          </div>
+          
+          <div class="meta-item">
+            <ion-icon name="eye-outline"></ion-icon>
+            <span>{{ provider.views }}</span>
+          </div>
+        </div>
+      </div>
 
-        <ion-card-content>
-          <h4 class="provider-name">{{ provider.name }}</h4>
-          <div class="provider-rating" *ngIf="provider.rating > 0">
-            <ion-icon 
-              *ngFor="let star of getStarRating(provider.rating)" 
-              [name]="star" 
-              class="star-icon">
-            </ion-icon>
-            <span class="rating-text">{{ provider.rating | number:'1.1-1' }}</span>
-          </div>
-          <p class="provider-description">{{ provider.description | slice:0:60 }}...</p>
-          <div class="provider-info">
-            <span class="distance" *ngIf="provider.distance">
-              {{ formatDistance(provider.distance) }}
-            </span>
-            <span class="views">{{ provider.views }} vistas</span>
-          </div>
-        </ion-card-content>
-      </ion-card>
+      <!-- Indicador de estado -->
+      <div class="service-status">
+        <div class="status-indicator" *ngIf="provider.verified"></div>
+      </div>
     </div>
   </div>
-
   <!-- Infinite Scroll -->
   <ion-infinite-scroll 
     threshold="100px" 
@@ -231,6 +176,16 @@
       loadingText="Cargando más proveedores...">
     </ion-infinite-scroll-content>
   </ion-infinite-scroll>
+
+  <!-- Componente de no resultados (tipo Tinder) -->
+  <app-no-results-expand
+    *ngIf="showNoResults && !isLoading"
+    [searchQuery]="searchQuery"
+    [currentRadius]="currentRadius"
+    [isLoading]="isExpandingRadius"
+    (expandRadius)="onExpandRadius($event)"
+    (retrySearch)="onRetrySearch()">
+  </app-no-results-expand>
 
   <!-- Pull to Refresh -->
   <ion-refresher slot="fixed" (ionRefresh)="refresh($event)">

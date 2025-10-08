@@ -13,7 +13,7 @@ import { SwiperOptions } from 'swiper/types';
 import { register } from 'swiper/element/bundle';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { InfiniteScrollCustomEvent } from '@ionic/angular';
-import { Subscription } from 'rxjs';
+import { Subscription, firstValueFrom } from 'rxjs';
 
 @Component({
   selector: 'app-provider-detail',
@@ -240,9 +240,40 @@ export class ProviderDetailPage implements OnInit, AfterViewInit, OnDestroy {
     if (!this.provider) return;
 
     try {
-      const categories = await this.apiService.getProductCategories(this.provider._id).toPromise() || [];
-      // Agregar 'all' al inicio del array
-      this.productCategories = ['all', ...categories];
+      // Cargar productos primero para obtener las categorías reales
+      const response = await firstValueFrom(this.apiService.getProductsByProvider(this.provider._id));
+      
+      if (response?.data && (response.data as any).products && Array.isArray((response.data as any).products)) {
+        // Usar las categorías que vienen del API (response.data.categories) si están disponibles
+        if ((response.data as any).categories && Array.isArray((response.data as any).categories)) {
+          console.log('ProviderDetail - Categories from API:', (response.data as any).categories);
+          this.productCategories = ['all', ...(response.data as any).categories];
+        } else {
+          // Fallback: extraer categorías únicas de los productos
+          const uniqueCategories = new Set<string>();
+          (response.data as any).products.forEach((product: any) => {
+            if (product.category && product.category.trim()) {
+              uniqueCategories.add(product.category.trim());
+            }
+          });
+          
+          // Convertir Set a Array y ordenar
+          const categoriesArray = Array.from(uniqueCategories).sort();
+          console.log('ProviderDetail - Categories found in products:', categoriesArray);
+          
+          // Agregar 'all' al inicio del array
+          this.productCategories = ['all', ...categoriesArray];
+        }
+      } else {
+        console.log('ProviderDetail - No products found, using default categories');
+        // Si no hay productos, usar categorías por defecto
+        const defaultCategories = [
+          'COMIDA', 'BEBIDAS', 'POSTRES', 'PRODUCTOS', 'SERVICIOS', 'OTROS'
+        ];
+        this.productCategories = ['all', ...defaultCategories];
+      }
+      
+      console.log('ProviderDetail - Final categories:', this.productCategories);
     } catch (error) {
       console.error('Error loading product categories:', error);
       // Si hay error, al menos mostrar 'all'
@@ -261,26 +292,41 @@ export class ProviderDetailPage implements OnInit, AfterViewInit, OnDestroy {
     }
 
     try {
-      const filters = {
-        category: this.selectedCategory === 'all' ? '' : this.selectedCategory
-      };
+      console.log('ProviderDetail - Loading products for provider:', this.provider._id);
+      const response = await firstValueFrom(this.apiService.getProductsByProvider(this.provider._id));
+      console.log('ProviderDetail - API response:', response);
 
-      const response = await this.apiService.getProductsByProvider(
-        this.provider._id,
-        this.currentPage,
-        50,
-        filters
-      ).toPromise();
-
-      if (response) {
-        const newProducts = response.products || [];
-        if (reset) {
-          this.products = newProducts;
-        } else {
-          this.products = [...this.products, ...newProducts];
+      if (response?.data) {
+        console.log('ProviderDetail - Response data:', response.data);
+        // Los productos están en response.data.products, no directamente en response.data
+        const allProducts = Array.isArray((response.data as any).products) ? (response.data as any).products : [];
+        console.log('ProviderDetail - All products processed:', allProducts);
+        
+        // Filtrar por categoría si no es 'all'
+        let filteredProducts = allProducts;
+        if (this.selectedCategory !== 'all') {
+          filteredProducts = allProducts.filter((product: any) => 
+            product.category === this.selectedCategory
+          );
+          console.log('ProviderDetail - Filtered products for category', this.selectedCategory, ':', filteredProducts);
         }
-        this.hasMoreProducts = response.pagination?.hasNextPage || false;
-        this.currentPage++;
+        
+        // Asegurar que filteredProducts sea siempre un array antes de usar spread operator
+        const productsToAdd = Array.isArray(filteredProducts) ? filteredProducts : [];
+        console.log('ProviderDetail - Products to add:', productsToAdd);
+        
+        if (reset) {
+          this.products = productsToAdd;
+        } else {
+          this.products = [...this.products, ...productsToAdd];
+        }
+        
+        console.log('ProviderDetail - Final products array:', this.products);
+        
+        // Por ahora no hay paginación en el nuevo endpoint, mostrar todos
+        this.hasMoreProducts = false;
+      } else {
+        console.log('ProviderDetail - No data in response or response is null');
       }
 
       // Reinicializar swiper de productos después de cargar

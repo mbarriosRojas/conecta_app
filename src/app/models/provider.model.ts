@@ -23,6 +23,7 @@ export interface Provider {
   count_rating: number;
   rating: number;
   schedule: Schedule[];
+  questions?: Question[];
   site_web: string;
   video: string;
   address: Address;
@@ -37,6 +38,11 @@ export interface Schedule {
   active: boolean;
   start: string;
   end: string;
+}
+
+export interface Question {
+  question: string;
+  answer: string;
 }
 
 export interface Address {

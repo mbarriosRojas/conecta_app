@@ -10,15 +10,27 @@ export class StorageService {
   private _storage: Storage | null = null;
   private filtersSubject = new BehaviorSubject<ProviderFilters>({});
   public filters$ = this.filtersSubject.asObservable();
+  private initializationPromise: Promise<void> | null = null;
 
   constructor(private storage: Storage) {
-    this.init();
+    this.initializationPromise = this.init();
   }
 
   async init() {
-    const storage = await this.storage.create();
-    this._storage = storage;
-    await this.loadFilters();
+    try {
+      const storage = await this.storage.create();
+      this._storage = storage;
+      await this.loadFilters();
+      console.log('StorageService - Initialized successfully');
+    } catch (error) {
+      console.error('StorageService - Initialization error:', error);
+    }
+  }
+
+  async ensureInitialized(): Promise<void> {
+    if (this.initializationPromise) {
+      await this.initializationPromise;
+    }
   }
 
   // Filters management
@@ -96,6 +108,29 @@ export class StorageService {
   }
 
   async removeItem(key: string): Promise<void> {
+    if (this._storage) {
+      await this._storage.remove(key);
+    }
+  }
+
+  // Generic storage methods for auth
+  async set(key: string, value: any): Promise<void> {
+    await this.ensureInitialized();
+    if (this._storage) {
+      await this._storage.set(key, value);
+    }
+  }
+
+  async get(key: string): Promise<any> {
+    await this.ensureInitialized();
+    if (this._storage) {
+      return await this._storage.get(key);
+    }
+    return null;
+  }
+
+  async remove(key: string): Promise<void> {
+    await this.ensureInitialized();
     if (this._storage) {
       await this._storage.remove(key);
     }

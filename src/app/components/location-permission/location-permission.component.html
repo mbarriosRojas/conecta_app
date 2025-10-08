@@ -1,0 +1,29 @@
+<ion-card *ngIf="shouldShowComponent" class="location-permission-card">
+  <ion-card-content>
+    <div class="permission-content">
+      <ion-icon name="location" class="location-icon" [color]="locationPermissionStatus === 'granted' ? 'success' : 'warning'"></ion-icon>
+      
+      <div class="permission-text">
+        <h3>{{ permissionMessage }}</h3>
+        <p *ngIf="locationPermissionStatus === 'denied'">
+          Permite el acceso a tu ubicación para encontrar servicios cerca de ti.
+        </p>
+        <p *ngIf="locationPermissionStatus === 'unknown' || locationPermissionStatus === 'prompt'">
+          Necesitamos tu ubicación para mostrarte servicios cercanos.
+        </p>
+      </div>
+    </div>
+
+    <ion-button 
+      *ngIf="locationPermissionStatus !== 'granted'"
+      expand="block" 
+      fill="solid" 
+      color="primary"
+      (click)="requestLocationPermission()"
+      [disabled]="isRequesting">
+      <ion-icon name="location" slot="start" *ngIf="!isRequesting"></ion-icon>
+      <ion-spinner name="crescent" *ngIf="isRequesting"></ion-spinner>
+      {{ isRequesting ? 'Solicitando...' : 'Permitir Ubicación' }}
+    </ion-button>
+  </ion-card-content>
+</ion-card>

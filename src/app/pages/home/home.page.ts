@@ -2,13 +2,18 @@ import { Component, OnInit, ViewChild, ElementRef, AfterViewInit } from '@angula
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { take } from 'rxjs/operators';
+import { firstValueFrom } from 'rxjs';
 import { IonContent, IonInfiniteScroll, IonRefresher, LoadingController, ToastController, AlertController, IonicModule } from '@ionic/angular';
 import { ApiService } from '../../services/api.service';
 import { LocationService, LocationData } from '../../services/location.service';
 import { StorageService } from '../../services/storage.service';
 import { GeocodingService, LocationSuggestion } from '../../services/geocoding.service';
+import { PermissionService } from '../../services/permission.service';
 import { Provider, ProviderFilters, Category } from '../../models/provider.model';
 import { environment } from '../../../environments/environment';
+import { LocationPermissionComponent } from '../../components/location-permission/location-permission.component';
+import { NoResultsExpandComponent } from '../../components/no-results-expand/no-results-expand.component';
 import Swiper from 'swiper';
 import { SwiperOptions } from 'swiper/types';
 
@@ -17,12 +22,11 @@ import { SwiperOptions } from 'swiper/types';
   templateUrl: 'home.page.html',
   styleUrls: ['home.page.scss'],
   standalone: true,
-  imports: [CommonModule, FormsModule, IonicModule]
+  imports: [CommonModule, FormsModule, IonicModule, LocationPermissionComponent, NoResultsExpandComponent]
 })
 export class HomePage implements OnInit, AfterViewInit {
   @ViewChild(IonContent) content!: IonContent;
   @ViewChild(IonInfiniteScroll) infiniteScroll!: IonInfiniteScroll;
-  @ViewChild('categoriesSlider', { static: false }) categoriesSlider!: ElementRef;
   @ViewChild('bannersSlider', { static: false }) bannersSlider!: ElementRef;
 
   providers: Provider[] = [];
@@ -35,9 +39,11 @@ export class HomePage implements OnInit, AfterViewInit {
   
   currentLocation: LocationData | null = null;
   filters: ProviderFilters = {
-    radius: environment.defaultRadius,
     limit: environment.itemsPerPage
   };
+  
+  // Radio de búsqueda actual (sin radio por defecto)
+  currentRadius: number = environment.defaultRadius;
   
   isLoading = false;
   isLoadingMore = false;
@@ -46,6 +52,10 @@ export class HomePage implements OnInit, AfterViewInit {
   searchQuery = '';
   selectedCategory: Category | null = null;
   selectedCity = '';
+  
+  // Estados para manejo de resultados
+  showNoResults = false;
+  isExpandingRadius = false;
   selectedRadius = environment.defaultRadius;
   
   // Filtros temporales (en el modal, no aplicados aún)
@@ -65,27 +75,6 @@ export class HomePage implements OnInit, AfterViewInit {
   selectedLocation: LocationSuggestion | null = null;
   locationSuggestions: LocationSuggestion[] = [];
   
-  // Configuración del swiper para categorías
-  categoriesSwiperConfig: SwiperOptions = {
-    slidesPerView: 5.5,
-    spaceBetween: 8,
-    freeMode: true,
-    grabCursor: true,
-    breakpoints: {
-      320: {
-        slidesPerView: 4.5,
-        spaceBetween: 6
-      },
-      480: {
-        slidesPerView: 5.5,
-        spaceBetween: 8
-      },
-      768: {
-        slidesPerView: 7,
-        spaceBetween: 10
-      }
-    }
-  };
 
   // Configuración del swiper para banners
   bannersSwiperConfig: SwiperOptions = {
@@ -108,7 +97,6 @@ export class HomePage implements OnInit, AfterViewInit {
     }
   };
   
-  private categoriesSwiper: Swiper | null = null;
   private bannersSwiper: Swiper | null = null;
 
   constructor(
@@ -116,6 +104,7 @@ export class HomePage implements OnInit, AfterViewInit {
     private locationService: LocationService,
     private storageService: StorageService,
     private geocodingService: GeocodingService,
+    private permissionService: PermissionService,
     private loadingController: LoadingController,
     private toastController: ToastController,
     private alertController: AlertController,
@@ -144,12 +133,13 @@ export class HomePage implements OnInit, AfterViewInit {
         this.filters.lng = this.currentLocation.longitude;
         console.log('Usando ubicación guardada:', this.currentLocation);
       } else {
-        // Solo solicitar permisos si no tenemos ubicación guardada
-        const hasPermission = await this.locationService.requestPermissions();
+        // Solicitar permisos de ubicación explícitamente
+        console.log('Solicitando permisos de ubicación...');
+        const hasPermission = await this.permissionService.checkAndRequestLocationPermission();
         if (hasPermission) {
           await this.getCurrentLocation();
         } else {
-          this.showLocationPermissionAlert();
+          console.log('Permisos de ubicación denegados, continuando sin ubicación');
         }
       }
       
@@ -206,69 +196,157 @@ export class HomePage implements OnInit, AfterViewInit {
   }
 
   async loadInitialData() {
+    console.log('Home - loadInitialData started');
+    
     const loading = await this.loadingController.create({
       message: 'Cargando proveedores...',
       spinner: 'crescent'
     });
     await loading.present();
+    console.log('Home - Loading controller presented');
+
+    // Timeout de seguridad para cerrar el loading después de 30 segundos
+    const timeoutId = setTimeout(async () => {
+      console.warn('Home - Loading timeout reached, dismissing loading');
+      try {
+        await loading.dismiss();
+      } catch (e) {
+        console.error('Error dismissing loading on timeout:', e);
+      }
+    }, 30000);
 
     try {
       // Cargar categorías, ciudades y banners si no están en cache
+      // Hacer estas cargas en paralelo para ser más eficiente
+      const loadPromises = [];
+      
       if (this.categories.length === 0) {
-        await this.loadCategories();
+        console.log('Home - Loading categories...');
+        loadPromises.push(this.loadCategories().catch(error => {
+          console.error('Home - Error loading categories:', error);
+          return null;
+        }));
       }
+      
       if (this.cities.length === 0) {
-        await this.loadCities();
+        console.log('Home - Loading cities...');
+        loadPromises.push(this.loadCities().catch(error => {
+          console.error('Home - Error loading cities:', error);
+          return null;
+        }));
       }
+      
       if (this.banners.length === 0) {
-        await this.loadBanners();
+        console.log('Home - Loading banners...');
+        loadPromises.push(this.loadBanners().catch(error => {
+          console.error('Home - Error loading banners:', error);
+          return null;
+        }));
+      }
+
+      // Esperar a que terminen las cargas en paralelo
+      if (loadPromises.length > 0) {
+        console.log('Home - Waiting for parallel loads to complete...');
+        try {
+          await Promise.all(loadPromises);
+        } catch (error) {
+          console.log('Home - Some parallel loads failed, but continuing...');
+        }
+        console.log('Home - Parallel loads completed');
       }
 
       // Cargar proveedores
+      console.log('Home - Loading providers...');
       await this.loadProviders(true);
+      console.log('Home - Providers loaded successfully');
       
     } catch (error) {
-      console.error('Error loading initial data:', error);
+      console.error('Home - Error loading initial data:', error);
       this.showErrorToast('Error al cargar los datos');
     } finally {
+      console.log('Home - Dismissing loading controller');
+      clearTimeout(timeoutId);
       await loading.dismiss();
+      console.log('Home - Loading controller dismissed');
     }
   }
 
   async loadCategories() {
+    console.log('Home - loadCategories started');
+    
+    // Primero intentar cargar desde cache
     try {
-      this.categories = await this.apiService.getCategories().toPromise() || [];
-      await this.storageService.saveCategories(this.categories);
-      
-      // Reinicializar Swiper después de cargar categorías
-      setTimeout(() => {
-        this.initializeSwiper();
-      }, 100);
-    } catch (error) {
-      console.error('Error loading categories:', error);
-      
-      // Reinicializar Swiper con categorías del cache
-      setTimeout(() => {
-        this.initializeSwiper();
-      }, 100);
+      const cachedCategories = await this.storageService.getCategories();
+      if (cachedCategories && cachedCategories.length > 0) {
+        this.categories = cachedCategories;
+        console.log('Home - Using cached categories initially:', this.categories.length);
+        
+        // Reinicializar Swiper inmediatamente con cache
+        setTimeout(() => {
+          this.initializeSwiper();
+        }, 100);
+      }
+    } catch (cacheError) {
+      console.log('Home - No cached categories found');
     }
+    
+    // Luego intentar cargar desde API en background
+    try {
+      console.log('Home - Fetching categories from API...');
+          // Timeout aumentado a 10 segundos para dar más tiempo
+          const categoriesPromise = firstValueFrom(this.apiService.getCategories());
+          const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Categories timeout')), 10000)
+          );
+      
+      const apiCategories = await Promise.race([categoriesPromise, timeoutPromise]) as any[] || [];
+      
+      if (apiCategories.length > 0) {
+        this.categories = apiCategories;
+        await this.storageService.saveCategories(this.categories);
+        console.log('Home - Categories loaded from API:', this.categories.length);
+        
+        // Reinicializar Swiper con nuevas categorías
+        setTimeout(() => {
+          this.initializeSwiper();
+        }, 100);
+      }
+        } catch (error: any) {
+          console.error('Home - Error loading categories from API:', error);
+          console.error('Home - Error details:', {
+            message: error?.message || 'Unknown error',
+            name: error?.name || 'Error',
+            stack: error?.stack
+          });
+          
+          // Si no hay categorías del cache, usar categorías por defecto
+          if (this.categories.length === 0) {
+            console.log('Home - Using default categories due to API error');
+            this.categories = [
+              { _id: '1', name: 'Todos', image: 'assets/icons/grid.svg', background: '#f0f0f0', position: 1, favorite: true } as any,
+              { _id: '2', name: 'Restaurantes', image: 'assets/icons/cutlery.svg', background: '#ff6b6b', position: 2, favorite: true } as any,
+              { _id: '3', name: 'Servicios', image: 'assets/icons/service.svg', background: '#4ecdc4', position: 3, favorite: true } as any
+            ];
+          }
+        }
   }
 
   async loadCities() {
+    console.log('Home - loadCities started');
     try {
-      this.cities = await this.apiService.getCities().toPromise() || [];
+      this.cities = await firstValueFrom(this.apiService.getCities()) || [];
       await this.storageService.saveCities(this.cities);
+      console.log('Home - Cities loaded:', this.cities.length);
     } catch (error) {
-      console.error('Error loading cities:', error);
+      console.error('Home - Error loading cities:', error);
     }
   }
 
   async loadBanners() {
+    console.log('Home - loadBanners started');
     try {
-      console.log('Loading banners...');
-      this.banners = await this.apiService.getBanners().toPromise() || [];
-      console.log('Loaded banners:', this.banners);
-      console.log('Banners count:', this.banners.length);
+      this.banners = await firstValueFrom(this.apiService.getBanners()) || [];
+      console.log('Home - Banners loaded:', this.banners.length);
       
       // Actualizar el fondo del banner con la primera imagen
       if (this.banners.length > 0) {
@@ -289,15 +367,22 @@ export class HomePage implements OnInit, AfterViewInit {
     }
   }
 
-  async loadProviders(reset = false) {
-    if (this.isLoading && !reset) return;
+  async loadProviders(reset = false, radius?: number) {
+    console.log('Home - loadProviders called, reset:', reset, 'isLoading:', this.isLoading);
+    
+    if (this.isLoading && !reset) {
+      console.log('Home - Already loading, skipping request');
+      return;
+    }
 
     this.isLoading = true;
+    this.showNoResults = false;
     
     if (reset) {
       this.currentPage = 0;
       this.providers = [];
       this.hasMoreData = true;
+      console.log('Home - Reset providers data');
     }
 
     try {
@@ -305,14 +390,21 @@ export class HomePage implements OnInit, AfterViewInit {
       currentFilters.limit = environment.itemsPerPage;
       currentFilters.page = this.currentPage;
       
-      console.log('Loading providers with filters:', currentFilters);
+      // Usar el radio especificado o el radio actual
+      const searchRadius = radius || this.currentRadius;
       
-      const newProviders = await this.apiService.getProviders(currentFilters).toPromise() || [];
+      console.log('Home - Loading providers with filters:', currentFilters, 'radius:', searchRadius);
       
-      console.log('Received providers:', newProviders.length);
+      const newProviders = await firstValueFrom(this.apiService.getProviders(currentFilters, searchRadius)) || [];
+      
+      console.log('Home - Received providers:', newProviders.length, 'providers:', newProviders);
       
       if (reset) {
         this.providers = newProviders;
+        this.currentRadius = searchRadius;
+        
+        // Mostrar componente de no resultados si no hay datos
+        this.showNoResults = newProviders.length === 0;
       } else {
         this.providers = [...this.providers, ...newProviders];
       }
@@ -321,12 +413,15 @@ export class HomePage implements OnInit, AfterViewInit {
       this.currentPage++;
       
     } catch (error) {
-      console.error('Error loading providers:', error);
+      console.error('Home - Error loading providers:', error);
       this.showErrorToast('Error al cargar proveedores');
+      this.showNoResults = true;
     } finally {
+      console.log('Home - loadProviders finished, setting isLoading to false');
       this.isLoading = false;
       this.isLoadingMore = false;
       this.isRefreshing = false;
+      this.isExpandingRadius = false;
     }
   }
 
@@ -450,7 +545,8 @@ export class HomePage implements OnInit, AfterViewInit {
     // Aplicar filtros temporales a los filtros reales
     this.selectedCategory = this.tempSelectedCategory;
     this.selectedCity = this.tempSelectedCity;
-    this.selectedRadius = this.tempSelectedRadius;
+    // Asegurar que el radio sea un número
+    this.selectedRadius = parseInt(this.tempSelectedRadius.toString());
     this.selectedLocation = this.tempSelectedLocation;
     this.selectedLocationName = this.tempSelectedLocationName;
     
@@ -458,6 +554,13 @@ export class HomePage implements OnInit, AfterViewInit {
     this.filters.categoryId = this.selectedCategory?._id || '';
     this.filters.city = this.selectedCity;
     this.filters.radius = this.selectedRadius;
+    
+    console.log('Home - Applied filters:', {
+      categoryId: this.filters.categoryId,
+      city: this.filters.city,
+      radius: this.filters.radius,
+      selectedRadius: this.selectedRadius
+    });
     
     // Si hay ubicación seleccionada, usarla; si no, usar ubicación actual
     if (this.selectedLocation) {
@@ -504,15 +607,19 @@ export class HomePage implements OnInit, AfterViewInit {
   }
 
   async onProviderClick(provider: Provider) {
-    // Registrar vista del proveedor
+    console.log('Provider clicked:', provider._id);
+    
+    // Navegar primero al detalle del proveedor (no esperar la vista)
+    this.router.navigate(['/provider-detail', provider._id]);
+    
+    // Registrar vista del proveedor en background (no bloqueante)
     try {
-      await this.apiService.addView(provider._id).toPromise();
+      await firstValueFrom(this.apiService.addView(provider._id));
+      console.log('View registered successfully');
     } catch (error) {
       console.error('Error adding view:', error);
+      // No hacer nada más, la vista ya se registró o falló silenciosamente
     }
-    
-    // Navegar al detalle del proveedor
-    this.router.navigate(['/provider-detail', provider._id]);
   }
 
   // Location modal methods
@@ -698,14 +805,6 @@ export class HomePage implements OnInit, AfterViewInit {
   }
 
   private initializeSwiper() {
-    // Inicializar swiper de categorías
-    if (this.categoriesSlider && this.categories.length > 0) {
-      if (this.categoriesSwiper) {
-        this.categoriesSwiper.destroy(true, true);
-      }
-      this.categoriesSwiper = new Swiper(this.categoriesSlider.nativeElement, this.categoriesSwiperConfig);
-    }
-
     // Inicializar swiper de banners
     if (this.bannersSlider && this.banners.length > 0) {
       if (this.bannersSwiper) {
@@ -732,6 +831,40 @@ export class HomePage implements OnInit, AfterViewInit {
     if (link) {
       window.open(link, '_blank');
     }
+  }
+
+  // Métodos para manejar eventos de geolocalización
+  onLocationGranted() {
+    console.log('Ubicación permitida');
+    this.showSuccessToast('Ubicación obtenida correctamente');
+    // Recargar datos con la nueva ubicación
+    this.loadInitialData();
+  }
+
+  onLocationDenied() {
+    console.log('Ubicación denegada');
+    // Continuar sin ubicación - cargar datos por defecto
+    this.loadInitialData();
+  }
+
+  // Método para expandir el radio de búsqueda (tipo Tinder)
+  async onExpandRadius(newRadius: number) {
+    this.isExpandingRadius = true;
+    this.showNoResults = false;
+    
+    console.log(`Expandiendo radio de búsqueda a ${newRadius}m`);
+    
+    // Mostrar toast informativo
+    this.showSuccessToast(`Buscando en un radio de ${(newRadius / 1000).toFixed(0)}km...`);
+    
+    // Cargar providers con el nuevo radio
+    await this.loadProviders(true, newRadius);
+  }
+
+  // Método para reintentar la búsqueda
+  async onRetrySearch() {
+    console.log('Reintentando búsqueda...');
+    await this.loadProviders(true);
   }
 
   private async showSuccessToast(message: string) {

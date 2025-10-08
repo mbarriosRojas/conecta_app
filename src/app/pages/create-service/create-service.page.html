@@ -1,0 +1,209 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/tabs/services"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Crear Servicio</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true">
+  <form (ngSubmit)="onSubmit()" #serviceForm="ngForm">
+    
+    <!-- Información básica -->
+    <ion-card>
+      <ion-card-header>
+        <ion-card-title>Información Básica</ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <ion-item>
+          <ion-label position="stacked">Nombre del servicio *</ion-label>
+          <ion-input [(ngModel)]="formData.name" name="name" required></ion-input>
+        </ion-item>
+
+        <ion-item>
+          <ion-label position="stacked">Descripción *</ion-label>
+          <ion-textarea [(ngModel)]="formData.description" name="description" required rows="4"></ion-textarea>
+        </ion-item>
+
+        <ion-item>
+          <ion-label position="stacked">Categoría *</ion-label>
+          <ion-select [(ngModel)]="formData.categoryId" name="categoryId" required>
+            <ion-select-option *ngFor="let category of categories" [value]="category._id">
+              {{ category.name }}
+            </ion-select-option>
+          </ion-select>
+        </ion-item>
+
+        <ion-item>
+          <ion-label position="stacked">Slug (URL amigable)</ion-label>
+          <ion-input [(ngModel)]="formData.slug" name="slug" placeholder="mi-servicio-unico"></ion-input>
+        </ion-item>
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Contacto -->
+    <ion-card>
+      <ion-card-header>
+        <ion-card-title>Información de Contacto</ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <ion-item>
+          <ion-label position="stacked">Teléfono de contacto *</ion-label>
+          <ion-input [(ngModel)]="formData.phone_contact" name="phone_contact" type="tel" required></ion-input>
+        </ion-item>
+
+        <ion-item>
+          <ion-label position="stacked">Teléfono adicional</ion-label>
+          <ion-input [(ngModel)]="formData.phone_number" name="phone_number" type="tel"></ion-input>
+        </ion-item>
+
+        <ion-item>
+          <ion-label position="stacked">Email</ion-label>
+          <ion-input [(ngModel)]="formData.email" name="email" type="email"></ion-input>
+        </ion-item>
+
+        <ion-item>
+          <ion-label position="stacked">Sitio web</ion-label>
+          <ion-input [(ngModel)]="formData.site_web" name="site_web" type="url" placeholder="https://"></ion-input>
+        </ion-item>
+
+        <ion-item>
+          <ion-label position="stacked">Video (YouTube, Vimeo, etc.)</ion-label>
+          <ion-input [(ngModel)]="formData.video" name="video" type="url"></ion-input>
+        </ion-item>
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Redes sociales -->
+    <ion-card>
+      <ion-card-header>
+        <ion-card-title>Redes Sociales</ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <ion-item>
+          <ion-label position="stacked">Facebook</ion-label>
+          <ion-input [(ngModel)]="formData.facebook" name="facebook" placeholder="https://facebook.com/mi-pagina"></ion-input>
+        </ion-item>
+
+        <ion-item>
+          <ion-label position="stacked">Instagram</ion-label>
+          <ion-input [(ngModel)]="formData.instagram" name="instagram" placeholder="https://instagram.com/mi-cuenta"></ion-input>
+        </ion-item>
+
+        <ion-item>
+          <ion-label position="stacked">TikTok</ion-label>
+          <ion-input [(ngModel)]="formData.tiktok" name="tiktok" placeholder="https://tiktok.com/@mi-cuenta"></ion-input>
+        </ion-item>
+
+        <ion-item>
+          <ion-label position="stacked">LinkedIn</ion-label>
+          <ion-input [(ngModel)]="formData.linkedin" name="linkedin" placeholder="https://linkedin.com/in/mi-perfil"></ion-input>
+        </ion-item>
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Dirección con Mapa -->
+    <app-map-address
+      [initialAddress]="initialAddressData"
+      [height]="'250px'"
+      (addressSelected)="onAddressSelected($event)"
+      (addressChanged)="onAddressChanged($event)">
+    </app-map-address>
+
+    <!-- Horarios -->
+    <ion-card>
+      <ion-card-header>
+        <ion-card-title>Horarios de Atención</ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <div *ngFor="let schedule of formData.schedule; let i = index" class="schedule-item">
+          <ion-item>
+            <ion-checkbox [(ngModel)]="schedule.active" name="schedule{{i}}active"></ion-checkbox>
+            <ion-label>{{ schedule.day }}</ion-label>
+          </ion-item>
+          
+          <div *ngIf="schedule.active" class="schedule-times">
+            <ion-item>
+              <ion-label position="stacked">Hora de inicio</ion-label>
+              <ion-input [(ngModel)]="schedule.start" name="start{{i}}" type="time"></ion-input>
+            </ion-item>
+
+            <ion-item>
+              <ion-label position="stacked">Hora de cierre</ion-label>
+              <ion-input [(ngModel)]="schedule.end" name="end{{i}}" type="time"></ion-input>
+            </ion-item>
+          </div>
+        </div>
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Preguntas frecuentes -->
+    <ion-card>
+      <ion-card-header>
+        <ion-card-title>Preguntas Frecuentes</ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <div *ngFor="let question of formData.questions; let i = index" class="question-item">
+          <ion-item>
+            <ion-label position="stacked">Pregunta</ion-label>
+            <ion-input [(ngModel)]="question.question" name="question{{i}}"></ion-input>
+          </ion-item>
+
+          <ion-item>
+            <ion-label position="stacked">Respuesta</ion-label>
+            <ion-textarea [(ngModel)]="question.answer" name="answer{{i}}" rows="3"></ion-textarea>
+          </ion-item>
+
+          <ion-button fill="clear" color="danger" (click)="removeQuestion(i)" *ngIf="formData.questions.length > 1">
+            <ion-icon name="trash" slot="start"></ion-icon>
+            Eliminar
+          </ion-button>
+        </div>
+
+        <ion-button fill="outline" (click)="addQuestion()">
+          <ion-icon name="add" slot="start"></ion-icon>
+          Agregar pregunta
+        </ion-button>
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Imágenes -->
+    <ion-card>
+      <ion-card-header>
+        <ion-card-title>Imágenes</ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <ion-item>
+          <ion-label position="stacked">Logo del servicio</ion-label>
+          <ion-input type="file" accept="image/*" (change)="onLogoSelected($event)"></ion-input>
+        </ion-item>
+
+        <ion-item>
+          <ion-label position="stacked">Imágenes del servicio *</ion-label>
+          <ion-input type="file" accept="image/*" multiple (change)="onImagesSelected($event)"></ion-input>
+        </ion-item>
+
+        <ion-note color="medium">
+          <p>• Selecciona al menos una imagen del servicio</p>
+          <p>• Formatos recomendados: JPG, PNG</p>
+          <p>• Tamaño máximo: 5MB por imagen</p>
+        </ion-note>
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Botones de acción -->
+    <div class="action-buttons">
+      <ion-button expand="block" fill="solid" color="primary" type="submit" [disabled]="isLoading">
+        <ion-icon name="checkmark" slot="start" *ngIf="!isLoading"></ion-icon>
+        <ion-spinner name="crescent" *ngIf="isLoading"></ion-spinner>
+        {{ isLoading ? 'Creando...' : 'Crear Servicio' }}
+      </ion-button>
+
+      <ion-button expand="block" fill="outline" (click)="router.navigate(['/tabs/services'])" [disabled]="isLoading">
+        Cancelar
+      </ion-button>
+    </div>
+
+  </form>
+</ion-content>

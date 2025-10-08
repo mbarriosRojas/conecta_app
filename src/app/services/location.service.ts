@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Geolocation } from '@capacitor/geolocation';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { BehaviorSubject, Observable, of } from 'rxjs';
+import { catchError, map } from 'rxjs/operators';
 
 export interface LocationData {
   latitude: number;
@@ -9,14 +10,32 @@ export interface LocationData {
   timestamp: number;
 }
 
+export interface LocationQueryParams {
+  lat?: number;
+  lng?: number;
+  radius?: number;
+}
+
 @Injectable({
   providedIn: 'root'
 })
 export class LocationService {
   private currentLocationSubject = new BehaviorSubject<LocationData | null>(null);
   public currentLocation$ = this.currentLocationSubject.asObservable();
+  private defaultRadius = 10000; // 10km en metros
 
-  constructor() {}
+  constructor() {
+    this.initializeLocation();
+  }
+
+  private async initializeLocation() {
+    try {
+      // Intentar obtener la ubicación al inicializar el servicio
+      await this.getCurrentPosition();
+    } catch (error) {
+      console.log('No se pudo obtener la ubicación inicial:', error);
+    }
+  }
 
   async getCurrentPosition(): Promise<LocationData> {
     try {
@@ -150,5 +169,90 @@ export class LocationService {
       const km = (distanceInMeters / 1000).toFixed(1);
       return `${km}km`;
     }
+  }
+
+  // Métodos para query parameters
+  getLocationQueryParams(radius?: number): LocationQueryParams {
+    const location = this.getCurrentLocation();
+    if (!location) {
+      return {};
+    }
+
+    const params: LocationQueryParams = {
+      lat: location.latitude,
+      lng: location.longitude
+    };
+
+    // Solo agregar radio si se especifica explícitamente
+    if (radius && radius > 0) {
+      params.radius = radius;
+    }
+
+    return params;
+  }
+
+  getLocationQueryString(radius?: number): string {
+    const params = this.getLocationQueryParams(radius);
+    if (!params.lat || !params.lng) {
+      return '';
+    }
+
+    const queryParams = new URLSearchParams();
+    queryParams.set('lat', params.lat.toString());
+    queryParams.set('lng', params.lng.toString());
+    if (params.radius) {
+      queryParams.set('radius', params.radius.toString());
+    }
+
+    return queryParams.toString();
+  }
+
+  // Método para obtener ubicación como Observable
+  getCurrentLocationObservable(): Observable<LocationData | null> {
+    return this.currentLocation$.pipe(
+      map(location => location),
+      catchError(error => {
+        console.error('Error en currentLocation$:', error);
+        return of(null);
+      })
+    );
+  }
+
+  // Método para forzar actualización de ubicación
+  async refreshLocation(): Promise<LocationData> {
+    return await this.getCurrentPosition();
+  }
+
+  // Método para verificar si la ubicación está disponible
+  isLocationAvailable(): boolean {
+    return this.getCurrentLocation() !== null;
+  }
+
+  // Método para obtener ubicación con fallback
+  async getLocationWithFallback(): Promise<LocationData> {
+    try {
+      return await this.getCurrentPosition();
+    } catch (error) {
+      // Si no se puede obtener la ubicación actual, usar una ubicación por defecto
+      // (por ejemplo, centro de la ciudad principal)
+      const fallbackLocation: LocationData = {
+        latitude: 4.6097, // Bogotá, Colombia
+        longitude: -74.0817,
+        accuracy: 0,
+        timestamp: Date.now()
+      };
+      
+      this.currentLocationSubject.next(fallbackLocation);
+      return fallbackLocation;
+    }
+  }
+
+  // Método para configurar radio por defecto
+  setDefaultRadius(radius: number): void {
+    this.defaultRadius = radius;
+  }
+
+  getDefaultRadius(): number {
+    return this.defaultRadius;
   }
 }

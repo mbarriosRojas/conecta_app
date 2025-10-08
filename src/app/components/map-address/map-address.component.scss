@@ -1,0 +1,308 @@
+.map-address-card {
+  margin: 16px 0;
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+// Header del card
+ion-card-header {
+  padding-bottom: 8px;
+  
+  ion-card-title {
+    display: flex;
+    align-items: center;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--ion-color-primary);
+    
+    ion-icon {
+      margin-right: 8px;
+      font-size: 20px;
+    }
+  }
+}
+
+// Contenedor de búsqueda
+.search-container {
+  position: relative;
+  margin-bottom: 16px;
+  
+  .address-search-item {
+    --border-radius: 12px;
+    --border-width: 1px;
+    --border-color: var(--ion-color-light);
+    --background: var(--ion-color-light);
+    --padding-start: 16px;
+    --padding-end: 16px;
+    
+    ion-input {
+      --padding-top: 12px;
+      --padding-bottom: 12px;
+      font-size: 16px;
+    }
+    
+    &:focus-within {
+      --border-color: var(--ion-color-primary);
+      --background: var(--ion-color-primary-tint);
+    }
+  }
+}
+
+// Contenedor de sugerencias
+.suggestions-container {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  margin-top: 4px;
+  max-height: 200px;
+  overflow-y: auto;
+  
+  ion-list {
+    padding: 0;
+    margin: 0;
+  }
+  
+  .suggestion-item {
+    --padding-start: 16px;
+    --padding-end: 16px;
+    --min-height: 56px;
+    border-bottom: 1px solid var(--ion-color-light);
+    
+    &:last-child {
+      border-bottom: none;
+    }
+    
+    &:hover {
+      --background: var(--ion-color-primary-tint);
+    }
+    
+    ion-label {
+      h3 {
+        font-size: 14px;
+        font-weight: 500;
+        margin: 0 0 2px 0;
+        color: var(--ion-color-dark);
+      }
+      
+      p {
+        font-size: 12px;
+        margin: 0;
+        color: var(--ion-color-medium);
+      }
+    }
+  }
+}
+
+// Contenedor del mapa
+.map-container {
+  position: relative;
+  margin: 16px 0;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  
+  .address-map {
+    width: 100%;
+    border-radius: 12px;
+  }
+  
+  .map-loading {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.9);
+    z-index: 100;
+    
+    ion-spinner {
+      margin-bottom: 12px;
+    }
+    
+    p {
+      margin: 0;
+      color: var(--ion-color-medium);
+      font-size: 14px;
+    }
+  }
+}
+
+// Información de dirección seleccionada
+.address-info {
+  margin: 16px 0;
+  
+  ion-item {
+    --border-radius: 12px;
+    --border-color: var(--ion-color-success);
+    --border-width: 1px;
+    
+    ion-icon {
+      font-size: 20px;
+    }
+    
+    ion-label {
+      h3 {
+        font-size: 14px;
+        font-weight: 600;
+        margin: 0 0 4px 0;
+        color: var(--ion-color-success-shade);
+      }
+      
+      p {
+        font-size: 12px;
+        margin: 0;
+        color: var(--ion-color-success);
+        line-height: 1.3;
+      }
+    }
+  }
+}
+
+// Campos de dirección
+.address-fields {
+  margin: 16px 0;
+  
+  ion-item {
+    --border-radius: 12px;
+    --padding-start: 16px;
+    --padding-end: 16px;
+    margin-bottom: 12px;
+    
+    ion-label[position="stacked"] {
+      font-weight: 500;
+      color: var(--ion-color-dark);
+      margin-bottom: 8px;
+    }
+    
+    ion-input {
+      --padding-top: 12px;
+      --padding-bottom: 12px;
+      --background: var(--ion-color-light);
+      --border-radius: 8px;
+      --padding-start: 12px;
+      --padding-end: 12px;
+      font-size: 14px;
+      
+      &[readonly] {
+        --color: var(--ion-color-medium);
+        opacity: 0.8;
+      }
+    }
+  }
+}
+
+// Botones de acción
+.action-buttons {
+  margin: 20px 0 16px 0;
+  
+  .location-button {
+    margin-bottom: 12px;
+    height: 48px;
+    --border-radius: 24px;
+    --border-width: 2px;
+    font-weight: 500;
+    
+    ion-icon {
+      margin-right: 8px;
+    }
+  }
+  
+  .confirm-button {
+    height: 48px;
+    --border-radius: 24px;
+    font-weight: 600;
+    
+    ion-icon {
+      margin-right: 8px;
+    }
+    
+    &[disabled] {
+      --opacity: 0.5;
+    }
+  }
+}
+
+// Información adicional
+.map-info {
+  display: flex;
+  align-items: flex-start;
+  padding: 12px;
+  background: var(--ion-color-light);
+  margin-top: 16px;
+  
+  ion-icon {
+    margin-right: 8px;
+    margin-top: 2px;
+    flex-shrink: 0;
+  }
+  
+  p {
+    margin: 0;
+    font-size: 12px;
+    color: var(--ion-color-medium);
+    line-height: 1.4;
+  }
+}
+
+// Responsive
+@media (max-width: 768px) {
+  .map-address-card {
+    margin: 12px 0;
+  }
+  
+  .map-container {
+    margin: 12px 0;
+  }
+  
+  .action-buttons {
+    margin: 16px 0 12px 0;
+    
+    .location-button,
+    .confirm-button {
+      height: 44px;
+      font-size: 14px;
+    }
+  }
+  
+  .suggestions-container {
+    max-height: 150px;
+  }
+}
+
+// Animaciones
+.suggestions-container {
+  animation: slideDown 0.2s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.address-info {
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}

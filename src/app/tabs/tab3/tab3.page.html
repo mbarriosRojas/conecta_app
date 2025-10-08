@@ -1,0 +1,443 @@
+
+
+<ion-content [fullscreen]="true">
+  <ion-header collapse="condense">
+    <ion-toolbar>
+      <ion-title size="large">Perfil</ion-title>
+    </ion-toolbar>
+  </ion-header>
+
+  <div class="profile-container">
+    
+    <!-- Si el usuario está autenticado -->
+    <div *ngIf="user; else notAuthenticated">
+      <!-- Información del usuario -->
+      <ion-card class="user-info-card">
+        <ion-card-content>
+          <div class="user-avatar" (click)="changeProfileImage()">
+            <img *ngIf="user?.profileImage" [src]="user.profileImage" alt="Foto de perfil" class="profile-image">
+            <ion-icon *ngIf="!user?.profileImage" name="person-circle" size="large"></ion-icon>
+            <div class="avatar-overlay">
+              <ion-icon name="camera" size="small"></ion-icon>
+            </div>
+          </div>
+          <div class="user-details">
+            <h2>{{ user?.name || 'Usuario' }} {{ user?.lastname || '' }}</h2>
+            <p>{{ user?.email || 'usuario@email.com' }}</p>
+            <p *ngIf="user?.phone">{{ user.phone }}</p>
+          </div>
+          <ion-button fill="clear" size="small" (click)="editProfile()" class="edit-profile-btn">
+            <ion-icon name="create-outline"></ion-icon>
+          </ion-button>
+        </ion-card-content>
+      </ion-card>
+
+    <!-- Acciones principales -->
+    <div class="actions-section">
+      <ion-button 
+        expand="block" 
+        fill="solid" 
+        color="primary" 
+        (click)="goToCreateService()"
+        class="action-button">
+        <ion-icon name="add-circle" slot="start"></ion-icon>
+        Crear Nuevo Servicio
+      </ion-button>
+
+      <ion-button 
+        expand="block" 
+        fill="outline" 
+        color="primary" 
+        (click)="goToServices()"
+        class="action-button">
+        <ion-icon name="business" slot="start"></ion-icon>
+        Mis Servicios
+      </ion-button>
+    </div>
+
+    <!-- Opciones del menú -->
+    <div class="menu-section">
+      <ion-list>
+        <ion-item button>
+          <ion-icon name="settings-outline" slot="start" color="medium"></ion-icon>
+          <ion-label>Configuración</ion-label>
+          <ion-icon name="chevron-forward" slot="end"></ion-icon>
+        </ion-item>
+
+        <ion-item button>
+          <ion-icon name="help-circle-outline" slot="start" color="medium"></ion-icon>
+          <ion-label>Ayuda y Soporte</ion-label>
+          <ion-icon name="chevron-forward" slot="end"></ion-icon>
+        </ion-item>
+
+        <ion-item button>
+          <ion-icon name="information-circle-outline" slot="start" color="medium"></ion-icon>
+          <ion-label>Acerca de</ion-label>
+          <ion-icon name="chevron-forward" slot="end"></ion-icon>
+        </ion-item>
+      </ion-list>
+    </div>
+
+      <!-- Botón de cerrar sesión -->
+      <div class="logout-section">
+        <ion-button 
+          expand="block" 
+          fill="clear" 
+          color="danger" 
+          (click)="logout()"
+          class="logout-button">
+          <ion-icon name="log-out" slot="start"></ion-icon>
+          Cerrar Sesión
+        </ion-button>
+      </div>
+    </div>
+
+    <!-- Si el usuario NO está autenticado -->
+    <ng-template #notAuthenticated>
+      <!-- Toggle entre Login y Registro -->
+      <div class="auth-toggle">
+        <ion-segment [(ngModel)]="authMode" (ionChange)="onAuthModeChange()">
+          <ion-segment-button value="login">
+            <ion-label>Iniciar Sesión</ion-label>
+          </ion-segment-button>
+          <ion-segment-button value="register">
+            <ion-label>Crear Cuenta</ion-label>
+          </ion-segment-button>
+        </ion-segment>
+      </div>
+
+      <!-- Formulario de Login -->
+      <ion-card class="auth-card" *ngIf="authMode === 'login'">
+        <ion-card-content>
+          <form (ngSubmit)="onLogin()" #loginForm="ngForm" class="auth-form">
+            <div class="form-group">
+              <ion-item>
+                <ion-label position="stacked">Correo electrónico *</ion-label>
+                <ion-input 
+                  type="email" 
+                  name="email"
+                  [(ngModel)]="loginData.email"
+                  #email="ngModel"
+                  required
+                  email
+                  placeholder="tu@email.com">
+                </ion-input>
+              </ion-item>
+              <div class="error-message" *ngIf="email.invalid && email.touched">
+                <p *ngIf="email.errors?.['required']">El correo es obligatorio</p>
+                <p *ngIf="email.errors?.['email']">Formato de correo inválido</p>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <ion-item>
+                <ion-label position="stacked">Contraseña *</ion-label>
+                <ion-input 
+                  [type]="showLoginPassword ? 'text' : 'password'"
+                  name="password"
+                  [(ngModel)]="loginData.password"
+                  #password="ngModel"
+                  required
+                  placeholder="Tu contraseña">
+                </ion-input>
+                <ion-button 
+                  fill="clear" 
+                  slot="end" 
+                  (click)="toggleLoginPassword()"
+                  class="password-toggle">
+                  <ion-icon [name]="showLoginPassword ? 'eye-off' : 'eye'"></ion-icon>
+                </ion-button>
+              </ion-item>
+              <div class="error-message" *ngIf="password.invalid && password.touched">
+                <p *ngIf="password.errors?.['required']">La contraseña es obligatoria</p>
+              </div>
+            </div>
+
+            <ion-button 
+              expand="block" 
+              fill="solid" 
+              color="primary" 
+              type="submit"
+              [disabled]="loginForm.invalid || isLoading"
+              class="auth-button">
+              <ion-spinner name="crescent" *ngIf="isLoading"></ion-spinner>
+              <ion-icon name="log-in" slot="start" *ngIf="!isLoading"></ion-icon>
+              {{ isLoading ? 'Iniciando sesión...' : 'Iniciar Sesión' }}
+            </ion-button>
+          </form>
+        </ion-card-content>
+      </ion-card>
+
+      <!-- Formulario de Registro -->
+      <ion-card class="auth-card" *ngIf="authMode === 'register'">
+        <ion-card-content>
+          <form (ngSubmit)="onRegister()" #registerForm="ngForm" class="auth-form">
+            <div class="form-group">
+              <ion-item>
+                <ion-label position="stacked">Nombre *</ion-label>
+                <ion-input 
+                  type="text" 
+                  name="name"
+                  [(ngModel)]="registerData.name"
+                  #name="ngModel"
+                  required
+                  placeholder="Tu nombre">
+                </ion-input>
+              </ion-item>
+              <div class="error-message" *ngIf="name.invalid && name.touched">
+                <p *ngIf="name.errors?.['required']">El nombre es obligatorio</p>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <ion-item>
+                <ion-label position="stacked">Apellido *</ion-label>
+                <ion-input 
+                  type="text" 
+                  name="lastname"
+                  [(ngModel)]="registerData.lastname"
+                  #lastname="ngModel"
+                  required
+                  placeholder="Tu apellido">
+                </ion-input>
+              </ion-item>
+              <div class="error-message" *ngIf="lastname.invalid && lastname.touched">
+                <p *ngIf="lastname.errors?.['required']">El apellido es obligatorio</p>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <ion-item>
+                <ion-label position="stacked">Correo electrónico *</ion-label>
+                <ion-input 
+                  type="email" 
+                  name="email"
+                  [(ngModel)]="registerData.email"
+                  #email="ngModel"
+                  required
+                  email
+                  placeholder="tu@email.com">
+                </ion-input>
+              </ion-item>
+              <div class="error-message" *ngIf="email.invalid && email.touched">
+                <p *ngIf="email.errors?.['required']">El correo es obligatorio</p>
+                <p *ngIf="email.errors?.['email']">Formato de correo inválido</p>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <ion-item>
+                <ion-label position="stacked">Teléfono</ion-label>
+                <ion-input 
+                  type="tel" 
+                  name="phone"
+                  [(ngModel)]="registerData.phone"
+                  placeholder="+57 300 123 4567">
+                </ion-input>
+              </ion-item>
+            </div>
+
+            <div class="form-group">
+              <ion-item>
+                <ion-label position="stacked">Contraseña *</ion-label>
+                <ion-input 
+                  [type]="showRegisterPassword ? 'text' : 'password'"
+                  name="password"
+                  [(ngModel)]="registerData.password"
+                  #password="ngModel"
+                  required
+                  minlength="6"
+                  placeholder="Mínimo 6 caracteres">
+                </ion-input>
+                <ion-button 
+                  fill="clear" 
+                  slot="end" 
+                  (click)="toggleRegisterPassword()"
+                  class="password-toggle">
+                  <ion-icon [name]="showRegisterPassword ? 'eye-off' : 'eye'"></ion-icon>
+                </ion-button>
+              </ion-item>
+              <div class="error-message" *ngIf="password.invalid && password.touched">
+                <p *ngIf="password.errors?.['required']">La contraseña es obligatoria</p>
+                <p *ngIf="password.errors?.['minlength']">Mínimo 6 caracteres</p>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <ion-item>
+                <ion-label position="stacked">Confirmar contraseña *</ion-label>
+                <ion-input 
+                  [type]="showConfirmPassword ? 'text' : 'password'"
+                  name="confirmPassword"
+                  [(ngModel)]="registerData.confirmPassword"
+                  #confirmPassword="ngModel"
+                  required
+                  placeholder="Repite tu contraseña">
+                </ion-input>
+                <ion-button 
+                  fill="clear" 
+                  slot="end" 
+                  (click)="toggleConfirmPassword()"
+                  class="password-toggle">
+                  <ion-icon [name]="showConfirmPassword ? 'eye-off' : 'eye'"></ion-icon>
+                </ion-button>
+              </ion-item>
+              <div class="error-message" *ngIf="confirmPassword.invalid && confirmPassword.touched">
+                <p *ngIf="confirmPassword.errors?.['required']">Confirma tu contraseña</p>
+                <p *ngIf="registerData.password !== registerData.confirmPassword && confirmPassword.touched">
+                  Las contraseñas no coinciden
+                </p>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <ion-item>
+                <ion-checkbox 
+                  name="acceptTerms"
+                  [(ngModel)]="registerData.acceptTerms"
+                  #acceptTerms="ngModel"
+                  required>
+                </ion-checkbox>
+                <ion-label class="checkbox-label">
+                  Acepto los <a href="#" (click)="$event.preventDefault()">términos y condiciones</a>
+                </ion-label>
+              </ion-item>
+              <div class="error-message" *ngIf="acceptTerms.invalid && acceptTerms.touched">
+                <p>Debes aceptar los términos y condiciones</p>
+              </div>
+            </div>
+
+            <ion-button 
+              expand="block" 
+              fill="solid" 
+              color="primary" 
+              type="submit"
+              [disabled]="registerForm.invalid || registerData.password !== registerData.confirmPassword || !registerData.acceptTerms || isLoading"
+              class="auth-button">
+              <ion-spinner name="crescent" *ngIf="isLoading"></ion-spinner>
+              <ion-icon name="person-add" slot="start" *ngIf="!isLoading"></ion-icon>
+              {{ isLoading ? 'Creando cuenta...' : 'Crear Cuenta' }}
+            </ion-button>
+          </form>
+        </ion-card-content>
+      </ion-card>
+
+      <!-- Información adicional para usuarios no autenticados -->
+      <div class="info-section">
+        <h3>¿Por qué registrarse?</h3>
+        <ion-list>
+          <ion-item>
+            <ion-icon name="business" slot="start" color="primary"></ion-icon>
+            <ion-label>
+              <h4>Gestiona tus servicios</h4>
+              <p>Crea y administra tus negocios desde la app</p>
+            </ion-label>
+          </ion-item>
+
+          <ion-item>
+            <ion-icon name="heart" slot="start" color="danger"></ion-icon>
+            <ion-label>
+              <h4>Guarda tus favoritos</h4>
+              <p>Mantén una lista de tus servicios preferidos</p>
+            </ion-label>
+          </ion-item>
+
+          <ion-item>
+            <ion-icon name="notifications" slot="start" color="warning"></ion-icon>
+            <ion-label>
+              <h4>Recibe notificaciones</h4>
+              <p>Ofertas y actualizaciones de tus servicios</p>
+            </ion-label>
+          </ion-item>
+        </ion-list>
+      </div>
+    </ng-template>
+  </div>
+
+  <!-- Modal para editar perfil -->
+  <ion-modal [isOpen]="isEditProfileModalOpen" (didDismiss)="closeEditProfileModal()">
+    <ng-template>
+      <ion-header>
+        <ion-toolbar>
+          <ion-title>Editar Perfil</ion-title>
+          <ion-buttons slot="end">
+            <ion-button (click)="closeEditProfileModal()">
+              <ion-icon name="close"></ion-icon>
+            </ion-button>
+          </ion-buttons>
+        </ion-toolbar>
+      </ion-header>
+      
+      <ion-content class="modal-content">
+        <form (ngSubmit)="onUpdateProfile()" #editProfileForm="ngForm" class="edit-form">
+          <div class="form-group">
+            <ion-item>
+              <ion-label position="stacked">Nombre *</ion-label>
+              <ion-input 
+                type="text" 
+                name="name"
+                [(ngModel)]="editProfileData.name"
+                #name="ngModel"
+                required
+                placeholder="Tu nombre">
+              </ion-input>
+            </ion-item>
+          </div>
+
+          <div class="form-group">
+            <ion-item>
+              <ion-label position="stacked">Apellido *</ion-label>
+              <ion-input 
+                type="text" 
+                name="lastname"
+                [(ngModel)]="editProfileData.lastname"
+                #lastname="ngModel"
+                required
+                placeholder="Tu apellido">
+              </ion-input>
+            </ion-item>
+          </div>
+
+          <div class="form-group">
+            <ion-item>
+              <ion-label position="stacked">Correo electrónico *</ion-label>
+              <ion-input 
+                type="email" 
+                name="email"
+                [(ngModel)]="editProfileData.email"
+                #email="ngModel"
+                required
+                email
+                placeholder="tu@email.com">
+              </ion-input>
+            </ion-item>
+          </div>
+
+          <div class="form-group">
+            <ion-item>
+              <ion-label position="stacked">Teléfono</ion-label>
+              <ion-input 
+                type="tel" 
+                name="phone"
+                [(ngModel)]="editProfileData.phone"
+                placeholder="+57 300 123 4567">
+              </ion-input>
+            </ion-item>
+          </div>
+
+          <ion-button 
+            expand="block" 
+            fill="solid" 
+            color="primary" 
+            type="submit"
+            [disabled]="editProfileForm.invalid || isUpdatingProfile"
+            class="update-button">
+            <ion-spinner name="crescent" *ngIf="isUpdatingProfile"></ion-spinner>
+            <ion-icon name="checkmark" slot="start" *ngIf="!isUpdatingProfile"></ion-icon>
+            {{ isUpdatingProfile ? 'Actualizando...' : 'Actualizar Perfil' }}
+          </ion-button>
+        </form>
+      </ion-content>
+    </ng-template>
+  </ion-modal>
+</ion-content>

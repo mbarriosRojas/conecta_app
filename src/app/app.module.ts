@@ -1,7 +1,7 @@
 import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import { RouteReuseStrategy } from '@angular/router';
-import { HttpClientModule } from '@angular/common/http';
+import { HttpClientModule, HTTP_INTERCEPTORS } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 
 import { IonicModule, IonicRouteStrategy } from '@ionic/angular';
@@ -15,6 +15,11 @@ import { ApiService } from './services/api.service';
 import { LocationService } from './services/location.service';
 import { StorageService } from './services/storage.service';
 import { UtilsService } from './services/utils.service';
+import { AuthService } from './services/auth.service';
+import { PermissionService } from './services/permission.service';
+
+// Interceptors
+import { AuthInterceptor } from './interceptors/auth.interceptor';
 
 @NgModule({
   declarations: [AppComponent],
@@ -28,10 +33,17 @@ import { UtilsService } from './services/utils.service';
   ],
   providers: [
     { provide: RouteReuseStrategy, useClass: IonicRouteStrategy },
+    {
+      provide: HTTP_INTERCEPTORS,
+      useClass: AuthInterceptor,
+      multi: true
+    },
     ApiService,
     LocationService,
     StorageService,
-    UtilsService
+    UtilsService,
+    AuthService,
+    PermissionService
   ],
   bootstrap: [AppComponent],
 })

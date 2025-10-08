@@ -1,0 +1,49 @@
+<ion-card class="no-results-card">
+  <ion-card-content>
+    <div class="no-results-content">
+      <!-- Icono principal -->
+      <div class="icon-container">
+        <ion-icon name="search-outline" size="large" color="medium"></ion-icon>
+      </div>
+
+      <!-- Mensaje principal -->
+      <div class="message-container">
+        <h3>No encontramos resultados</h3>
+        <p *ngIf="searchQuery">
+          No hay servicios que coincidan con "<strong>{{ searchQuery }}</strong>" 
+          en un radio de <strong>{{ radiusInKm }}km</strong>
+        </p>
+        <p *ngIf="!searchQuery">
+          No hay servicios disponibles en un radio de <strong>{{ radiusInKm }}km</strong>
+        </p>
+      </div>
+
+      <!-- Opciones de expansión -->
+      <div class="options-container" *ngIf="canExpand">
+        <p class="suggestion-text">
+          Ampliar búsqueda de {{ radiusInKm }}km a {{ suggestedRadiusInKm }}km
+        </p>
+        
+        <ion-button 
+          expand="block" 
+          fill="solid" 
+          color="primary"
+          (click)="onExpandRadius()"
+          [disabled]="isLoading"
+          class="expand-button">
+          <ion-icon name="location" slot="start" *ngIf="!isLoading"></ion-icon>
+          <ion-spinner name="crescent" *ngIf="isLoading"></ion-spinner>
+          {{ isLoading ? 'Buscando...' : 'Ampliar búsqueda' }}
+        </ion-button>
+      </div>
+
+      <!-- Mensaje cuando se alcanza el máximo -->
+      <div class="max-reached-container" *ngIf="!canExpand">
+        <ion-icon name="warning-outline" color="warning"></ion-icon>
+        <p>Radio máximo alcanzado ({{ maxRadius / 1000 }}km)</p>
+      </div>
+
+    
+    </div>
+  </ion-card-content>
+</ion-card>

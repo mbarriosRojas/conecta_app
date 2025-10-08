@@ -1,0 +1,94 @@
+
+
+<ion-content [fullscreen]="true">
+  <ion-refresher slot="fixed" (ionRefresh)="refresh($event)">
+    <ion-refresher-content></ion-refresher-content>
+  </ion-refresher>
+
+  <!-- Header estilo WhatsApp -->
+  <div class="whatsapp-header">
+    <div class="header-title">
+      <h1>Mis Servicios</h1>
+    </div>
+    <div class="header-actions">
+      <ion-button fill="clear" (click)="createNewService()">
+        <ion-icon name="add-circle"></ion-icon>
+      </ion-button>
+    </div>
+  </div>
+
+  <!-- Lista de servicios estilo WhatsApp -->
+  <div class="whatsapp-services-container" *ngIf="!isLoading && providers.length > 0">
+    <div class="whatsapp-service-item" 
+         *ngFor="let provider of providers">
+      
+      <!-- Avatar del servicio -->
+      <div class="service-avatar">
+        <img 
+          [src]="provider.logo || 'assets/images/default-provider.png'" 
+          [alt]="provider.name"
+          class="avatar-image"
+          *ngIf="provider.logo">
+        <div class="avatar-placeholder" *ngIf="!provider.logo">
+          <ion-icon name="business"></ion-icon>
+        </div>
+      </div>
+
+      <!-- Información del servicio -->
+      <div class="service-info">
+        <div class="service-header">
+          <h3 class="service-name">{{ provider.name }}</h3>
+          <span class="service-time">{{ (typeof provider.categoryId === 'object' ? provider.categoryId.name : provider.categoryId) || 'Sin categoría' }}</span>
+        </div>
+        
+        <div class="service-message">
+          <p class="service-description">{{ provider.description | slice:0:80 }}{{ provider.description.length > 80 ? '...' : '' }}</p>
+        </div>
+        
+        <div class="service-meta">
+          <div class="meta-item">
+            <ion-icon name="eye-outline"></ion-icon>
+            <span>{{ provider.views || 0 }}</span>
+          </div>
+          
+          <div class="meta-item">
+            <ion-icon name="star-outline"></ion-icon>
+            <span>{{ provider.rating || 0 }}</span>
+          </div>
+          
+          <div class="meta-item" *ngIf="provider.address?.city">
+            <ion-icon name="location-outline"></ion-icon>
+            <span>{{ provider.address.city }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Acciones del servicio -->
+      <div class="service-actions">
+        <ion-button fill="clear" size="small" (click)="editService(provider)">
+          <ion-icon name="create-outline"></ion-icon>
+        </ion-button>
+        <ion-button fill="clear" size="small" color="danger" (click)="deleteService(provider)">
+          <ion-icon name="trash-outline"></ion-icon>
+        </ion-button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Estado vacío -->
+  <div class="empty-state" *ngIf="!isLoading && providers.length === 0">
+    <ion-icon name="business-outline" size="large"></ion-icon>
+    <h2>No tienes servicios registrados</h2>
+    <p>Crea tu primer servicio para comenzar a ofrecer tus productos y servicios a la comunidad.</p>
+    <ion-button fill="solid" color="primary" (click)="createNewService()">
+      <ion-icon name="add" slot="start"></ion-icon>
+      Crear Mi Primer Servicio
+    </ion-button>
+  </div>
+
+  <!-- Loading state -->
+  <div class="loading-state" *ngIf="isLoading">
+    <ion-spinner name="crescent"></ion-spinner>
+    <p>Cargando servicios...</p>
+  </div>
+</ion-content>
