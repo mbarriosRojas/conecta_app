@@ -31,18 +31,25 @@ export class LocationPermissionComponent implements OnInit {
 
   async checkLocationPermission() {
     try {
-      const hasPermission = await this.locationService.requestPermissions();
-      this.locationPermissionStatus = hasPermission ? 'granted' : 'denied';
+      // Solo verificar el estado, no solicitar permisos automáticamente
+      const permissionStatus = await this.permissionService.checkLocationPermission();
       
-      if (hasPermission) {
+      if (permissionStatus === 'granted') {
+        this.locationPermissionStatus = 'granted';
         this.locationGranted.emit();
-      } else {
+      } else if (permissionStatus === 'denied') {
+        this.locationPermissionStatus = 'denied';
         this.locationDenied.emit();
+      } else {
+        // Si no está definido, asumir que está permitido (los permisos están en el manifiesto)
+        this.locationPermissionStatus = 'granted';
+        this.locationGranted.emit();
       }
     } catch (error) {
       console.error('Error checking location permission:', error);
-      this.locationPermissionStatus = 'denied';
-      this.locationDenied.emit();
+      // En caso de error, asumir que está permitido
+      this.locationPermissionStatus = 'granted';
+      this.locationGranted.emit();
     }
   }
 
@@ -52,14 +59,20 @@ export class LocationPermissionComponent implements OnInit {
     this.isRequesting = true;
 
     try {
-      const result = await this.permissionService.requestLocationPermissionWithModal();
-      
-      if (result.granted) {
-        this.locationPermissionStatus = 'granted';
-        this.locationGranted.emit();
+      // Si los permisos están denegados, mostrar alert para ir a configuración
+      if (this.locationPermissionStatus === 'denied') {
+        await this.showPermissionDeniedAlert();
       } else {
-        this.locationPermissionStatus = 'denied';
-        this.locationDenied.emit();
+        // Intentar solicitar permisos
+        const result = await this.permissionService.requestLocationPermissionWithModal();
+        
+        if (result.granted) {
+          this.locationPermissionStatus = 'granted';
+          this.locationGranted.emit();
+        } else {
+          this.locationPermissionStatus = 'denied';
+          this.locationDenied.emit();
+        }
       }
     } catch (error) {
       console.error('Error requesting location permission:', error);
@@ -96,10 +109,8 @@ export class LocationPermissionComponent implements OnInit {
   }
 
   get shouldShowComponent(): boolean {
-    if (this.showOnlyIfDenied) {
-      return this.locationPermissionStatus === 'denied';
-    }
-    return this.locationPermissionStatus !== 'granted';
+    // Solo mostrar cuando los permisos están explícitamente denegados
+    return this.locationPermissionStatus === 'denied';
   }
 
   get permissionMessage(): string {

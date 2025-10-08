@@ -833,19 +833,6 @@ export class HomePage implements OnInit, AfterViewInit {
     }
   }
 
-  // Métodos para manejar eventos de geolocalización
-  onLocationGranted() {
-    console.log('Ubicación permitida');
-    this.showSuccessToast('Ubicación obtenida correctamente');
-    // Recargar datos con la nueva ubicación
-    this.loadInitialData();
-  }
-
-  onLocationDenied() {
-    console.log('Ubicación denegada');
-    // Continuar sin ubicación - cargar datos por defecto
-    this.loadInitialData();
-  }
 
   // Método para expandir el radio de búsqueda (tipo Tinder)
   async onExpandRadius(newRadius: number) {

@@ -13,6 +13,9 @@ const config: CapacitorConfig = {
     },
     Camera: {
       permissions: ['camera', 'photos']
+    },
+    Filesystem: {
+      permissions: ['read', 'write']
     }
   }
 };

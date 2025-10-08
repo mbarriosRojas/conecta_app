@@ -25,11 +25,6 @@
 
 <ion-content [fullscreen]="true" class="home-content">
 
-  <!-- Componente de permisos de geolocalización -->
-  <app-location-permission 
-    (locationGranted)="onLocationGranted()"
-    (locationDenied)="onLocationDenied()">
-  </app-location-permission>
 
   <!-- Banner promocional -->
   <div class="promotional-banner" [style.background-image]="banners.length > 0 ? 'url(' + banners[0].image + ')' : ''">

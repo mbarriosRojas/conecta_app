@@ -6,10 +6,7 @@
       <div class="permission-text">
         <h3>{{ permissionMessage }}</h3>
         <p *ngIf="locationPermissionStatus === 'denied'">
-          Permite el acceso a tu ubicación para encontrar servicios cerca de ti.
-        </p>
-        <p *ngIf="locationPermissionStatus === 'unknown' || locationPermissionStatus === 'prompt'">
-          Necesitamos tu ubicación para mostrarte servicios cercanos.
+          Los permisos de ubicación están desactivados. Actívalos en configuración para encontrar servicios cerca de ti.
         </p>
       </div>
     </div>
@@ -23,7 +20,7 @@
       [disabled]="isRequesting">
       <ion-icon name="location" slot="start" *ngIf="!isRequesting"></ion-icon>
       <ion-spinner name="crescent" *ngIf="isRequesting"></ion-spinner>
-      {{ isRequesting ? 'Solicitando...' : 'Permitir Ubicación' }}
+      {{ isRequesting ? 'Abriendo configuración...' : 'Ir a Configuración' }}
     </ion-button>
   </ion-card-content>
 </ion-card>

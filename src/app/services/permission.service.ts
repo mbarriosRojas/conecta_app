@@ -1,7 +1,6 @@
 import { Injectable } from '@angular/core';
-import { AlertController, ToastController, ModalController } from '@ionic/angular';
+import { AlertController, ToastController } from '@ionic/angular';
 import { LocationService } from './location.service';
-import { LocationModalComponent } from '../components/location-modal/location-modal.component';
 
 export interface PermissionResult {
   granted: boolean;
@@ -18,9 +17,18 @@ export class PermissionService {
   constructor(
     private locationService: LocationService,
     private alertController: AlertController,
-    private toastController: ToastController,
-    private modalController: ModalController
+    private toastController: ToastController
   ) {}
+
+  async checkLocationPermission(): Promise<'granted' | 'denied' | 'prompt'> {
+    try {
+      const hasPermission = await this.locationService.requestPermissions();
+      return hasPermission ? 'granted' : 'denied';
+    } catch (error) {
+      console.error('Error checking location permission:', error);
+      return 'denied';
+    }
+  }
 
   async requestLocationPermissionWithModal(): Promise<PermissionResult> {
     if (this.hasRequestedLocationPermission) {
@@ -136,22 +144,8 @@ export class PermissionService {
       return true;
     }
 
-    // Si falla, mostrar modal de permisos
-    return await this.showLocationPermissionModal();
-  }
-
-  async showLocationPermissionModal(): Promise<boolean> {
-    const modal = await this.modalController.create({
-      component: LocationModalComponent,
-      backdropDismiss: false,
-      showBackdrop: true,
-      cssClass: 'location-permission-modal'
-    });
-
-    await modal.present();
-    
-    const result = await modal.onDidDismiss();
-    return result.data?.granted || false;
+    // Si falla, retornar false (los permisos están en el manifiesto)
+    return false;
   }
 
   resetLocationPermissionRequest() {
