@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.infinity.providers',
+  appId: 'aki_app.app',
   appName: 'Infinity Providers',
   webDir: 'www',
   server: {

@@ -40,3 +40,21 @@
 /* @import "@ionic/angular/css/palettes/dark.always.css"; */
 /* @import "@ionic/angular/css/palettes/dark.class.css"; */
 @import "@ionic/angular/css/palettes/dark.system.css";
+
+/* App Variables */
+:root {
+  --primary-color: #3483fa;
+  --secondary-color: #00a650;
+  --warning-color: #fff159;
+  --danger-color: #ff6b6b;
+  --light-gray: #f5f5f5;
+  --medium-gray: #666666;
+  --dark-gray: #333333;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  --whatsapp-green: #25d366;
+  --whatsapp-light: #dcf8c6;
+  --whatsapp-background: #ffffff;
+  --whatsapp-border: #e5e5e5;
+  --selected-purple: #8e44ad;
+}
