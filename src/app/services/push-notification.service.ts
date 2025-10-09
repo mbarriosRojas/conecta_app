@@ -11,6 +11,7 @@ import { getMessaging, getToken, onMessage, Messaging } from 'firebase/messaging
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { environment } from '../../environments/environment';
 import { StorageService } from './storage.service';
+import { LocationService } from './location.service';
 import { firstValueFrom } from 'rxjs';
 
 @Injectable({
@@ -25,7 +26,8 @@ export class PushNotificationService {
   constructor(
     private platform: Platform,
     private http: HttpClient,
-    private storageService: StorageService
+    private storageService: StorageService,
+    private locationService: LocationService
   ) {}
 
   /**
@@ -187,12 +189,26 @@ export class PushNotificationService {
                       this.platform.is('ios') ? 'Apple' : 'Browser'
       };
 
+      // Obtener ubicación actual si está disponible
+      let location = null;
+      try {
+        const currentLocation = await this.locationService.getCurrentPosition();
+        location = {
+          lat: currentLocation.latitude,
+          lng: currentLocation.longitude
+        };
+        console.log('📍 Ubicación incluida en registro de token:', location);
+      } catch (error) {
+        console.log('⚠️ No se pudo obtener ubicación para el token');
+      }
+
       const response = await firstValueFrom(
         this.http.post(`${environment.apiUrl}/api/notifications/register-token`, {
           userID: this.userID,
           token,
           platform,
-          deviceInfo
+          deviceInfo,
+          ...(location && { lat: location.lat, lng: location.lng })
         }, { headers })
       );
 

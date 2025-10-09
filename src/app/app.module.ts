@@ -17,6 +17,7 @@ import { StorageService } from './services/storage.service';
 import { UtilsService } from './services/utils.service';
 import { AuthService } from './services/auth.service';
 import { PermissionService } from './services/permission.service';
+import { PushNotificationService } from './services/push-notification.service';
 
 // Interceptors
 import { AuthInterceptor } from './interceptors/auth.interceptor';
@@ -43,7 +44,8 @@ import { AuthInterceptor } from './interceptors/auth.interceptor';
     StorageService,
     UtilsService,
     AuthService,
-    PermissionService
+    PermissionService,
+    PushNotificationService
   ],
   bootstrap: [AppComponent],
 })
