@@ -1,28 +1,31 @@
+
 <ion-header [translucent]="true">
   <ion-toolbar>
     <div class="whatsapp-header">
+      <!-- Título -->
       <div class="header-title">
-        <h1>Servicios</h1>
+        <h1>Akí</h1>
       </div>
-      <div class="header-actions">
+      
+      <!-- Contenedor del buscador y filtro -->
+      <div class="search-filter-container">
+        <ion-searchbar
+          [(ngModel)]="searchQuery"
+          (ionInput)="onSearch($event)"
+          placeholder="Buscar servicios..."
+          show-clear-button="focus"
+          debounce="300"
+          class="whatsapp-searchbar">
+        </ion-searchbar>
+        
+        <!-- Botón de filtro al lado del buscador -->
         <ion-button fill="clear" (click)="openFilterModal()" class="filter-button">
           <ion-icon name="funnel-outline"></ion-icon>
         </ion-button>
       </div>
     </div>
-    <div class="search-filter-container">
-      <ion-searchbar
-        [(ngModel)]="searchQuery"
-        (ionInput)="onSearch($event)"
-        placeholder="Buscar servicios..."
-        show-clear-button="focus"
-        debounce="300"
-        class="whatsapp-searchbar">
-      </ion-searchbar>
-    </div>
   </ion-toolbar>
 </ion-header>
-
 <ion-content [fullscreen]="true" class="home-content">
 
 
@@ -35,7 +38,7 @@
           <div class="banners-slider" #bannersSlider *ngIf="banners.length > 0">
             <div class="swiper-wrapper">
               <div class="swiper-slide" *ngFor="let banner of banners">
-                <!--<div class="banner-item" [style.background-image]="'url(' + banner.image + ')'">
+                <div class="banner-item" [style.background-image]="'url(' + banner.image + ')'">
                   <div class="banner-overlay" *ngIf="banner.link">
                     <div class="banner-content">
                       <div class="banner-actions">
@@ -45,7 +48,7 @@
                       </div>
                     </div>
                   </div>
-                </div>-->
+                </div>
               </div>
             </div>
             <!-- Paginación -->
@@ -251,14 +254,14 @@
           </ion-item>
 
           <!-- Location Filter Button -->
-          <ion-item button (click)="openLocationModal()">
+          <!--<ion-item button (click)="openLocationModal()">
             <ion-icon name="location-outline" slot="start" color="primary"></ion-icon>
             <ion-label>
               <h3>Ubicación</h3>
               <p>{{ tempSelectedLocationName || 'Usar ubicación actual' }}</p>
             </ion-label>
             <ion-icon name="chevron-forward" slot="end"></ion-icon>
-          </ion-item>
+          </ion-item>-->
 
           <!-- Clear Filters -->
           <ion-button 

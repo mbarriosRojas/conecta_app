@@ -764,7 +764,6 @@ export class HomePage implements OnInit, AfterViewInit {
     this.storageService.saveFilters(this.filters);
     this.loadProviders(true);
     const categoryName = category ? category.name : 'Todos';
-    this.showSuccessToast(`Filtro aplicado: ${categoryName}`);
   }
 
   onImageError(event: any) {

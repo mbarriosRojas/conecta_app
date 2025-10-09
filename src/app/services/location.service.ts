@@ -164,7 +164,7 @@ export class LocationService {
 
   formatDistance(distanceInMeters: number): string {
     if (distanceInMeters < 1000) {
-      return `${distanceInMeters}m`;
+      return `${distanceInMeters.toFixed(2)}m`;
     } else {
       const km = (distanceInMeters / 1000).toFixed(1);
       return `${km}km`;
