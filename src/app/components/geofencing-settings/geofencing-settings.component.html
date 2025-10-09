@@ -1,0 +1,105 @@
+<ion-content class="geofencing-settings-content">
+  <div class="settings-container">
+    
+    <!-- Header -->
+    <div class="header-section">
+      <ion-icon name="location" class="header-icon"></ion-icon>
+      <h2>Geomarketing</h2>
+      <p>Recibe ofertas de negocios cercanos cuando pases cerca de ellos</p>
+    </div>
+
+    <!-- Estado del servicio -->
+    <div class="status-section">
+      <ion-card>
+        <ion-card-content>
+          <div class="status-item">
+            <div class="status-info">
+              <ion-icon [name]="isMonitoring ? 'checkmark-circle' : 'close-circle'" 
+                        [color]="isMonitoring ? 'success' : 'danger'"></ion-icon>
+              <div class="status-text">
+                <h3>{{ isMonitoring ? 'Activo' : 'Inactivo' }}</h3>
+                <p>{{ isMonitoring ? 'Recibiendo ofertas cercanas' : 'No recibiendo ofertas' }}</p>
+              </div>
+            </div>
+            <ion-toggle 
+              [(ngModel)]="isMonitoring" 
+              (ionChange)="toggleGeofencing()"
+              [disabled]="isLoading">
+            </ion-toggle>
+          </div>
+        </ion-card-content>
+      </ion-card>
+    </div>
+
+    <!-- Geocercas activas -->
+    <div class="regions-section" *ngIf="isMonitoring">
+      <div class="section-header">
+        <h3>Negocios Cercanos</h3>
+        <ion-button 
+          fill="clear" 
+          size="small" 
+          (click)="refreshGeofences()"
+          [disabled]="isLoading">
+          <ion-icon name="refresh" slot="icon-only"></ion-icon>
+        </ion-button>
+      </div>
+
+      <div class="regions-list" *ngIf="currentRegions.length > 0">
+        <ion-card *ngFor="let region of currentRegions" class="region-card">
+          <ion-card-content>
+            <div class="region-info">
+              <div class="region-header">
+                <h4>{{ region.name }}</h4>
+                <ion-chip color="primary" size="small">
+                  <ion-icon name="location" slot="start"></ion-icon>
+                  {{ region.radius }}m
+                </ion-chip>
+              </div>
+              <p *ngIf="region.description">{{ region.description }}</p>
+              <div class="region-meta">
+                <ion-icon name="notifications" color="medium"></ion-icon>
+                <span>{{ region.notificationSettings?.onEntry ? 'Entrada' : 'Sin notificaciones' }}</span>
+              </div>
+            </div>
+          </ion-card-content>
+        </ion-card>
+      </div>
+
+      <div class="empty-state" *ngIf="currentRegions.length === 0">
+        <ion-icon name="location-outline" class="empty-icon"></ion-icon>
+        <p>No hay negocios cercanos configurados</p>
+        <ion-button fill="outline" (click)="refreshGeofences()">
+          Actualizar
+        </ion-button>
+      </div>
+    </div>
+
+    <!-- Información adicional -->
+    <div class="info-section">
+      <ion-card>
+        <ion-card-content>
+          <div class="info-item">
+            <ion-icon name="information-circle" color="primary"></ion-icon>
+            <div class="info-text">
+              <h4>¿Cómo funciona?</h4>
+              <p>Cuando te acerques a un negocio que tenga ofertas activas, recibirás una notificación con la promoción disponible.</p>
+            </div>
+          </div>
+        </ion-card-content>
+      </ion-card>
+
+      <ion-card>
+        <ion-card-content>
+          <div class="info-item">
+            <ion-icon name="battery-half" color="warning"></ion-icon>
+            <div class="info-text">
+              <h4>Consumo de batería</h4>
+              <p>El servicio está optimizado para usar poca batería, solo se activa cuando detecta movimiento significativo.</p>
+            </div>
+          </div>
+        </ion-card-content>
+      </ion-card>
+    </div>
+
+  </div>
+</ion-content>

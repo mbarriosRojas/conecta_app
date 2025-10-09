@@ -10,9 +10,9 @@ import { LocationService, LocationData } from '../../services/location.service';
 import { StorageService } from '../../services/storage.service';
 import { GeocodingService, LocationSuggestion } from '../../services/geocoding.service';
 import { PermissionService } from '../../services/permission.service';
+import { GeofencingService } from '../../services/geofencing.service';
 import { Provider, ProviderFilters, Category } from '../../models/provider.model';
 import { environment } from '../../../environments/environment';
-import { LocationPermissionComponent } from '../../components/location-permission/location-permission.component';
 import { NoResultsExpandComponent } from '../../components/no-results-expand/no-results-expand.component';
 import Swiper from 'swiper';
 import { SwiperOptions } from 'swiper/types';
@@ -22,7 +22,7 @@ import { SwiperOptions } from 'swiper/types';
   templateUrl: 'home.page.html',
   styleUrls: ['home.page.scss'],
   standalone: true,
-  imports: [CommonModule, FormsModule, IonicModule, LocationPermissionComponent, NoResultsExpandComponent]
+  imports: [CommonModule, FormsModule, IonicModule, NoResultsExpandComponent]
 })
 export class HomePage implements OnInit, AfterViewInit {
   @ViewChild(IonContent) content!: IonContent;
@@ -105,6 +105,7 @@ export class HomePage implements OnInit, AfterViewInit {
     private storageService: StorageService,
     private geocodingService: GeocodingService,
     private permissionService: PermissionService,
+    private geofencingService: GeofencingService,
     private loadingController: LoadingController,
     private toastController: ToastController,
     private alertController: AlertController,
@@ -145,6 +146,9 @@ export class HomePage implements OnInit, AfterViewInit {
       
       // Cargar datos iniciales
       await this.loadInitialData();
+      
+      // Inicializar geofencing (en segundo plano, no bloquea la UI)
+      this.initializeGeofencing();
       
     } catch (error) {
       console.error('Error initializing app:', error);
@@ -192,6 +196,33 @@ export class HomePage implements OnInit, AfterViewInit {
     } catch (error) {
       console.error('Error getting location:', error);
       this.showErrorToast('No se pudo obtener la ubicación actual');
+    }
+  }
+
+  /**
+   * Inicializa el servicio de geofencing en segundo plano
+   */
+  private async initializeGeofencing(): Promise<void> {
+    try {
+      console.log('🔧 Inicializando geofencing en segundo plano...');
+      
+      // Verificar si el usuario quiere recibir notificaciones de geofencing
+      const geofencingEnabled = await this.storageService.get('geofencing_enabled');
+      
+      if (geofencingEnabled === 'true') {
+        const initialized = await this.geofencingService.initialize();
+        if (initialized) {
+          console.log('✅ Geofencing inicializado correctamente');
+        } else {
+          console.log('❌ Error inicializando geofencing');
+        }
+      } else {
+        console.log('ℹ️ Geofencing deshabilitado por el usuario');
+      }
+      
+    } catch (error) {
+      console.error('Error inicializando geofencing:', error);
+      // No mostrar error al usuario, es opcional
     }
   }
 

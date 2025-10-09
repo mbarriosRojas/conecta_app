@@ -1,6 +1,6 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { LoadingController, ToastController, AlertController, ActionSheetController } from '@ionic/angular';
+import { LoadingController, ToastController, AlertController, ActionSheetController, IonModal } from '@ionic/angular';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { IonicModule } from '@ionic/angular';
@@ -9,6 +9,7 @@ import { Category, Provider, Question } from '../../models/provider.model';
 import { MapAddressComponent, AddressData } from '../../components/map-address/map-address.component';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { firstValueFrom } from 'rxjs';
+import { GeofencingAnalyticsService, GeofenceStats, GeofenceConfig, PromotionConfig } from '../../services/geofencing-analytics.service';
 
 @Component({
   selector: 'app-edit-service',
@@ -114,6 +115,44 @@ export class EditServicePage implements OnInit {
   showLogoButton = false;
   showImagesButton = false;
 
+  // Geofencing y Analytics
+  @ViewChild('geofenceModal') geofenceModal!: IonModal;
+  @ViewChild('promotionModal') promotionModal!: IonModal;
+  
+  geofenceStats: GeofenceStats | null = null;
+  hasGeofence = false;
+  hasPromotion = false;
+  currentPromotion: any = null;
+  isLoadingGeofence = false;
+  isLoadingPromotion = false;
+  promotionAudiencePreview: any = null;
+  
+  geofenceConfig: GeofenceConfig = {
+    name: '',
+    center: {
+      latitude: 0,
+      longitude: 0
+    },
+    radius: 200,
+    description: '',
+    notificationSettings: {
+      onEntry: true,
+      onExit: false,
+      cooldownMinutes: 30
+    }
+  };
+  
+  promotionConfig: PromotionConfig = {
+    businessName: '',
+    promotion_text: '',
+    location: {
+      latitude: 0,
+      longitude: 0
+    },
+    promo_radius_meters: 200,
+    isActive: true
+  };
+
   constructor(
     private route: ActivatedRoute,
     public router: Router,
@@ -121,7 +160,8 @@ export class EditServicePage implements OnInit {
     private loadingController: LoadingController,
     private toastController: ToastController,
     private alertController: AlertController,
-    private actionSheetController: ActionSheetController
+    private actionSheetController: ActionSheetController,
+    private geofencingAnalyticsService: GeofencingAnalyticsService
   ) {}
 
   async ngOnInit() {
@@ -131,6 +171,9 @@ export class EditServicePage implements OnInit {
         this.loadCategories(),
         this.loadProvider()
       ]);
+      
+      // Cargar estadísticas de geofencing después de cargar el provider
+      await this.loadGeofenceStats();
     }
   }
 
@@ -804,4 +847,295 @@ export class EditServicePage implements OnInit {
   editProduct(product: any) {
     this.openProductModal(product);
   }
+
+  // ========== Métodos de Geofencing y Analytics ==========
+
+  /**
+   * Carga las estadísticas de geofencing del negocio
+   */
+  async loadGeofenceStats() {
+    if (!this.provider?._id) return;
+
+    try {
+      const response = await firstValueFrom(
+        this.geofencingAnalyticsService.getBusinessStats(this.provider._id)
+      );
+
+      if (response?.status === 'success' && response.data) {
+        this.geofenceStats = response.data;
+        this.hasGeofence = !!response.data.geofence;
+        this.hasPromotion = !!response.data.promotion;
+        this.currentPromotion = response.data.promotion;
+      }
+    } catch (error: any) {
+      if (error.status !== 404) {
+        console.error('Error loading geofence stats:', error);
+      } else {
+        // No existe geocerca aún
+        this.hasGeofence = false;
+        this.hasPromotion = false;
+      }
+    }
+  }
+
+  /**
+   * Abre el modal de configuración de geocerca
+   */
+  async openGeofenceConfigModal() {
+    if (!this.provider) return;
+
+    // Configurar datos iniciales
+    this.geofenceConfig.center = {
+      latitude: this.provider.address?.location?.coordinates?.[1] || 0,
+      longitude: this.provider.address?.location?.coordinates?.[0] || 0
+    };
+    this.geofenceConfig.name = this.provider.name;
+
+    // Si ya existe una geocerca, cargar sus datos
+    if (this.hasGeofence && this.geofenceStats?.geofence) {
+      const geofence = this.geofenceStats.geofence;
+      this.geofenceConfig = {
+        name: geofence.name,
+        center: geofence.center,
+        radius: geofence.radius,
+        description: '',
+        notificationSettings: geofence.stats ? {
+          onEntry: true,
+          onExit: false,
+          cooldownMinutes: 30
+        } : {
+          onEntry: true,
+          onExit: false,
+          cooldownMinutes: 30
+        }
+      };
+    }
+
+    this.geofenceModal.present();
+  }
+
+  /**
+   * Cierra el modal de configuración de geocerca
+   */
+  closeGeofenceModal() {
+    this.geofenceModal.dismiss();
+  }
+
+  /**
+   * Guarda la configuración de la geocerca
+   */
+  async saveGeofence() {
+    if (!this.provider?._id) return;
+
+    this.isLoadingGeofence = true;
+
+    try {
+      const response = await firstValueFrom(
+        this.geofencingAnalyticsService.createOrUpdateGeofence(
+          this.provider._id,
+          this.geofenceConfig
+        )
+      );
+
+      if (response?.status === 'success') {
+        this.showSuccessToast('Geocerca guardada exitosamente');
+        this.closeGeofenceModal();
+        await this.loadGeofenceStats();
+      }
+    } catch (error) {
+      console.error('Error saving geofence:', error);
+      this.showErrorToast('Error al guardar la geocerca');
+    } finally {
+      this.isLoadingGeofence = false;
+    }
+  }
+
+  /**
+   * Elimina la geocerca del negocio
+   */
+  async deleteGeofence() {
+    if (!this.provider?._id) return;
+
+    const alert = await this.alertController.create({
+      header: 'Confirmar Eliminación',
+      message: '¿Estás seguro de eliminar esta geocerca? Perderás todas las estadísticas asociadas.',
+      buttons: [
+        {
+          text: 'Cancelar',
+          role: 'cancel'
+        },
+        {
+          text: 'Eliminar',
+          role: 'destructive',
+          handler: async () => {
+            try {
+              await firstValueFrom(
+                this.geofencingAnalyticsService.deleteGeofence(this.provider!._id)
+              );
+              
+              this.showSuccessToast('Geocerca eliminada exitosamente');
+              this.closeGeofenceModal();
+              this.hasGeofence = false;
+              this.geofenceStats = null;
+            } catch (error) {
+              console.error('Error deleting geofence:', error);
+              this.showErrorToast('Error al eliminar la geocerca');
+            }
+          }
+        }
+      ]
+    });
+
+    await alert.present();
+  }
+
+  /**
+   * Abre el modal de creación/edición de promoción
+   */
+  async openPromotionModal() {
+    if (!this.provider) return;
+
+    // Configurar datos iniciales
+    this.promotionConfig.businessName = this.provider.name;
+    this.promotionConfig.location = {
+      latitude: this.provider.address?.location?.coordinates?.[1] || 0,
+      longitude: this.provider.address?.location?.coordinates?.[0] || 0
+    };
+
+    // Si ya existe una promoción, cargar sus datos
+    if (this.hasPromotion && this.currentPromotion) {
+      this.promotionConfig = {
+        businessName: this.currentPromotion.businessName || this.provider.name,
+        promotion_text: this.currentPromotion.text || '',
+        location: {
+          latitude: this.currentPromotion.location?.coordinates?.[1] || this.provider.address?.location?.coordinates?.[1] || 0,
+          longitude: this.currentPromotion.location?.coordinates?.[0] || this.provider.address?.location?.coordinates?.[0] || 0
+        },
+        promo_radius_meters: this.currentPromotion.radius || 200,
+        isActive: this.currentPromotion.isActive !== undefined ? this.currentPromotion.isActive : true
+      };
+    }
+
+    // Calcular alcance estimado
+    await this.calculatePromotionReach();
+
+    this.promotionModal.present();
+  }
+
+  /**
+   * Cierra el modal de promoción
+   */
+  closePromotionModal() {
+    this.promotionModal.dismiss();
+  }
+
+  /**
+   * Guarda la promoción
+   */
+  async savePromotion() {
+    if (!this.provider?._id) return;
+
+    if (!this.promotionConfig.promotion_text || this.promotionConfig.promotion_text.trim() === '') {
+      this.showErrorToast('El texto de la promoción es requerido');
+      return;
+    }
+
+    this.isLoadingPromotion = true;
+
+    try {
+      const response = await firstValueFrom(
+        this.geofencingAnalyticsService.createOrUpdatePromotion(
+          this.provider._id,
+          this.promotionConfig
+        )
+      );
+
+      if (response?.status === 'success') {
+        this.showSuccessToast('Promoción guardada exitosamente');
+        this.closePromotionModal();
+        await this.loadGeofenceStats();
+      }
+    } catch (error) {
+      console.error('Error saving promotion:', error);
+      this.showErrorToast('Error al guardar la promoción');
+    } finally {
+      this.isLoadingPromotion = false;
+    }
+  }
+
+  /**
+   * Elimina la promoción del negocio
+   */
+  async deletePromotion() {
+    if (!this.provider?._id) return;
+
+    const alert = await this.alertController.create({
+      header: 'Confirmar Eliminación',
+      message: '¿Estás seguro de eliminar esta promoción?',
+      buttons: [
+        {
+          text: 'Cancelar',
+          role: 'cancel'
+        },
+        {
+          text: 'Eliminar',
+          role: 'destructive',
+          handler: async () => {
+            try {
+              await firstValueFrom(
+                this.geofencingAnalyticsService.deletePromotion(this.provider!._id)
+              );
+              
+              this.showSuccessToast('Promoción eliminada exitosamente');
+              this.closePromotionModal();
+              this.hasPromotion = false;
+              this.currentPromotion = null;
+              await this.loadGeofenceStats();
+            } catch (error) {
+              console.error('Error deleting promotion:', error);
+              this.showErrorToast('Error al eliminar la promoción');
+            }
+          }
+        }
+      ]
+    });
+
+    await alert.present();
+  }
+
+  /**
+   * Calcula el alcance estimado de la promoción
+   */
+  async calculatePromotionReach() {
+    if (!this.provider?._id) return;
+
+    try {
+      const response = await firstValueFrom(
+        this.geofencingAnalyticsService.getPromotionReach(
+          this.provider._id,
+          this.promotionConfig.promo_radius_meters
+        )
+      );
+
+      if (response && response.status === 'success') {
+        this.promotionAudiencePreview = response.data;
+      }
+    } catch (error) {
+      console.error('Error calculating promotion reach:', error);
+      this.promotionAudiencePreview = {
+        activeUsers4h: 0,
+        estimatedReach: 0
+      };
+    }
+  }
+
+  /**
+   * Formateador para el pin del rango de radio
+   */
+  formatRadiusPin = (value: number) => {
+    if (value >= 1000) {
+      return `${(value / 1000).toFixed(1)}km`;
+    }
+    return `${value}m`;
+  };
 }

@@ -415,6 +415,95 @@
         </div>
       </div>
 
+      <!-- Sección: Geomarketing -->
+      <div class="settings-section" *ngIf="provider">
+        <div class="section-title">📍 Geomarketing</div>
+        
+        <!-- Estadísticas de Geofencing -->
+        <div class="geofencing-stats-card" *ngIf="geofenceStats">
+          <div class="stats-header">
+            <h3>Estadísticas de Tu Geocerca</h3>
+            <ion-button fill="clear" size="small" (click)="loadGeofenceStats()">
+              <ion-icon name="refresh-outline"></ion-icon>
+            </ion-button>
+          </div>
+
+          <div class="stats-grid">
+            <div class="stat-item">
+              <ion-icon name="people-outline" color="primary"></ion-icon>
+              <div class="stat-value">{{ geofenceStats.audience?.activeUsers4h || 0 }}</div>
+              <div class="stat-label">Usuarios Activos (4h)</div>
+            </div>
+
+            <div class="stat-item">
+              <ion-icon name="trending-up-outline" color="success"></ion-icon>
+              <div class="stat-value">{{ geofenceStats.performance?.totalEntries || 0 }}</div>
+              <div class="stat-label">Entradas Totales</div>
+            </div>
+
+            <div class="stat-item">
+              <ion-icon name="megaphone-outline" color="tertiary"></ion-icon>
+              <div class="stat-value">{{ geofenceStats.audience?.estimatedReach || 0 }}</div>
+              <div class="stat-label">Alcance Estimado</div>
+            </div>
+
+            <div class="stat-item">
+              <ion-icon name="calendar-outline" color="medium"></ion-icon>
+              <div class="stat-value">{{ geofenceStats.performance?.avgUsersPerDay || 0 }}</div>
+              <div class="stat-label">Promedio Diario</div>
+            </div>
+          </div>
+
+          <div class="geofence-info" *ngIf="geofenceStats.geofence">
+            <ion-item lines="none">
+              <ion-icon name="location-outline" slot="start" color="primary"></ion-icon>
+              <ion-label>
+                <h3>Radio Activo</h3>
+                <p>{{ geofenceStats.geofence.radius }}m alrededor de tu negocio</p>
+              </ion-label>
+            </ion-item>
+          </div>
+        </div>
+
+        <!-- Botón para configurar geocerca -->
+        <div class="settings-item clickable" (click)="openGeofenceConfigModal()">
+          <div class="item-icon">
+            <ion-icon name="navigate-circle-outline" color="primary"></ion-icon>
+          </div>
+          <div class="item-content">
+            <div class="item-label">
+              {{ hasGeofence ? 'Editar Geocerca' : 'Configurar Geocerca' }}
+            </div>
+            <p class="item-description">
+              {{ hasGeofence ? 'Modifica tu radio y notificaciones' : 'Define tu área de influencia' }}
+            </p>
+          </div>
+          <ion-icon name="chevron-forward-outline" color="medium"></ion-icon>
+        </div>
+
+        <!-- Botón para crear/editar promoción -->
+        <div class="settings-item clickable" (click)="openPromotionModal()">
+          <div class="item-icon">
+            <ion-icon name="gift-outline" color="tertiary"></ion-icon>
+          </div>
+          <div class="item-content">
+            <div class="item-label">
+              {{ hasPromotion ? 'Editar Promoción' : 'Crear Promoción' }}
+            </div>
+            <p class="item-description">
+              {{ hasPromotion ? currentPromotion?.text : 'Atrae clientes con ofertas geográficas' }}
+            </p>
+          </div>
+          <ion-icon name="chevron-forward-outline" color="medium"></ion-icon>
+        </div>
+
+        <!-- Información adicional -->
+        <div class="info-banner" *ngIf="!hasGeofence">
+          <ion-icon name="information-circle-outline"></ion-icon>
+          <p>Configura tu geocerca para recibir estadísticas de usuarios cercanos y crear promociones segmentadas.</p>
+        </div>
+      </div>
+
     </div> <!-- Cierre del contenedor whatsapp-container -->
 
     <!-- Botones de acción -->
@@ -576,6 +665,235 @@
 
             <ion-button expand="block" fill="outline" (click)="closeProductModal()" [disabled]="isLoadingProduct">
               Cancelar
+            </ion-button>
+          </div>
+
+        </form>
+      </ion-content>
+    </ng-template>
+  </ion-modal>
+
+  <!-- Modal: Configurar Geocerca -->
+  <ion-modal #geofenceModal [breakpoints]="[0, 0.5, 0.8, 1]" [initialBreakpoint]="0.8">
+    <ng-template>
+      <ion-header>
+        <ion-toolbar>
+          <ion-title>Configurar Geocerca</ion-title>
+          <ion-buttons slot="end">
+            <ion-button (click)="closeGeofenceModal()">
+              <ion-icon name="close"></ion-icon>
+            </ion-button>
+          </ion-buttons>
+        </ion-toolbar>
+      </ion-header>
+
+      <ion-content class="ion-padding">
+        <form #geofenceForm="ngForm" (ngSubmit)="saveGeofence()">
+          
+          <ion-card>
+            <ion-card-header>
+              <ion-card-title>Configuración de Área</ion-card-title>
+            </ion-card-header>
+
+            <ion-card-content>
+              <ion-item>
+                <ion-label position="stacked">Nombre de la Geocerca</ion-label>
+                <ion-input 
+                  [(ngModel)]="geofenceConfig.name" 
+                  name="geofenceName" 
+                  required
+                  placeholder="Ej: Mi Negocio - Centro"></ion-input>
+              </ion-item>
+
+              <ion-item>
+                <ion-label position="stacked">Radio de Acción (metros)</ion-label>
+                <ion-range 
+                  [(ngModel)]="geofenceConfig.radius" 
+                  name="geofenceRadius"
+                  min="50" 
+                  max="5000" 
+                  step="50"
+                  pin="true"
+                  [pinFormatter]="formatRadiusPin">
+                  <ion-label slot="start">50m</ion-label>
+                  <ion-label slot="end">5km</ion-label>
+                </ion-range>
+                <p class="range-value">{{ geofenceConfig.radius }}m</p>
+              </ion-item>
+
+              <ion-item>
+                <ion-label position="stacked">Descripción (Opcional)</ion-label>
+                <ion-textarea 
+                  [(ngModel)]="geofenceConfig.description" 
+                  name="geofenceDescription"
+                  rows="2"
+                  placeholder="Ej: Área principal de cobertura"></ion-textarea>
+              </ion-item>
+
+              <div class="settings-divider"></div>
+
+              <h3 class="settings-subtitle">Notificaciones</h3>
+
+              <ion-item>
+                <ion-toggle 
+                  [(ngModel)]="geofenceConfig.notificationSettings!.onEntry" 
+                  name="notifyOnEntry"
+                  labelPlacement="start">
+                  <ion-label>Notificar al entrar</ion-label>
+                </ion-toggle>
+              </ion-item>
+
+              <ion-item>
+                <ion-toggle 
+                  [(ngModel)]="geofenceConfig.notificationSettings!.onExit" 
+                  name="notifyOnExit"
+                  labelPlacement="start">
+                  <ion-label>Notificar al salir</ion-label>
+                </ion-toggle>
+              </ion-item>
+
+              <ion-item>
+                <ion-label position="stacked">Tiempo de Espera (minutos)</ion-label>
+                <ion-input 
+                  [(ngModel)]="geofenceConfig.notificationSettings!.cooldownMinutes" 
+                  name="cooldownMinutes"
+                  type="number"
+                  min="5"
+                  max="1440"
+                  placeholder="30"></ion-input>
+                <ion-note slot="helper">Mínimo 5 min, Máximo 24 horas</ion-note>
+              </ion-item>
+            </ion-card-content>
+          </ion-card>
+
+          <div class="modal-actions">
+            <ion-button expand="block" type="submit" color="primary" [disabled]="isLoadingGeofence">
+              <ion-spinner name="crescent" *ngIf="isLoadingGeofence"></ion-spinner>
+              {{ isLoadingGeofence ? 'Guardando...' : 'Guardar Geocerca' }}
+            </ion-button>
+
+            <ion-button 
+              expand="block" 
+              fill="outline" 
+              color="danger" 
+              (click)="deleteGeofence()" 
+              *ngIf="hasGeofence"
+              [disabled]="isLoadingGeofence">
+              Eliminar Geocerca
+            </ion-button>
+          </div>
+
+        </form>
+      </ion-content>
+    </ng-template>
+  </ion-modal>
+
+  <!-- Modal: Crear/Editar Promoción -->
+  <ion-modal #promotionModal [breakpoints]="[0, 0.5, 0.8, 1]" [initialBreakpoint]="0.8">
+    <ng-template>
+      <ion-header>
+        <ion-toolbar>
+          <ion-title>{{ hasPromotion ? 'Editar' : 'Crear' }} Promoción</ion-title>
+          <ion-buttons slot="end">
+            <ion-button (click)="closePromotionModal()">
+              <ion-icon name="close"></ion-icon>
+            </ion-button>
+          </ion-buttons>
+        </ion-toolbar>
+      </ion-header>
+
+      <ion-content class="ion-padding">
+        <form #promotionForm="ngForm" (ngSubmit)="savePromotion()">
+          
+          <ion-card>
+            <ion-card-header>
+              <ion-card-title>Detalles de la Promoción</ion-card-title>
+            </ion-card-header>
+
+            <ion-card-content>
+              <ion-item>
+                <ion-label position="stacked">Texto de la Promoción *</ion-label>
+                <ion-textarea 
+                  [(ngModel)]="promotionConfig.promotion_text" 
+                  name="promotionText" 
+                  required
+                  rows="3"
+                  maxlength="200"
+                  placeholder="Ej: ¡20% de descuento en todos los productos! Válido hoy."></ion-textarea>
+                <ion-note slot="helper">{{ promotionConfig.promotion_text?.length || 0 }}/200 caracteres</ion-note>
+              </ion-item>
+
+              <ion-item>
+                <ion-label position="stacked">Radio de Promoción (metros)</ion-label>
+                <ion-range 
+                  [(ngModel)]="promotionConfig.promo_radius_meters" 
+                  name="promoRadius"
+                  min="50" 
+                  max="5000" 
+                  step="50"
+                  pin="true"
+                  [pinFormatter]="formatRadiusPin">
+                  <ion-label slot="start">50m</ion-label>
+                  <ion-label slot="end">5km</ion-label>
+                </ion-range>
+                <p class="range-value">{{ promotionConfig.promo_radius_meters }}m</p>
+              </ion-item>
+
+              <div class="settings-divider"></div>
+
+              <ion-item>
+                <ion-toggle 
+                  [(ngModel)]="promotionConfig.isActive" 
+                  name="promotionActive"
+                  labelPlacement="start">
+                  <ion-label>
+                    <h3>Promoción Activa</h3>
+                    <p>Los usuarios recibirán notificaciones</p>
+                  </ion-label>
+                </ion-toggle>
+              </ion-item>
+
+              <!-- Estadísticas de alcance -->
+              <div class="promotion-stats" *ngIf="promotionAudiencePreview">
+                <h3 class="stats-title">
+                  <ion-icon name="analytics-outline"></ion-icon>
+                  Alcance Estimado
+                </h3>
+                <div class="stats-preview">
+                  <div class="preview-item">
+                    <ion-icon name="people-outline" color="primary"></ion-icon>
+                    <span>{{ promotionAudiencePreview.activeUsers4h || 0 }} usuarios activos</span>
+                  </div>
+                  <div class="preview-item">
+                    <ion-icon name="megaphone-outline" color="tertiary"></ion-icon>
+                    <span>{{ promotionAudiencePreview.estimatedReach || 0 }} alcance estimado</span>
+                  </div>
+                </div>
+                <ion-button 
+                  size="small" 
+                  fill="clear" 
+                  (click)="calculatePromotionReach()">
+                  <ion-icon name="refresh-outline" slot="start"></ion-icon>
+                  Recalcular
+                </ion-button>
+              </div>
+            </ion-card-content>
+          </ion-card>
+
+          <div class="modal-actions">
+            <ion-button expand="block" type="submit" color="primary" [disabled]="isLoadingPromotion">
+              <ion-spinner name="crescent" *ngIf="isLoadingPromotion"></ion-spinner>
+              {{ isLoadingPromotion ? 'Guardando...' : 'Guardar Promoción' }}
+            </ion-button>
+
+            <ion-button 
+              expand="block" 
+              fill="outline" 
+              color="danger" 
+              (click)="deletePromotion()" 
+              *ngIf="hasPromotion"
+              [disabled]="isLoadingPromotion">
+              Eliminar Promoción
             </ion-button>
           </div>
 
