@@ -172,19 +172,13 @@
         <div class="section-title">Ubicación</div>
         
         <div class="settings-item location-item">
-          <div class="item-icon">
-            <ion-icon name="location"></ion-icon>
-          </div>
-          <div class="item-content">
-            <div class="item-label">Dirección del servicio</div>
-            <div class="location-map-container">
-              <app-map-address
-                [initialAddress]="initialAddressData"
-                [height]="'200px'"
-                (addressSelected)="onAddressSelected($event)"
-                (addressChanged)="onAddressChanged($event)">
-              </app-map-address>
-            </div>
+          <div class="location-map-container">
+            <app-map-address
+              [initialAddress]="initialAddressData"
+              [height]="'200px'"
+              (addressSelected)="onAddressSelected($event)"
+              (addressChanged)="onAddressChanged($event)">
+            </app-map-address>
           </div>
         </div>
       </div>
