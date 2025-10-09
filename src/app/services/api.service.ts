@@ -85,7 +85,7 @@ export class ApiService {
   }
 
   // Providers endpoints
-  getProviders(filters: ProviderFilters, radius?: number): Observable<Provider[]> {
+  getProviders(filters: ProviderFilters, radius?: number): Observable<PaginatedResponse<Provider>> {
     this.setLoading(true);
     let params = new HttpParams();
     
@@ -106,11 +106,11 @@ export class ApiService {
       params = params.set('radius', radius.toString());
     }
 
-    return this.http.get<ApiResponse<Provider[]>>(`${this.baseUrl}/api/provider/provider/filters/app`, { params })
+    return this.http.get<PaginatedResponse<Provider>>(`${this.baseUrl}/api/provider/provider/filters/app`, { params })
       .pipe(
         map(response => {
           this.setLoading(false);
-          return response.data || [];
+          return response;
         }),
         catchError(this.handleError.bind(this))
       );

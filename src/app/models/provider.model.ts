@@ -85,16 +85,20 @@ export interface ApiResponse<T> {
   data: T;
 }
 
+export interface PaginationInfo {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPrevPage: boolean;
+}
+
 export interface PaginatedResponse<T> {
   status: 'success' | 'error';
   message: string;
   data: T[];
-  pagination?: {
-    page: number;
-    limit: number;
-    total: number;
-    hasMore: boolean;
-  };
+  pagination?: PaginationInfo;
 }
 
 export interface LocationData {

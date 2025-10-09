@@ -379,7 +379,7 @@ export class HomePage implements OnInit, AfterViewInit {
     this.showNoResults = false;
     
     if (reset) {
-      this.currentPage = 0;
+      this.currentPage = 1; // Cambiar a 1 para que coincida con el backend
       this.providers = [];
       this.hasMoreData = true;
       console.log('Home - Reset providers data');
@@ -395,22 +395,35 @@ export class HomePage implements OnInit, AfterViewInit {
       
       console.log('Home - Loading providers with filters:', currentFilters, 'radius:', searchRadius);
       
-      const newProviders = await firstValueFrom(this.apiService.getProviders(currentFilters, searchRadius)) || [];
+      const response = await firstValueFrom(this.apiService.getProviders(currentFilters, searchRadius));
       
-      console.log('Home - Received providers:', newProviders.length, 'providers:', newProviders);
+      console.log('Home - Received response:', response);
       
-      if (reset) {
-        this.providers = newProviders;
-        this.currentRadius = searchRadius;
+      if (response && response.data && response.data.length > 0) {
+        if (reset) {
+          this.providers = response.data;
+          this.currentRadius = searchRadius;
+          
+          // Mostrar componente de no resultados si no hay datos
+          this.showNoResults = false;
+        } else {
+          this.providers = [...this.providers, ...response.data];
+        }
         
-        // Mostrar componente de no resultados si no hay datos
-        this.showNoResults = newProviders.length === 0;
+        // Actualizar información de paginación
+        this.hasMoreData = response.pagination?.hasNextPage || false;
+        this.currentPage++;
+        
+        console.log('Home - Providers loaded:', this.providers.length, 'Has more:', this.hasMoreData);
+        console.log('Home - Pagination info:', response.pagination);
       } else {
-        this.providers = [...this.providers, ...newProviders];
+        if (reset) {
+          this.providers = [];
+        }
+        this.hasMoreData = false;
+        this.showNoResults = true;
+        console.log('Home - No providers found');
       }
-      
-      this.hasMoreData = newProviders.length === environment.itemsPerPage;
-      this.currentPage++;
       
     } catch (error) {
       console.error('Home - Error loading providers:', error);
