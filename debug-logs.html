@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Logs - Infinity Providers</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .log { background: #f5f5f5; padding: 10px; margin: 5px 0; border-radius: 5px; }
+        .error { background: #ffebee; color: #c62828; }
+        .success { background: #e8f5e8; color: #2e7d32; }
+        .warning { background: #fff3e0; color: #ef6c00; }
+        .info { background: #e3f2fd; color: #1565c0; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Debug Logs - Infinity Providers</h1>
+    <div id="logs"></div>
+    
+    <script>
+        const logsDiv = document.getElementById('logs');
+        
+        function addLog(message, type = 'info') {
+            const logDiv = document.createElement('div');
+            logDiv.className = `log ${type}`;
+            logDiv.innerHTML = `<strong>${new Date().toLocaleTimeString()}</strong>: ${message}`;
+            logsDiv.appendChild(logDiv);
+            logsDiv.scrollTop = logsDiv.scrollHeight;
+        }
+        
+        // Interceptar console.log
+        const originalLog = console.log;
+        const originalError = console.error;
+        const originalWarn = console.warn;
+        
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            addLog(args.join(' '), 'info');
+        };
+        
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            addLog(args.join(' '), 'error');
+        };
+        
+        console.warn = function(...args) {
+            originalWarn.apply(console, args);
+            addLog(args.join(' '), 'warning');
+        };
+        
+        // Verificar permisos de ubicación
+        if (navigator.geolocation) {
+            addLog('✅ Geolocation API disponible', 'success');
+            
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    addLog(`✅ Ubicación obtenida: ${position.coords.latitude}, ${position.coords.longitude}`, 'success');
+                },
+                (error) => {
+                    addLog(`❌ Error obteniendo ubicación: ${error.message}`, 'error');
+                }
+            );
+        } else {
+            addLog('❌ Geolocation API no disponible', 'error');
+        }
+        
+        // Verificar conectividad
+        fetch('http://localhost:8080/api/notifications/register-token', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ test: true })
+        })
+        .then(response => {
+            addLog('✅ Backend accesible', 'success');
+        })
+        .catch(error => {
+            addLog(`❌ Backend no accesible: ${error.message}`, 'error');
+        });
+        
+        addLog('🚀 Script de diagnóstico iniciado', 'info');
+    </script>
+</body>
+</html>
