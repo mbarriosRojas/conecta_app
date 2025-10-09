@@ -70,21 +70,27 @@ export class PushNotificationService {
   private async initializeNativePush(): Promise<void> {
     try {
       console.log('📱 Inicializando push notifications nativas...');
+      console.log('📱 Plataforma detectada:', this.platform.platforms());
 
       // Solicitar permisos
+      console.log('📱 Solicitando permisos de notificaciones...');
       const permissionStatus = await PushNotifications.requestPermissions();
+      console.log('📱 Estado de permisos:', permissionStatus);
 
       if (permissionStatus.receive === 'granted') {
         console.log('✅ Permisos de notificaciones concedidos');
 
         // Registrar para recibir notificaciones
+        console.log('📱 Registrando para recibir notificaciones...');
         await PushNotifications.register();
+        console.log('📱 Registro completado');
 
         // Configurar listeners
+        console.log('📱 Configurando listeners...');
         this.setupNativeListeners();
 
       } else {
-        console.log('❌ Permisos de notificaciones denegados');
+        console.log('❌ Permisos de notificaciones denegados:', permissionStatus);
       }
 
     } catch (error) {
@@ -96,16 +102,21 @@ export class PushNotificationService {
    * Configura los listeners para notificaciones nativas
    */
   private setupNativeListeners(): void {
+    console.log('🔧 Configurando listeners de notificaciones...');
+    
     // Listener: Registro exitoso
     PushNotifications.addListener('registration', async (token: Token) => {
-      console.log('✅ Token FCM recibido:', token.value);
+      console.log('🎉 LISTENER: Token FCM recibido:', token.value);
+      console.log('🎉 LISTENER: Token length:', token.value?.length);
       this.currentToken = token.value;
+      console.log('🎉 LISTENER: Registrando token en backend...');
       await this.registerTokenInBackend(token.value, this.getPlatformName());
+      console.log('🎉 LISTENER: Token registrado en backend');
     });
 
     // Listener: Error en registro
     PushNotifications.addListener('registrationError', (error: any) => {
-      console.error('❌ Error en registro de push notifications:', error);
+      console.error('❌ LISTENER: Error en registro de push notifications:', error);
     });
 
     // Listener: Notificación recibida (app en foreground)
@@ -147,9 +158,7 @@ export class PushNotificationService {
         console.log('✅ Permisos de notificaciones web concedidos');
 
         // Obtener token
-        const token = await getToken(this.messaging, {
-          vapidKey: environment.firebase.vapidKey
-        });
+        const token = await getToken(this.messaging);
 
         console.log('✅ Token FCM web recibido:', token);
         this.currentToken = token;
@@ -176,6 +185,9 @@ export class PushNotificationService {
   private async registerTokenInBackend(token: string, platform: string): Promise<void> {
     try {
       console.log(`📤 Registrando token en backend (${platform})...`);
+      console.log(`📤 Token: ${token?.substring(0, 20)}...`);
+      console.log(`📤 UserID: ${this.userID}`);
+      console.log(`📤 API URL: ${environment.apiUrl}`);
 
       const headers = new HttpHeaders({
         'Content-Type': 'application/json'
@@ -184,7 +196,7 @@ export class PushNotificationService {
       const deviceInfo = {
         model: this.platform.is('ios') ? 'iOS Device' : 
                this.platform.is('android') ? 'Android Device' : 'Web Browser',
-        version: this.platform.version() || 'unknown',
+        version: '1.0.0', // Versión de la app
         manufacturer: this.platform.is('android') ? 'Android' : 
                       this.platform.is('ios') ? 'Apple' : 'Browser'
       };
@@ -202,6 +214,7 @@ export class PushNotificationService {
         console.log('⚠️ No se pudo obtener ubicación para el token');
       }
 
+      console.log('📤 Enviando petición al backend...');
       const response = await firstValueFrom(
         this.http.post(`${environment.apiUrl}/api/notifications/register-token`, {
           userID: this.userID,
@@ -212,13 +225,19 @@ export class PushNotificationService {
         }, { headers })
       );
 
+      console.log('📤 Respuesta del backend:', response);
+
       if ((response as any).status === 'success') {
         console.log('✅ Token registrado en backend correctamente');
         await this.storageService.set('fcm_token', token);
+        console.log('✅ Token guardado en storage local');
+      } else {
+        console.log('⚠️ Respuesta del backend no exitosa:', response);
       }
 
     } catch (error) {
       console.error('❌ Error registrando token en backend:', error);
+      console.error('❌ Error details:', error);
     }
   }
 
@@ -327,6 +346,46 @@ export class PushNotificationService {
 
     } catch (error) {
       console.error('❌ Error desregistrando token:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Actualiza el userID del token cuando el usuario inicia sesión
+   */
+  async updateTokenUserID(authenticatedUserID: string): Promise<boolean> {
+    try {
+      if (!this.currentToken) {
+        console.log('⚠️ No hay token FCM para actualizar userID');
+        return false;
+      }
+
+      console.log(`🔄 Actualizando userID del token: ${this.userID} → ${authenticatedUserID}`);
+
+      const headers = new HttpHeaders({
+        'Content-Type': 'application/json'
+      });
+
+      const response = await firstValueFrom(
+        this.http.post(`${environment.apiUrl}/api/notifications/update-token-user`, {
+          oldUserID: this.userID,
+          newUserID: authenticatedUserID,
+          token: this.currentToken
+        }, { headers })
+      );
+
+      if ((response as any).status === 'success') {
+        // Actualizar el userID local
+        this.userID = authenticatedUserID;
+        await this.storageService.set('userID', authenticatedUserID);
+        console.log('✅ UserID del token actualizado correctamente');
+        return true;
+      }
+
+      return false;
+
+    } catch (error) {
+      console.error('❌ Error actualizando userID del token:', error);
       return false;
     }
   }

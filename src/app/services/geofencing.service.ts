@@ -272,9 +272,49 @@ export class GeofencingService {
       }
 
       this.lastKnownLocation = newLocation;
+      
+      // Actualizar ubicación en el token FCM si hay un cambio significativo
+      await this.updateTokenLocation(newLocation);
 
     } catch (error) {
       console.error('Error manejando actualización de ubicación:', error);
+    }
+  }
+
+  /**
+   * Actualiza la ubicación en el token FCM
+   */
+  private async updateTokenLocation(location: { latitude: number; longitude: number }): Promise<void> {
+    try {
+      const fcmToken = await this.storageService.get('fcm_token');
+      if (!fcmToken) {
+        console.log('⚠️ No hay token FCM para actualizar ubicación');
+        return;
+      }
+
+      const userID = await this.getUserId();
+      if (!userID) {
+        console.log('⚠️ No hay userID para actualizar ubicación');
+        return;
+      }
+
+      console.log('🔄 Actualizando ubicación en token FCM...');
+
+      const headers = new HttpHeaders({
+        'Content-Type': 'application/json'
+      });
+
+      await this.http.post(`${environment.apiUrl}/api/notifications/update-token-location`, {
+        userID,
+        token: fcmToken,
+        lat: location.latitude,
+        lng: location.longitude
+      }, { headers }).toPromise();
+
+      console.log('✅ Ubicación actualizada en token FCM');
+
+    } catch (error) {
+      console.error('❌ Error actualizando ubicación en token FCM:', error);
     }
   }
 

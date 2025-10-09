@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, tap } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { StorageService } from './storage.service';
+import { PushNotificationService } from './push-notification.service';
 
 export interface LoginRequest {
   email: string;
@@ -63,7 +64,8 @@ export class AuthService {
 
   constructor(
     private http: HttpClient,
-    private storageService: StorageService
+    private storageService: StorageService,
+    private pushNotificationService: PushNotificationService
   ) {
     this.initializationPromise = this.initializeAuth();
   }
@@ -144,6 +146,14 @@ export class AuthService {
       console.log('AuthService - setAuthData: token saved to localStorage');
     } catch (error) {
       console.error('AuthService - setAuthData: error saving to localStorage:', error);
+    }
+    
+    // Actualizar el userID del token FCM con el usuario autenticado
+    try {
+      await this.pushNotificationService.updateTokenUserID(user.id);
+      console.log('AuthService - setAuthData: FCM token userID updated');
+    } catch (error) {
+      console.error('AuthService - setAuthData: error updating FCM token userID:', error);
     }
     
     this.currentUserSubject.next(user);

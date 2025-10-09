@@ -39,8 +39,13 @@ export class LocationService {
 
   async getCurrentPosition(): Promise<LocationData> {
     try {
+      console.log('📍 LocationService: Obteniendo ubicación actual...');
+      console.log('📍 LocationService: Window disponible:', typeof window !== 'undefined');
+      console.log('📍 LocationService: Geolocation disponible:', typeof window !== 'undefined' && 'geolocation' in navigator);
+      
       // En web, usar la API nativa del navegador
       if (typeof window !== 'undefined' && 'geolocation' in navigator) {
+        console.log('📍 LocationService: Usando API web de geolocalización');
         return new Promise((resolve, reject) => {
           navigator.geolocation.getCurrentPosition(
             (position) => {
@@ -50,11 +55,12 @@ export class LocationService {
                 accuracy: position.coords.accuracy,
                 timestamp: position.timestamp
               };
+              console.log('📍 LocationService: Ubicación obtenida (web):', location);
               this.currentLocationSubject.next(location);
               resolve(location);
             },
             (error) => {
-              console.error('Error getting location:', error);
+              console.error('❌ LocationService: Error obteniendo ubicación (web):', error);
               reject(new Error('No se pudo obtener la ubicación actual'));
             },
             { enableHighAccuracy: true, timeout: 10000, maximumAge: 300000 }
@@ -63,6 +69,7 @@ export class LocationService {
       }
 
       // En dispositivos móviles, usar Capacitor
+      console.log('📍 LocationService: Usando Capacitor Geolocation');
       const coordinates = await Geolocation.getCurrentPosition({
         enableHighAccuracy: true,
         timeout: 10000,
@@ -76,10 +83,11 @@ export class LocationService {
         timestamp: coordinates.timestamp
       };
 
+      console.log('📍 LocationService: Ubicación obtenida (Capacitor):', location);
       this.currentLocationSubject.next(location);
       return location;
     } catch (error) {
-      console.error('Error getting location:', error);
+      console.error('❌ LocationService: Error obteniendo ubicación:', error);
       throw new Error('No se pudo obtener la ubicación actual');
     }
   }
