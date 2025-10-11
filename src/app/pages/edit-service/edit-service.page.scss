@@ -619,23 +619,105 @@ ion-checkbox {
 }
 
 .promotion-stats {
-  background: #f3f4f6;
-  border-radius: 8px;
-  padding: 16px;
+  background: #f8f9fa;
+  border-radius: 12px;
+  padding: 20px;
   margin-top: 16px;
+  border: 1px solid #e9ecef;
 
   .stats-title {
     display: flex;
     align-items: center;
     gap: 8px;
-    font-size: 15px;
-    font-weight: 600;
-    color: #374151;
-    margin: 0 0 12px 0;
+    font-size: 16px;
+    font-weight: 700;
+    color: #212529;
+    margin: 0 0 16px 0;
 
     ion-icon {
-      font-size: 20px;
+      font-size: 22px;
       color: #3b82f6;
+    }
+  }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 8px;
+  }
+
+  .stat-card {
+    background: white;
+    border-radius: 10px;
+    padding: 14px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-left: 3px solid;
+    transition: all 0.3s ease;
+
+    &.primary {
+      border-left-color: #3b82f6;
+    }
+
+    &.success {
+      border-left-color: #10b981;
+    }
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .stat-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+
+      ion-icon {
+        font-size: 20px;
+      }
+    }
+
+    &.primary .stat-icon {
+      background: rgba(59, 130, 246, 0.1);
+      
+      ion-icon {
+        color: #3b82f6;
+      }
+    }
+
+    &.success .stat-icon {
+      background: rgba(16, 185, 129, 0.1);
+      
+      ion-icon {
+        color: #10b981;
+      }
+    }
+
+    .stat-info {
+      flex: 1;
+      min-width: 0;
+
+      .stat-value {
+        font-size: 22px;
+        font-weight: 700;
+        color: #212529;
+        line-height: 1.2;
+      }
+
+      .stat-label {
+        font-size: 11px;
+        color: #6c757d;
+        margin-top: 2px;
+        line-height: 1.3;
+      }
     }
   }
 

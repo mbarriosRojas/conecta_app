@@ -1,0 +1,225 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/tabs/home"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Promociones Cercanas</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="openMapModal()">
+        <ion-icon name="map" slot="icon-only"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true">
+  
+  <!-- Pull to Refresh -->
+  <ion-refresher slot="fixed" (ionRefresh)="handleRefresh($event)">
+    <ion-refresher-content
+      pullingIcon="chevron-down-circle-outline"
+      pullingText="Desliza para actualizar"
+      refreshingSpinner="circles"
+      refreshingText="Cargando...">
+    </ion-refresher-content>
+  </ion-refresher>
+
+  <!-- Control de Radio -->
+  <div class="radius-control">
+    <div class="radius-header">
+      <div class="radius-info">
+        <ion-icon name="navigate-circle-outline" color="primary"></ion-icon>
+        <div class="radius-text">
+          <h3>Radio de búsqueda</h3>
+          <p>{{ formatRadiusPin(currentRadius) }}</p>
+        </div>
+      </div>
+      <div class="promotions-count">
+        <ion-badge color="tertiary">{{ totalPromotions }}</ion-badge>
+        <span>promociones</span>
+      </div>
+    </div>
+    
+    <ion-range
+      [(ngModel)]="currentRadius"
+      (ionChange)="onRadiusChange($event)"
+      min="500"
+      max="5000"
+      step="100"
+      pin="true"
+      [pinFormatter]="formatRadiusPin"
+      color="primary">
+      <ion-label slot="start">500m</ion-label>
+      <ion-label slot="end">5km</ion-label>
+    </ion-range>
+  </div>
+
+  <!-- Filtros -->
+  <div class="filters-section">
+    <ion-segment [(ngModel)]="selectedType" (ionChange)="onTypeFilterChange()" scrollable>
+      <ion-segment-button *ngFor="let type of promotionTypes" [value]="type.value">
+        <ion-label>{{ type.label }}</ion-label>
+      </ion-segment-button>
+    </ion-segment>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="loading-container">
+    <ion-spinner name="crescent" color="primary"></ion-spinner>
+    <p>Buscando promociones cercanas...</p>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="!isLoading && promotions.length === 0" class="empty-state">
+    <div class="empty-content">
+      <ion-icon name="gift-outline" color="medium"></ion-icon>
+      <h2>No hay promociones cerca</h2>
+      <p>Intenta aumentar el radio de búsqueda o cambia tu ubicación</p>
+      <ion-button fill="outline" (click)="loadPromotions()">
+        <ion-icon name="refresh" slot="start"></ion-icon>
+        Buscar nuevamente
+      </ion-button>
+    </div>
+  </div>
+
+  <!-- Lista de Promociones -->
+  <div *ngIf="!isLoading && promotions.length > 0" class="promotions-list">
+    <div *ngFor="let promo of promotions; let i = index" 
+         class="promotion-card" 
+         (click)="goToProvider(promo.businessID)">
+      
+      <div class="promotion-header">
+        <div class="promotion-number">{{ i + 1 }}</div>
+        <div class="promotion-info">
+          <h3>{{ promo.businessName }}</h3>
+          <div class="promotion-meta">
+            <ion-badge [color]="getPromotionColor(promo.type)" mode="ios">
+              <ion-icon [name]="getPromotionIcon(promo.type)"></ion-icon>
+              {{ promo.type }}
+            </ion-badge>
+            <span class="distance">
+              <ion-icon name="location"></ion-icon>
+              {{ promo.distanceFormatted }}
+            </span>
+          </div>
+        </div>
+        <ion-icon name="chevron-forward" color="medium"></ion-icon>
+      </div>
+
+      <div class="promotion-content">
+        <p class="promotion-text">{{ promo.text }}</p>
+      </div>
+
+      <div class="promotion-footer">
+        <div class="score-indicator">
+          <ion-icon name="star" color="warning"></ion-icon>
+          <span>Score: {{ promo.score }}</span>
+        </div>
+        <div class="dates">
+          <ion-icon name="time-outline" color="medium"></ion-icon>
+          <span>Válido hasta {{ promo.endDate | date:'dd/MM/yyyy' }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal del Mapa -->
+  <ion-modal #mapModal [isOpen]="showMapModal" (didDismiss)="closeMapModal()">
+    <ng-template>
+      <ion-header>
+        <ion-toolbar>
+          <ion-title>Mapa de Promociones</ion-title>
+          <ion-buttons slot="end">
+            <ion-button (click)="closeMapModal()">
+              <ion-icon name="close"></ion-icon>
+            </ion-button>
+          </ion-buttons>
+        </ion-toolbar>
+      </ion-header>
+
+      <ion-content>
+        <div id="promotionsMap" style="height: 100%; width: 100%;"></div>
+        
+        <!-- Info de promoción seleccionada -->
+        <div *ngIf="selectedPromotion" class="selected-promotion-info">
+          <div class="info-card">
+            <div class="card-header">
+              <div class="business-info">
+                <h3>{{ selectedPromotion.businessName }}</h3>
+                <div class="promotion-meta">
+                  <ion-badge [color]="getPromotionColor(selectedPromotion.type)" mode="ios">
+                    <ion-icon [name]="getPromotionIcon(selectedPromotion.type)"></ion-icon>
+                    {{ selectedPromotion.type }}
+                  </ion-badge>
+                  <span class="distance">
+                    <ion-icon name="location"></ion-icon>
+                    {{ selectedPromotion.distanceFormatted }}
+                  </span>
+                </div>
+              </div>
+              <ion-button fill="clear" size="small" (click)="selectedPromotion = null">
+                <ion-icon name="close"></ion-icon>
+              </ion-button>
+            </div>
+            
+            <div class="promotion-text">
+              <p>{{ selectedPromotion.text }}</p>
+            </div>
+            
+            <div class="card-footer">
+              <div class="score-info">
+                <ion-icon name="star" color="warning"></ion-icon>
+                <span>Score: {{ selectedPromotion.score }}</span>
+              </div>
+              <div class="validity">
+                <ion-icon name="time-outline" color="medium"></ion-icon>
+                <span>Válido hasta {{ selectedPromotion.endDate | date:'dd/MM/yyyy' }}</span>
+              </div>
+            </div>
+            
+            <div class="action-buttons">
+              <ion-button expand="block" fill="outline" (click)="goToProvider(selectedPromotion.businessID)">
+                <ion-icon name="information-circle" slot="start"></ion-icon>
+                Ver Detalles
+              </ion-button>
+              <ion-button expand="block" color="success" (click)="contactViaWhatsApp(selectedPromotion)">
+                <ion-icon name="logo-whatsapp" slot="start"></ion-icon>
+                Contactar WhatsApp
+              </ion-button>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Información de la búsqueda con slider -->
+        <div class="search-info" *ngIf="!selectedPromotion">
+          <div class="info-content">
+            <ion-icon name="information-circle" color="primary"></ion-icon>
+            <div class="info-text">
+              <h4>{{ totalPromotions }} promociones encontradas</h4>
+              <p>Radio: {{ formatRadiusPin(currentRadius) }}</p>
+            </div>
+          </div>
+          
+          <!-- Slider de radio integrado en la card -->
+          <div class="radius-slider-integrated">
+            <ion-range
+              [(ngModel)]="currentRadius"
+              (ionChange)="onMapRadiusChange($event)"
+              min="500"
+              max="10000"
+              step="100"
+              pin="true"
+              [pinFormatter]="formatRadiusPin"
+              color="primary">
+              <ion-label slot="start">500m</ion-label>
+              <ion-label slot="end">10km</ion-label>
+            </ion-range>
+          </div>
+        </div>
+
+      </ion-content>
+    </ng-template>
+  </ion-modal>
+
+</ion-content>
+

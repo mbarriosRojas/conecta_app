@@ -152,12 +152,42 @@ export class GeofencingAnalyticsService {
   /**
    * Calcula el alcance estimado de una promoción
    */
-  getPromotionReach(businessID: string, radius: number): Observable<any> {
-    return this.http.get(`${this.baseUrl}/api/geofencing/audience`, {
-      params: {
-        businessID,
-        radius: radius.toString()
-      }
-    });
+  getPromotionReach(businessID: string, radius: number, latitude?: number, longitude?: number): Observable<any> {
+    const params: any = {
+      businessID,
+      radius: radius.toString()
+    };
+    
+    // Incluir coordenadas si están disponibles para cálculo más preciso
+    if (latitude !== undefined && longitude !== undefined) {
+      params.latitude = latitude.toString();
+      params.longitude = longitude.toString();
+    }
+    
+    return this.http.get(`${this.baseUrl}/api/geofencing/audience`, { params });
+  }
+
+  /**
+   * Obtiene promociones cercanas a una ubicación
+   */
+  getNearbyPromotions(
+    latitude: number,
+    longitude: number,
+    radius: number = 2000,
+    categoryId?: string,
+    limit: number = 50
+  ): Observable<any> {
+    const params: any = {
+      latitude: latitude.toString(),
+      longitude: longitude.toString(),
+      radius: radius.toString(),
+      limit: limit.toString()
+    };
+
+    if (categoryId) {
+      params.categoryId = categoryId;
+    }
+
+    return this.http.get(`${this.baseUrl}/api/geofencing/promotions/nearby`, { params });
   }
 }

@@ -11,11 +11,18 @@ import { StorageService } from '../../services/storage.service';
 import { GeocodingService, LocationSuggestion } from '../../services/geocoding.service';
 import { PermissionService } from '../../services/permission.service';
 import { GeofencingService } from '../../services/geofencing.service';
+import { GeofencingAnalyticsService } from '../../services/geofencing-analytics.service';
 import { Provider, ProviderFilters, Category } from '../../models/provider.model';
 import { environment } from '../../../environments/environment';
 import { NoResultsExpandComponent } from '../../components/no-results-expand/no-results-expand.component';
 import Swiper from 'swiper';
 import { SwiperOptions } from 'swiper/types';
+
+// Interface para items del feed (proveedores o promociones)
+interface FeedItem {
+  type: 'provider' | 'promotion';
+  data: any;
+}
 
 @Component({
   selector: 'app-home',
@@ -37,6 +44,10 @@ export class HomePage implements OnInit, AfterViewInit {
   banners: any[] = [];
   currentBannerIndex: number = 0;
   
+  // Feed mixto con proveedores y promociones
+  feedItems: FeedItem[] = [];
+  nearbyPromotions: any[] = [];
+  
   currentLocation: LocationData | null = null;
   filters: ProviderFilters = {
     limit: environment.itemsPerPage
@@ -48,7 +59,7 @@ export class HomePage implements OnInit, AfterViewInit {
   isLoading = false;
   isLoadingMore = false;
   hasMoreData = true;
-  currentPage = 0;
+  currentPage = 1; // Empezar en página 1 (backend usa páginas 1-based)
   searchQuery = '';
   selectedCategory: Category | null = null;
   selectedCity = '';
@@ -106,6 +117,7 @@ export class HomePage implements OnInit, AfterViewInit {
     private geocodingService: GeocodingService,
     private permissionService: PermissionService,
     private geofencingService: GeofencingService,
+    private geofencingAnalyticsService: GeofencingAnalyticsService,
     private loadingController: LoadingController,
     private toastController: ToastController,
     private alertController: AlertController,
@@ -121,6 +133,27 @@ export class HomePage implements OnInit, AfterViewInit {
     setTimeout(() => {
       this.initializeSwiper();
     }, 500);
+    
+    // Configurar listener de scroll para debug
+    setTimeout(() => {
+      this.setupScrollListener();
+    }, 1000);
+  }
+
+  // Configurar listener de scroll para debug
+  async setupScrollListener() {
+    if (this.content) {
+      // Escuchar eventos de scroll para debug
+      this.content.ionScroll.subscribe(async () => {
+        if (this.hasMoreData && !this.isLoadingMore && !this.isLoading) {
+          const shouldTrigger = await this.checkScrollPosition();
+          if (shouldTrigger) {
+            console.log('🔥 Home - Scroll position should trigger infinite scroll but it didnt!');
+            console.log('🔥 Home - Manual trigger needed');
+          }
+        }
+      });
+    }
   }
 
   async initializeApp() {
@@ -410,11 +443,12 @@ export class HomePage implements OnInit, AfterViewInit {
     this.showNoResults = false;
     
     if (reset) {
-      this.currentPage = 1; // Cambiar a 1 para que coincida con el backend
+      this.currentPage = 1; // Siempre empezar en página 1
       this.providers = [];
       this.hasMoreData = true;
-      console.log('Home - Reset providers data');
+      console.log('Home - Reset providers data, currentPage set to:', this.currentPage);
     }
+    // No incrementar aquí, se hace después de la consulta exitosa
 
     try {
       const currentFilters = { ...this.filters };
@@ -425,6 +459,7 @@ export class HomePage implements OnInit, AfterViewInit {
       const searchRadius = radius || this.currentRadius;
       
       console.log('Home - Loading providers with filters:', currentFilters, 'radius:', searchRadius);
+      console.log('Home - About to request page:', this.currentPage);
       
       const response = await firstValueFrom(this.apiService.getProviders(currentFilters, searchRadius));
       
@@ -437,19 +472,43 @@ export class HomePage implements OnInit, AfterViewInit {
           
           // Mostrar componente de no resultados si no hay datos
           this.showNoResults = false;
+          
+          // Cargar promociones si hay una categoría seleccionada (no "Todos")
+          if (this.selectedCategory && this.selectedCategory._id !== '1') {
+            await this.loadNearbyPromotions();
+          } else {
+            this.nearbyPromotions = [];
+          }
+          
+          // Mezclar providers con promociones
+          this.mixProvidersWithPromotions();
         } else {
           this.providers = [...this.providers, ...response.data];
+          // Al cargar más, también mezclar con promociones si las hay
+          if (this.nearbyPromotions.length > 0) {
+            this.mixProvidersWithPromotions();
+          } else {
+            this.feedItems = this.providers.map(p => ({ type: 'provider', data: p }));
+          }
         }
         
         // Actualizar información de paginación
         this.hasMoreData = response.pagination?.hasNextPage || false;
-        this.currentPage++;
+        
+        // Incrementar página solo después de carga exitosa
+        if (!reset) {
+          this.currentPage++;
+          console.log('Home - Page incremented to:', this.currentPage);
+        }
         
         console.log('Home - Providers loaded:', this.providers.length, 'Has more:', this.hasMoreData);
+        console.log('Home - State after load - currentPage:', this.currentPage, 'hasMoreData:', this.hasMoreData, 'isLoadingMore:', this.isLoadingMore, 'isLoading:', this.isLoading);
         console.log('Home - Pagination info:', response.pagination);
+        this.logInfiniteScrollState();
       } else {
         if (reset) {
           this.providers = [];
+          this.feedItems = [];
         }
         this.hasMoreData = false;
         this.showNoResults = true;
@@ -463,9 +522,17 @@ export class HomePage implements OnInit, AfterViewInit {
     } finally {
       console.log('Home - loadProviders finished, setting isLoading to false');
       this.isLoading = false;
-      this.isLoadingMore = false;
+      // No resetear isLoadingMore aquí, se maneja en loadMore
       this.isRefreshing = false;
       this.isExpandingRadius = false;
+      
+      // Forzar actualización del componente infinite scroll después de cada carga
+      setTimeout(() => {
+        if (this.infiniteScroll && this.hasMoreData) {
+          this.infiniteScroll.disabled = false;
+          console.log('Home - Forced infiniteScroll.disabled = false after loadProviders');
+        }
+      }, 100);
     }
   }
 
@@ -497,12 +564,53 @@ export class HomePage implements OnInit, AfterViewInit {
   }
 
   async loadMore(event: any) {
-    if (this.hasMoreData && !this.isLoadingMore) {
-      this.isLoadingMore = true;
+    console.log('🚀 Home - loadMore called - SCROLL INFINITE TRIGGERED!');
+    console.log('Home - Event received:', event);
+    this.logInfiniteScrollState();
+    
+    // Verificar condiciones antes de proceder
+    if (!this.hasMoreData) {
+      console.log('Home - loadMore skipped: no more data available');
+      event.target.complete();
+      return;
+    }
+    
+    if (this.isLoadingMore) {
+      console.log('Home - loadMore skipped: already loading more');
+      event.target.complete();
+      return;
+    }
+    
+    if (this.isLoading) {
+      console.log('Home - loadMore skipped: main loading in progress');
+      event.target.complete();
+      return;
+    }
+
+    console.log('Home - All checks passed, proceeding with loadMore');
+    this.isLoadingMore = true;
+    
+    try {
+      console.log('Home - Calling loadProviders(false) for page:', this.currentPage + 1);
       await this.loadProviders(false);
+      console.log('Home - loadProviders completed successfully in loadMore');
+    } catch (error) {
+      console.error('Home - Error in loadMore:', error);
+      this.hasMoreData = false; // En caso de error, detener el scroll infinito
+    } finally {
+      this.isLoadingMore = false;
       event.target.complete();
-    } else {
-      event.target.complete();
+      console.log('Home - loadMore completed, isLoadingMore set to false');
+      
+      // Forzar actualización del componente infinite scroll
+      setTimeout(() => {
+        if (this.infiniteScroll) {
+          this.infiniteScroll.disabled = false;
+          console.log('Home - Forced infiniteScroll.disabled = false');
+        }
+      }, 100);
+      
+      this.logInfiniteScrollState();
     }
   }
 
@@ -510,6 +618,71 @@ export class HomePage implements OnInit, AfterViewInit {
     this.isRefreshing = true;
     await this.loadProviders(true);
     event.target.complete();
+  }
+
+  // Método para debuggear el estado del infinite scroll
+  logInfiniteScrollState() {
+    console.log('Home - Infinite Scroll State Debug:');
+    console.log('  - hasMoreData:', this.hasMoreData);
+    console.log('  - isLoadingMore:', this.isLoadingMore);
+    console.log('  - isLoading:', this.isLoading);
+    console.log('  - currentPage:', this.currentPage);
+    console.log('  - totalProviders:', this.providers.length);
+    console.log('  - infiniteScroll disabled:', (!this.hasMoreData || this.isLoadingMore));
+    console.log('  - itemsPerPage:', environment.itemsPerPage);
+    console.log('  - expectedNextPage:', this.currentPage + 1);
+    
+    // Verificar el estado del componente ion-infinite-scroll
+    if (this.infiniteScroll) {
+      console.log('  - infiniteScroll component exists:', !!this.infiniteScroll);
+      console.log('  - infiniteScroll disabled state:', this.infiniteScroll.disabled);
+      console.log('  - infiniteScroll threshold:', this.infiniteScroll.threshold);
+    } else {
+      console.log('  - infiniteScroll component: NOT FOUND');
+    }
+  }
+
+  // Método para forzar el scroll infinito (debug)
+  async forceLoadMore() {
+    console.log('Home - Force loadMore called');
+    if (this.hasMoreData && !this.isLoadingMore && !this.isLoading) {
+      console.log('Home - Forcing loadMore execution');
+      await this.loadMore({ target: { complete: () => console.log('Force complete called') } });
+    } else {
+      console.log('Home - Cannot force loadMore - conditions not met');
+      this.logInfiniteScrollState();
+    }
+  }
+
+  // Método para forzar la habilitación del infinite scroll
+  forceEnableInfiniteScroll() {
+    if (this.infiniteScroll && this.hasMoreData) {
+      this.infiniteScroll.disabled = false;
+      console.log('Home - Manually enabled infinite scroll');
+      this.logInfiniteScrollState();
+    }
+  }
+
+  // Método para verificar la posición del scroll
+  async checkScrollPosition() {
+    if (this.content) {
+      const scrollElement = await this.content.getScrollElement();
+      const scrollHeight = scrollElement.scrollHeight;
+      const scrollTop = scrollElement.scrollTop;
+      const clientHeight = scrollElement.clientHeight;
+      const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
+      
+      console.log('Home - Scroll Position Debug:');
+      console.log('  - scrollHeight:', scrollHeight);
+      console.log('  - scrollTop:', scrollTop);
+      console.log('  - clientHeight:', clientHeight);
+      console.log('  - distanceFromBottom:', distanceFromBottom);
+      console.log('  - threshold: 100px');
+      console.log('  - should trigger:', distanceFromBottom <= 100);
+      
+      return distanceFromBottom <= 100;
+    }
+    return false;
   }
 
 
@@ -905,5 +1078,115 @@ export class HomePage implements OnInit, AfterViewInit {
       position: 'bottom'
     });
     await toast.present();
+  }
+
+  /**
+   * Carga promociones cercanas para la categoría seleccionada
+   */
+  async loadNearbyPromotions() {
+    if (!this.currentLocation) {
+      return;
+    }
+
+    try {
+      const response = await firstValueFrom(
+        this.geofencingAnalyticsService.getNearbyPromotions(
+          this.currentLocation.latitude,
+          this.currentLocation.longitude,
+          this.currentRadius,
+          this.selectedCategory?._id,
+          10 // Máximo 10 promociones para mezclar
+        )
+      );
+
+      if (response && response.status === 'success') {
+        this.nearbyPromotions = response.data.promotions || [];
+        console.log('Promociones cercanas cargadas:', this.nearbyPromotions.length);
+      }
+    } catch (error) {
+      console.error('Error loading nearby promotions:', error);
+      this.nearbyPromotions = [];
+    }
+  }
+
+  /**
+   * Mezcla providers con promociones en el feed
+   * Inserta 1-2 promociones aleatoriamente cada 10 items aproximadamente
+   */
+  mixProvidersWithPromotions() {
+    if (this.nearbyPromotions.length === 0 || this.providers.length === 0) {
+      // Si no hay promociones, solo mostrar providers
+      this.feedItems = this.providers.map(p => ({ type: 'provider' as const, data: p }));
+      return;
+    }
+
+    const feedItems: FeedItem[] = [];
+    const promotionsCopy = [...this.nearbyPromotions];
+    const ITEMS_BETWEEN_PROMOS = 10; // Insertar promo cada 10 items
+
+    // Barajar promociones para aleatoriedad
+    promotionsCopy.sort(() => Math.random() - 0.5);
+
+    let promoIndex = 0;
+
+    for (let i = 0; i < this.providers.length; i++) {
+      // Agregar provider
+      feedItems.push({ type: 'provider', data: this.providers[i] });
+
+      // Insertar promoción cada X items (pero no en las primeras posiciones)
+      if (i > 0 && (i + 1) % ITEMS_BETWEEN_PROMOS === 0 && promoIndex < promotionsCopy.length) {
+        feedItems.push({ type: 'promotion', data: promotionsCopy[promoIndex] });
+        promoIndex++;
+      }
+    }
+
+    this.feedItems = feedItems;
+    console.log('Feed mezclado:', this.feedItems.length, 'items (', 
+                promoIndex, 'promociones insertadas)');
+  }
+
+  /**
+   * Verifica si un item del feed es una promoción
+   */
+  isPromotion(item: FeedItem): boolean {
+    return item.type === 'promotion';
+  }
+
+  /**
+   * Obtiene el ícono según el tipo de promoción
+   */
+  getPromotionIcon(type: string): string {
+    const icons: { [key: string]: string } = {
+      'DISCOUNT': 'pricetag',
+      'OFFER': 'gift',
+      'EVENT': 'calendar',
+      'GENERAL': 'megaphone'
+    };
+    return icons[type] || 'megaphone';
+  }
+
+  /**
+   * Navega a la página de promociones cercanas
+   */
+  goToPromotionsPage() {
+    this.router.navigate(['/promotions-nearby']);
+  }
+
+  /**
+   * TrackBy function para el feed mezclado
+   */
+  trackByFeedItemId(index: number, item: FeedItem): any {
+    if (item.type === 'provider') {
+      return item.data._id || index;
+    } else {
+      return `promo-${item.data._id}` || `promo-${index}`;
+    }
+  }
+
+  /**
+   * Navega al detalle del proveedor
+   */
+  goToProvider(businessID: string) {
+    this.router.navigate(['/provider-detail', businessID]);
   }
 }

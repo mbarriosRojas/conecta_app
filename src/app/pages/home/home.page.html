@@ -18,6 +18,11 @@
           class="whatsapp-searchbar">
         </ion-searchbar>
         
+        <!-- Botón de Promociones -->
+        <ion-button fill="clear" (click)="goToPromotionsPage()" class="promotions-button">
+          <ion-icon name="gift" color="tertiary"></ion-icon>
+        </ion-button>
+        
         <!-- Botón de filtro al lado del buscador -->
         <ion-button fill="clear" (click)="openFilterModal()" class="filter-button">
           <ion-icon name="funnel-outline"></ion-icon>
@@ -88,6 +93,18 @@
     </div>
   </div>
 
+  <!-- Banner de Promociones Cercanas -->
+  <div class="promotions-banner" (click)="goToPromotionsPage()">
+    <div class="banner-icon">
+      <ion-icon name="gift"></ion-icon>
+    </div>
+    <div class="banner-content">
+      <h3>🎁 Promociones Cerca de Ti</h3>
+      <p>Descubre ofertas exclusivas en tu zona</p>
+    </div>
+    <ion-icon name="chevron-forward" class="banner-arrow"></ion-icon>
+  </div>
+
   <!-- Sección "Visto recientemente" -->
   <div class="recent-section" *ngIf="recentProviders.length > 0">
     <h3 class="section-title">Visto recientemente</h3>
@@ -104,65 +121,156 @@
     </ion-card>
   </div>
 
-  <!-- Lista de servicios estilo WhatsApp -->
-  <div class="whatsapp-services-container" *ngIf="providers.length > 0">
-    <div class="whatsapp-service-item" 
-         *ngFor="let provider of providers; trackBy: trackByProviderId" 
-         (click)="onProviderClick(provider)">
+  <!-- Lista de servicios y promociones estilo WhatsApp -->
+  <div class="whatsapp-services-container" *ngIf="feedItems.length > 0 || providers.length > 0">
+    
+    <!-- Iterar sobre feedItems si hay promociones mezcladas, sino sobre providers -->
+    <ng-container *ngIf="feedItems.length > 0; else providersOnly">
+      <ng-container *ngFor="let item of feedItems; trackBy: trackByFeedItemId">
+        
+        <!-- Mini Promoción -->
+        <div class="mini-promotion-card" *ngIf="isPromotion(item)" (click)="goToProvider(item.data.businessID)">
+          <div class="promo-header">
+            <div class="promo-icon">
+              <ion-icon [name]="getPromotionIcon(item.data.type)" color="tertiary"></ion-icon>
+            </div>
+            <div class="promo-content">
+              <h4>🎁 {{ item.data.businessName }}</h4>
+              <p class="promo-text">{{ item.data.text }}</p>
+              <div class="promo-meta">
+                <ion-badge color="tertiary" mode="ios">
+                  <ion-icon name="pricetag"></ion-icon>
+                  Promoción
+                </ion-badge>
+                <span class="promo-distance">
+                  <ion-icon name="location"></ion-icon>
+                  {{ item.data.distanceFormatted }}
+                </span>
+              </div>
+            </div>
+            <ion-icon name="chevron-forward" color="medium" class="promo-arrow"></ion-icon>
+          </div>
+        </div>
+
+        <!-- Provider normal -->
+        <div class="whatsapp-service-item" *ngIf="!isPromotion(item)" (click)="onProviderClick(item.data)">
       
-      <!-- Avatar del servicio -->
-      <div class="service-avatar">
-        <img 
-          [src]="provider.logo || provider.images[0] || 'assets/images/default-provider.png'" 
-          [alt]="provider.name"
-          class="avatar-image"
-          loading="lazy">
-        
-        <!-- Badges -->
-        <div class="avatar-badges">
-          <ion-badge *ngIf="provider.verified" class="verified-badge" color="success">
-            <ion-icon name="checkmark-circle"></ion-icon>
-          </ion-badge>
-          <ion-badge *ngIf="provider.stand_out" class="featured-badge" color="warning">
-            <ion-icon name="star"></ion-icon>
-          </ion-badge>
-        </div>
-      </div>
+          <!-- Avatar del servicio -->
+          <div class="service-avatar">
+            <img 
+              [src]="item.data.logo || item.data.images[0] || 'assets/images/default-provider.png'" 
+              [alt]="item.data.name"
+              class="avatar-image"
+              loading="lazy">
+            
+            <!-- Badges -->
+            <div class="avatar-badges">
+              <ion-badge *ngIf="item.data.verified" class="verified-badge" color="success">
+                <ion-icon name="checkmark-circle"></ion-icon>
+              </ion-badge>
+              <ion-badge *ngIf="item.data.stand_out" class="featured-badge" color="warning">
+                <ion-icon name="star"></ion-icon>
+              </ion-badge>
+            </div>
+          </div>
 
-      <!-- Información del servicio -->
-      <div class="service-info">
-        <div class="service-header">
-          <h3 class="service-name">{{ provider.name }}</h3>
-          <span class="service-time" *ngIf="provider.distance">{{ formatDistance(provider.distance) }}</span>
+          <!-- Información del servicio -->
+          <div class="service-info">
+            <div class="service-header">
+              <h3 class="service-name">{{ item.data.name }}</h3>
+              <span class="service-time" *ngIf="item.data.distance">{{ formatDistance(item.data.distance) }}</span>
+            </div>
+            
+            <div class="service-message">
+              <p class="service-description">{{ item.data.description | slice:0:60 }}{{ item.data.description.length > 60 ? '...' : '' }}</p>
+            </div>
+            
+            <div class="service-meta">
+              <div class="meta-item" *ngIf="item.data.address?.city">
+                <ion-icon name="location-outline"></ion-icon>
+                <span>{{ item.data.address.city }}</span>
+              </div>
+              
+              <div class="meta-item" *ngIf="item.data.rating > 0">
+                <ion-icon name="star"></ion-icon>
+                <span>{{ item.data.rating | number:'1.1-1' }}</span>
+              </div>
+              
+              <div class="meta-item">
+                <ion-icon name="eye-outline"></ion-icon>
+                <span>{{ item.data.views }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Indicador de estado -->
+          <div class="service-status">
+            <div class="status-indicator" *ngIf="item.data.verified"></div>
+          </div>
         </div>
+      </ng-container>
+    </ng-container>
+
+    <!-- Fallback: Mostrar solo providers si no hay feedItems -->
+    <ng-template #providersOnly>
+      <div class="whatsapp-service-item" 
+           *ngFor="let provider of providers; trackBy: trackByProviderId" 
+           (click)="onProviderClick(provider)">
         
-        <div class="service-message">
-          <p class="service-description">{{ provider.description | slice:0:60 }}{{ provider.description.length > 60 ? '...' : '' }}</p>
+        <!-- Avatar del servicio -->
+        <div class="service-avatar">
+          <img 
+            [src]="provider.logo || provider.images[0] || 'assets/images/default-provider.png'" 
+            [alt]="provider.name"
+            class="avatar-image"
+            loading="lazy">
+          
+          <!-- Badges -->
+          <div class="avatar-badges">
+            <ion-badge *ngIf="provider.verified" class="verified-badge" color="success">
+              <ion-icon name="checkmark-circle"></ion-icon>
+            </ion-badge>
+            <ion-badge *ngIf="provider.stand_out" class="featured-badge" color="warning">
+              <ion-icon name="star"></ion-icon>
+            </ion-badge>
+          </div>
         </div>
-        
-        <div class="service-meta">
-          <div class="meta-item" *ngIf="provider.address?.city">
-            <ion-icon name="location-outline"></ion-icon>
-            <span>{{ provider.address.city }}</span>
+
+        <!-- Información del servicio -->
+        <div class="service-info">
+          <div class="service-header">
+            <h3 class="service-name">{{ provider.name }}</h3>
+            <span class="service-time" *ngIf="provider.distance">{{ formatDistance(provider.distance) }}</span>
           </div>
           
-          <div class="meta-item" *ngIf="provider.rating > 0">
-            <ion-icon name="star"></ion-icon>
-            <span>{{ provider.rating | number:'1.1-1' }}</span>
+          <div class="service-message">
+            <p class="service-description">{{ provider.description | slice:0:60 }}{{ provider.description.length > 60 ? '...' : '' }}</p>
           </div>
           
-          <div class="meta-item">
-            <ion-icon name="eye-outline"></ion-icon>
-            <span>{{ provider.views }}</span>
+          <div class="service-meta">
+            <div class="meta-item" *ngIf="provider.address?.city">
+              <ion-icon name="location-outline"></ion-icon>
+              <span>{{ provider.address.city }}</span>
+            </div>
+            
+            <div class="meta-item" *ngIf="provider.rating > 0">
+              <ion-icon name="star"></ion-icon>
+              <span>{{ provider.rating | number:'1.1-1' }}</span>
+            </div>
+            
+            <div class="meta-item">
+              <ion-icon name="eye-outline"></ion-icon>
+              <span>{{ provider.views }}</span>
+            </div>
           </div>
         </div>
-      </div>
 
-      <!-- Indicador de estado -->
-      <div class="service-status">
-        <div class="status-indicator" *ngIf="provider.verified"></div>
+        <!-- Indicador de estado -->
+        <div class="service-status">
+          <div class="status-indicator" *ngIf="provider.verified"></div>
+        </div>
       </div>
-    </div>
+    </ng-template>
   </div>
   <!-- Infinite Scroll -->
   <ion-infinite-scroll 
@@ -174,6 +282,26 @@
       loadingText="Cargando más proveedores...">
     </ion-infinite-scroll-content>
   </ion-infinite-scroll>
+
+  <!-- Botones de debug temporal -->
+  <div style="position: fixed; bottom: 100px; right: 20px; z-index: 1000;">
+    <div style="display: flex; flex-direction: column; gap: 5px;">
+      <ion-button 
+        size="small" 
+        color="primary" 
+        (click)="forceLoadMore()"
+        *ngIf="hasMoreData && !isLoadingMore">
+        Force Load More
+      </ion-button>
+      <ion-button 
+        size="small" 
+        color="secondary" 
+        (click)="forceEnableInfiniteScroll()"
+        *ngIf="hasMoreData">
+        Enable Infinite Scroll
+      </ion-button>
+    </div>
+  </div>
 
   <!-- Componente de no resultados (tipo Tinder) -->
   <app-no-results-expand
@@ -245,7 +373,7 @@
             <ion-range 
               [(ngModel)]="tempSelectedRadius" 
               min="1000" 
-              max="50000" 
+              max="500000000" 
               step="1000"
               color="primary">
               <ion-label slot="start">1km</ion-label>

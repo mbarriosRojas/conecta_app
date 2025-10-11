@@ -16,6 +16,10 @@ const config: CapacitorConfig = {
     },
     Filesystem: {
       permissions: ['read', 'write']
+    },
+    StatusBar: {
+      style: 'default',
+      backgroundColor: '#ffffff'
     }
   }
 };

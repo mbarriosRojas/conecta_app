@@ -1110,10 +1110,16 @@ export class EditServicePage implements OnInit {
     if (!this.provider?._id) return;
 
     try {
+      // Obtener coordenadas del provider para cálculo más preciso
+      const latitude = this.provider.address?.location?.coordinates?.[1];
+      const longitude = this.provider.address?.location?.coordinates?.[0];
+      
       const response = await firstValueFrom(
         this.geofencingAnalyticsService.getPromotionReach(
           this.provider._id,
-          this.promotionConfig.promo_radius_meters
+          this.promotionConfig.promo_radius_meters,
+          latitude,
+          longitude
         )
       );
 

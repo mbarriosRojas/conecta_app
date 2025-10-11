@@ -25,6 +25,10 @@ const routes: Routes = [
     path: 'edit-service/:id',
     loadComponent: () => import('./pages/edit-service/edit-service.page').then(m => m.EditServicePage),
     canActivate: [AuthGuard]
+  },
+  {
+    path: 'promotions-nearby',
+    loadComponent: () => import('./pages/promotions-nearby/promotions-nearby.page').then(m => m.PromotionsNearbyPage)
   }
 ];
 @NgModule({

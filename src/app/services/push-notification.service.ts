@@ -141,6 +141,13 @@ export class PushNotificationService {
     try {
       console.log('🌐 Inicializando push notifications web...');
 
+      // DESACTIVADO EN DESARROLLO: Las notificaciones web no son necesarias para desarrollo local
+      // Solo se usan en producción web. En móvil se usan las notificaciones nativas.
+      if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        console.log('ℹ️ Push notifications web desactivadas en desarrollo local');
+        return;
+      }
+
       // Verificar si Firebase está configurado
       if (environment.firebase.apiKey === 'TU_API_KEY_AQUI') {
         console.warn('⚠️ Firebase no configurado en environment.ts');
