@@ -1,7 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { Platform } from '@ionic/angular';
 import { StatusBar, Style } from '@capacitor/status-bar';
-import { PushNotificationService } from './services/push-notification.service';
 
 @Component({
   selector: 'app-root',
@@ -11,23 +10,25 @@ import { PushNotificationService } from './services/push-notification.service';
 })
 export class AppComponent implements OnInit {
   constructor(
-    private platform: Platform,
-    private pushNotificationService: PushNotificationService
+    private platform: Platform
   ) {}
 
   async ngOnInit() {
-    console.log('🚀 AppComponent: Iniciando aplicación...');
-    
-    // Inicializar StatusBar
-    await this.initializeStatusBar();
+    console.log('🚀 AppComponent: Iniciando aplicación AKI...');
     
     try {
-      // Inicializar notificaciones push al arrancar la app
-      console.log('🔔 AppComponent: Inicializando servicio de notificaciones...');
-      const result = await this.pushNotificationService.initialize();
-      console.log('🔔 AppComponent: Resultado de inicialización:', result);
+      // Inicializar StatusBar
+      await this.initializeStatusBar();
+      console.log('✅ AppComponent: StatusBar inicializado');
+      
+      // Esperar a que la plataforma esté lista
+      await this.platform.ready();
+      console.log('✅ AppComponent: Plataforma lista');
+      
+      console.log('🎉 AppComponent: Aplicación AKI iniciada correctamente');
+      
     } catch (error) {
-      console.error('❌ AppComponent: Error inicializando notificaciones:', error);
+      console.error('❌ AppComponent: Error en inicialización:', error);
     }
   }
 
@@ -35,9 +36,9 @@ export class AppComponent implements OnInit {
     try {
       if (this.platform.is('capacitor')) {
         await StatusBar.setStyle({ style: Style.Default });
-        await StatusBar.setBackgroundColor({ color: '#ffffff' });
+        await StatusBar.setBackgroundColor({ color: '#667eea' });
         await StatusBar.show();
-        console.log('✅ StatusBar inicializado correctamente');
+        console.log('✅ StatusBar configurado para AKI');
       }
     } catch (error) {
       console.error('❌ Error inicializando StatusBar:', error);

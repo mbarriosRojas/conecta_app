@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Convertidor SVG a PNG - AKI</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; max-width: 1200px; margin: 0 auto; }
+        .container { display: flex; flex-wrap: wrap; gap: 20px; margin: 20px 0; }
+        .icon-box { text-align: center; padding: 10px; border: 1px solid #ddd; border-radius: 8px; }
+        canvas { border: 1px solid #ccc; margin: 10px; }
+        .download-btn { 
+            background: #667eea; 
+            color: white; 
+            border: none; 
+            padding: 10px 20px; 
+            border-radius: 5px; 
+            cursor: pointer; 
+            margin: 5px;
+            display: block;
+            width: 100%;
+        }
+        .instructions { background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0; }
+        h1 { color: #667eea; }
+        h2 { color: #764ba2; }
+    </style>
+</head>
+<body>
+    <h1>🎨 Convertidor SVG a PNG - AKI</h1>
+    
+    <div class="instructions">
+        <h2>📋 Instrucciones:</h2>
+        <ol>
+            <li>Haz clic en "Generar y Descargar" para cada tamaño de ícono</li>
+            <li>Guarda los archivos PNG con los nombres correctos</li>
+            <li>Coloca los archivos en las carpetas de Android según se indica</li>
+            <li>Ejecuta <code>npx cap sync android</code> y <code>npx cap run android</code></li>
+        </ol>
+    </div>
+
+    <h2>📱 Iconos de la Aplicación</h2>
+    <div class="container">
+        <div class="icon-box">
+            <h3>48x48 (mdpi)</h3>
+            <canvas id="icon48" width="48" height="48"></canvas>
+            <button class="download-btn" onclick="downloadIcon('icon48', 'ic_launcher.png', 'android/app/src/main/res/mipmap-mdpi/')">Generar y Descargar</button>
+            <p><small>Colocar en: mipmap-mdpi/ic_launcher.png</small></p>
+        </div>
+
+        <div class="icon-box">
+            <h3>72x72 (hdpi)</h3>
+            <canvas id="icon72" width="72" height="72"></canvas>
+            <button class="download-btn" onclick="downloadIcon('icon72', 'ic_launcher.png', 'android/app/src/main/res/mipmap-hdpi/')">Generar y Descargar</button>
+            <p><small>Colocar en: mipmap-hdpi/ic_launcher.png</small></p>
+        </div>
+
+        <div class="icon-box">
+            <h3>96x96 (xhdpi)</h3>
+            <canvas id="icon96" width="96" height="96"></canvas>
+            <button class="download-btn" onclick="downloadIcon('icon96', 'ic_launcher.png', 'android/app/src/main/res/mipmap-xhdpi/')">Generar y Descargar</button>
+            <p><small>Colocar en: mipmap-xhdpi/ic_launcher.png</small></p>
+        </div>
+
+        <div class="icon-box">
+            <h3>144x144 (xxhdpi)</h3>
+            <canvas id="icon144" width="144" height="144"></canvas>
+            <button class="download-btn" onclick="downloadIcon('icon144', 'ic_launcher.png', 'android/app/src/main/res/mipmap-xxhdpi/')">Generar y Descargar</button>
+            <p><small>Colocar en: mipmap-xxhdpi/ic_launcher.png</small></p>
+        </div>
+
+        <div class="icon-box">
+            <h3>192x192 (xxxhdpi)</h3>
+            <canvas id="icon192" width="192" height="192"></canvas>
+            <button class="download-btn" onclick="downloadIcon('icon192', 'ic_launcher.png', 'android/app/src/main/res/mipmap-xxxhdpi/')">Generar y Descargar</button>
+            <p><small>Colocar en: mipmap-xxxhdpi/ic_launcher.png</small></p>
+        </div>
+    </div>
+
+    <h2>🖼️ Splash Screen</h2>
+    <div class="container">
+        <div class="icon-box" style="flex: 1;">
+            <h3>1242x2208 (Phone Portrait)</h3>
+            <canvas id="splash" width="400" height="710" style="max-width: 300px; height: auto;"></canvas>
+            <button class="download-btn" onclick="downloadSplash('splash', 'splash.png', 'android/app/src/main/res/drawable-port-xxxhdpi/')">Generar y Descargar</button>
+            <p><small>Colocar en: drawable-port-xxxhdpi/splash.png</small></p>
+        </div>
+    </div>
+
+    <div class="instructions">
+        <h2>🔧 Pasos Finales:</h2>
+        <ol>
+            <li><strong>Descargar todos los archivos PNG</strong> usando los botones de arriba</li>
+            <li><strong>Colocar en las carpetas correctas</strong> según se indica</li>
+            <li><strong>Limpiar y reconstruir:</strong>
+                <pre><code>cd infinity-providers-app
+npx cap sync android
+cd android
+./gradlew clean
+cd ..
+npx cap run android</code></pre>
+            </li>
+        </ol>
+    </div>
+
+    <script>
+        function drawAKIIcon(canvasId, size) {
+            const canvas = document.getElementById(canvasId);
+            const ctx = canvas.getContext('2d');
+            
+            // Clear canvas
+            ctx.clearRect(0, 0, size, size);
+            
+            // Create gradient
+            const gradient = ctx.createLinearGradient(0, 0, size, size);
+            gradient.addColorStop(0, '#667eea');
+            gradient.addColorStop(1, '#764ba2');
+            
+            // Draw background circle
+            const centerX = size / 2;
+            const centerY = size / 2;
+            const radius = size * 0.45;
+            
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+            ctx.fillStyle = gradient;
+            ctx.fill();
+            
+            // Draw border
+            ctx.strokeStyle = 'white';
+            ctx.lineWidth = Math.max(1, size * 0.04);
+            ctx.stroke();
+            
+            // Draw AKI text
+            ctx.fillStyle = 'white';
+            ctx.font = `bold ${size * 0.25}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('AKI', centerX, centerY);
+            
+            // Draw decorative dots
+            const dotSize = Math.max(1, size * 0.03);
+            const dotDistance = size * 0.25;
+            
+            // Accent gradient for dots
+            const dotGradient = ctx.createLinearGradient(0, 0, size, size);
+            dotGradient.addColorStop(0, '#f093fb');
+            dotGradient.addColorStop(1, '#f5576c');
+            
+            ctx.fillStyle = dotGradient;
+            ctx.globalAlpha = 0.8;
+            
+            // Draw decorative dots
+            const positions = [
+                [centerX - dotDistance, centerY - dotDistance],
+                [centerX + dotDistance, centerY - dotDistance],
+                [centerX - dotDistance, centerY + dotDistance],
+                [centerX + dotDistance, centerY + dotDistance]
+            ];
+            
+            positions.forEach(([x, y]) => {
+                ctx.beginPath();
+                ctx.arc(x, y, dotSize, 0, 2 * Math.PI);
+                ctx.fill();
+            });
+            
+            // Center dot
+            ctx.globalAlpha = 0.9;
+            ctx.fillStyle = 'white';
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, dotSize * 0.7, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            ctx.globalAlpha = 1;
+        }
+        
+        function drawAKISplash(canvasId, displayWidth, displayHeight, actualWidth, actualHeight) {
+            const canvas = document.getElementById(canvasId);
+            const ctx = canvas.getContext('2d');
+            
+            // Set canvas size for display
+            canvas.width = displayWidth;
+            canvas.height = displayHeight;
+            
+            // Clear canvas
+            ctx.clearRect(0, 0, displayWidth, displayHeight);
+            
+            // Create background gradient
+            const bgGradient = ctx.createLinearGradient(0, 0, displayWidth, displayHeight);
+            bgGradient.addColorStop(0, '#667eea');
+            bgGradient.addColorStop(0.5, '#764ba2');
+            bgGradient.addColorStop(1, '#f093fb');
+            
+            // Draw background
+            ctx.fillStyle = bgGradient;
+            ctx.fillRect(0, 0, displayWidth, displayHeight);
+            
+            const centerX = displayWidth / 2;
+            const centerY = displayHeight / 2;
+            
+            // Logo container
+            const logoSize = Math.min(displayWidth, displayHeight) * 0.25;
+            const logoY = centerY - displayHeight * 0.1;
+            
+            // Draw logo background
+            ctx.beginPath();
+            ctx.arc(centerX, logoY, logoSize / 2, 0, 2 * Math.PI);
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+            ctx.fill();
+            
+            // Draw logo border
+            ctx.strokeStyle = 'white';
+            ctx.lineWidth = logoSize * 0.06;
+            ctx.stroke();
+            
+            // Draw AKI text
+            ctx.fillStyle = bgGradient;
+            ctx.font = `bold ${logoSize * 0.35}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('AKI', centerX, logoY + logoSize * 0.05);
+            
+            // Draw subtitle
+            ctx.fillStyle = 'white';
+            ctx.font = `${displayWidth * 0.025}px Arial`;
+            ctx.fillText('Conecta Personal', centerX, logoY + logoSize * 0.8);
+        }
+        
+        function downloadIcon(canvasId, filename, folder) {
+            const canvas = document.getElementById(canvasId);
+            const link = document.createElement('a');
+            link.download = filename;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+            
+            console.log(`📱 Descarga: ${filename}`);
+            console.log(`📁 Colocar en: ${folder}${filename}`);
+        }
+        
+        function downloadSplash(canvasId, filename, folder) {
+            // Create full-size canvas for download
+            const displayCanvas = document.getElementById(canvasId);
+            const downloadCanvas = document.createElement('canvas');
+            downloadCanvas.width = 1242;
+            downloadCanvas.height = 2208;
+            const ctx = downloadCanvas.getContext('2d');
+            
+            // Create background gradient
+            const bgGradient = ctx.createLinearGradient(0, 0, 1242, 2208);
+            bgGradient.addColorStop(0, '#667eea');
+            bgGradient.addColorStop(0.5, '#764ba2');
+            bgGradient.addColorStop(1, '#f093fb');
+            
+            // Draw background
+            ctx.fillStyle = bgGradient;
+            ctx.fillRect(0, 0, 1242, 2208);
+            
+            const centerX = 1242 / 2;
+            const centerY = 2208 / 2;
+            
+            // Logo container
+            const logoSize = 310; // 1242 * 0.25
+            const logoY = centerY - 2208 * 0.1;
+            
+            // Draw logo background
+            ctx.beginPath();
+            ctx.arc(centerX, logoY, logoSize / 2, 0, 2 * Math.PI);
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+            ctx.fill();
+            
+            // Draw logo border
+            ctx.strokeStyle = 'white';
+            ctx.lineWidth = 18;
+            ctx.stroke();
+            
+            // Draw AKI text
+            ctx.fillStyle = bgGradient;
+            ctx.font = 'bold 108px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('AKI', centerX, logoY + 15);
+            
+            // Draw subtitle
+            ctx.fillStyle = 'white';
+            ctx.font = '31px Arial';
+            ctx.fillText('Conecta Personal', centerX, logoY + 155);
+            
+            // Download
+            const link = document.createElement('a');
+            link.download = filename;
+            link.href = downloadCanvas.toDataURL('image/png');
+            link.click();
+            
+            console.log(`🖼️ Descarga: ${filename}`);
+            console.log(`📁 Colocar en: ${folder}${filename}`);
+        }
+        
+        // Draw all icons when page loads
+        window.onload = function() {
+            drawAKIIcon('icon48', 48);
+            drawAKIIcon('icon72', 72);
+            drawAKIIcon('icon96', 96);
+            drawAKIIcon('icon144', 144);
+            drawAKIIcon('icon192', 192);
+            drawAKISplash('splash', 400, 710, 1242, 2208);
+        };
+    </script>
+</body>
+</html>
