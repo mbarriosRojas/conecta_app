@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 108 108" width="108" height="108">
+  <defs>
+    <linearGradient id="primaryGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="accentGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#f093fb;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#f5576c;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="108" height="108" rx="24" fill="url(#primaryGradient)"/>
+  
+  <!-- AKI Text -->
+  <text x="54" y="68" font-family="Arial, sans-serif" font-size="32" font-weight="bold" 
+        text-anchor="middle" fill="white">AKI</text>
+  
+  <!-- Decorative dots -->
+  <circle cx="30" cy="30" r="3" fill="url(#accentGradient)" opacity="0.8"/>
+  <circle cx="78" cy="30" r="3" fill="url(#accentGradient)" opacity="0.8"/>
+  <circle cx="30" cy="78" r="3" fill="url(#accentGradient)" opacity="0.8"/>
+  <circle cx="78" cy="78" r="3" fill="url(#accentGradient)" opacity="0.8"/>
+  
+  <!-- Central dot -->
+  <circle cx="54" cy="54" r="2" fill="white" opacity="0.9"/>
+</svg>

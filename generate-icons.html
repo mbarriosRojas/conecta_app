@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>AKI Icon Generator</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .icon-container { margin: 20px 0; }
+        canvas { border: 1px solid #ccc; margin: 10px; }
+        .download-btn { 
+            background: #667eea; 
+            color: white; 
+            border: none; 
+            padding: 10px 20px; 
+            border-radius: 5px; 
+            cursor: pointer; 
+            margin: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>AKI Icon Generator</h1>
+    
+    <div class="icon-container">
+        <h3>48x48 (mdpi)</h3>
+        <canvas id="icon48" width="48" height="48"></canvas>
+        <button class="download-btn" onclick="downloadIcon('icon48', 'ic_launcher_48.png')">Download 48x48</button>
+    </div>
+    
+    <div class="icon-container">
+        <h3>72x72 (hdpi)</h3>
+        <canvas id="icon72" width="72" height="72"></canvas>
+        <button class="download-btn" onclick="downloadIcon('icon72', 'ic_launcher_72.png')">Download 72x72</button>
+    </div>
+    
+    <div class="icon-container">
+        <h3>96x96 (xhdpi)</h3>
+        <canvas id="icon96" width="96" height="96"></canvas>
+        <button class="download-btn" onclick="downloadIcon('icon96', 'ic_launcher_96.png')">Download 96x96</button>
+    </div>
+    
+    <div class="icon-container">
+        <h3>144x144 (xxhdpi)</h3>
+        <canvas id="icon144" width="144" height="144"></canvas>
+        <button class="download-btn" onclick="downloadIcon('icon144', 'ic_launcher_144.png')">Download 144x144</button>
+    </div>
+    
+    <div class="icon-container">
+        <h3>192x192 (xxxhdpi)</h3>
+        <canvas id="icon192" width="192" height="192"></canvas>
+        <button class="download-btn" onclick="downloadIcon('icon192', 'ic_launcher_192.png')">Download 192x192</button>
+    </div>
+
+    <script>
+        function drawAKIIcon(canvasId, size) {
+            const canvas = document.getElementById(canvasId);
+            const ctx = canvas.getContext('2d');
+            
+            // Clear canvas
+            ctx.clearRect(0, 0, size, size);
+            
+            // Create gradient
+            const gradient = ctx.createLinearGradient(0, 0, size, size);
+            gradient.addColorStop(0, '#667eea');
+            gradient.addColorStop(1, '#764ba2');
+            
+            // Draw background circle
+            const centerX = size / 2;
+            const centerY = size / 2;
+            const radius = size * 0.45;
+            
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+            ctx.fillStyle = gradient;
+            ctx.fill();
+            
+            // Draw border
+            ctx.strokeStyle = 'white';
+            ctx.lineWidth = size * 0.04;
+            ctx.stroke();
+            
+            // Draw AKI text
+            ctx.fillStyle = 'white';
+            ctx.font = `bold ${size * 0.25}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('AKI', centerX, centerY);
+            
+            // Draw decorative dots
+            const dotSize = size * 0.03;
+            const dotDistance = size * 0.25;
+            
+            // Accent gradient for dots
+            const dotGradient = ctx.createLinearGradient(0, 0, size, size);
+            dotGradient.addColorStop(0, '#f093fb');
+            dotGradient.addColorStop(1, '#f5576c');
+            
+            // Top left
+            ctx.beginPath();
+            ctx.arc(centerX - dotDistance, centerY - dotDistance, dotSize, 0, 2 * Math.PI);
+            ctx.fillStyle = dotGradient;
+            ctx.globalAlpha = 0.8;
+            ctx.fill();
+            
+            // Top right
+            ctx.beginPath();
+            ctx.arc(centerX + dotDistance, centerY - dotDistance, dotSize, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            // Bottom left
+            ctx.beginPath();
+            ctx.arc(centerX - dotDistance, centerY + dotDistance, dotSize, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            // Bottom right
+            ctx.beginPath();
+            ctx.arc(centerX + dotDistance, centerY + dotDistance, dotSize, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            // Center dot
+            ctx.globalAlpha = 0.9;
+            ctx.fillStyle = 'white';
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, dotSize * 0.7, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            ctx.globalAlpha = 1;
+        }
+        
+        function downloadIcon(canvasId, filename) {
+            const canvas = document.getElementById(canvasId);
+            const link = document.createElement('a');
+            link.download = filename;
+            link.href = canvas.toDataURL();
+            link.click();
+        }
+        
+        // Draw all icons
+        window.onload = function() {
+            drawAKIIcon('icon48', 48);
+            drawAKIIcon('icon72', 72);
+            drawAKIIcon('icon96', 96);
+            drawAKIIcon('icon144', 144);
+            drawAKIIcon('icon192', 192);
+        };
+    </script>
+</body>
+</html>

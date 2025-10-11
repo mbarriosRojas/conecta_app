@@ -1,8 +1,8 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'aki_app.app',
-  appName: 'Infinity Providers',
+  appId: 'com.aki.conectapersonal',
+  appName: 'AKI',
   webDir: 'www',
   server: {
     androidScheme: 'https'
@@ -19,7 +19,20 @@ const config: CapacitorConfig = {
     },
     StatusBar: {
       style: 'default',
-      backgroundColor: '#ffffff'
+      backgroundColor: '#667eea'
+    },
+    SplashScreen: {
+      launchShowDuration: 3000,
+      launchAutoHide: true,
+      backgroundColor: '#667eea',
+      androidSplashResourceName: 'splash',
+      androidScaleType: 'CENTER_CROP',
+      showSpinner: false,
+      androidSpinnerStyle: 'large',
+      iosSpinnerStyle: 'small',
+      spinnerColor: '#ffffff',
+      splashFullScreen: true,
+      splashImmersive: true
     }
   }
 };

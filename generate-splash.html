@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>AKI Splash Screen Generator</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .splash-container { margin: 20px 0; }
+        canvas { border: 1px solid #ccc; margin: 10px; }
+        .download-btn { 
+            background: #667eea; 
+            color: white; 
+            border: none; 
+            padding: 10px 20px; 
+            border-radius: 5px; 
+            cursor: pointer; 
+            margin: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>AKI Splash Screen Generator</h1>
+    
+    <div class="splash-container">
+        <h3>Phone Portrait (1242x2208)</h3>
+        <canvas id="splashPhone" width="1242" height="2208"></canvas>
+        <button class="download-btn" onclick="downloadSplash('splashPhone', 'splash_phone.png')">Download Phone</button>
+    </div>
+    
+    <div class="splash-container">
+        <h3>Phone Landscape (2208x1242)</h3>
+        <canvas id="splashPhoneLand" width="2208" height="1242"></canvas>
+        <button class="download-btn" onclick="downloadSplash('splashPhoneLand', 'splash_phone_land.png')">Download Phone Landscape</button>
+    </div>
+    
+    <div class="splash-container">
+        <h3>Tablet Portrait (1536x2048)</h3>
+        <canvas id="splashTablet" width="1536" height="2048"></canvas>
+        <button class="download-btn" onclick="downloadSplash('splashTablet', 'splash_tablet.png')">Download Tablet</button>
+    </div>
+    
+    <div class="splash-container">
+        <h3>Tablet Landscape (2048x1536)</h3>
+        <canvas id="splashTabletLand" width="2048" height="1536"></canvas>
+        <button class="download-btn" onclick="downloadSplash('splashTabletLand', 'splash_tablet_land.png')">Download Tablet Landscape</button>
+    </div>
+
+    <script>
+        function drawAKISplash(canvasId, width, height) {
+            const canvas = document.getElementById(canvasId);
+            const ctx = canvas.getContext('2d');
+            
+            // Clear canvas
+            ctx.clearRect(0, 0, width, height);
+            
+            // Create background gradient
+            const bgGradient = ctx.createLinearGradient(0, 0, width, height);
+            bgGradient.addColorStop(0, '#667eea');
+            bgGradient.addColorStop(0.5, '#764ba2');
+            bgGradient.addColorStop(1, '#f093fb');
+            
+            // Draw background
+            ctx.fillStyle = bgGradient;
+            ctx.fillRect(0, 0, width, height);
+            
+            // Draw decorative background circles
+            const centerX = width / 2;
+            const centerY = height / 2;
+            
+            // Background circles
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+            ctx.beginPath();
+            ctx.arc(width * 0.15, height * 0.18, width * 0.12, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            ctx.beginPath();
+            ctx.arc(width * 0.85, height * 0.25, width * 0.15, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            ctx.beginPath();
+            ctx.arc(width * 0.25, height * 0.82, width * 0.14, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            ctx.beginPath();
+            ctx.arc(width * 0.75, height * 0.75, width * 0.10, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            // Logo container
+            const logoSize = Math.min(width, height) * 0.25;
+            const logoX = centerX;
+            const logoY = centerY - height * 0.1;
+            
+            // Create logo gradient
+            const logoGradient = ctx.createLinearGradient(0, 0, logoSize, logoSize);
+            logoGradient.addColorStop(0, '#ffffff');
+            logoGradient.addColorStop(1, '#f8f9fa');
+            
+            // Draw logo background
+            ctx.beginPath();
+            ctx.arc(logoX, logoY, logoSize / 2, 0, 2 * Math.PI);
+            ctx.fillStyle = logoGradient;
+            ctx.fill();
+            
+            // Add shadow effect
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+            ctx.shadowBlur = 20;
+            ctx.shadowOffsetX = 0;
+            ctx.shadowOffsetY = 10;
+            
+            // Draw logo border
+            ctx.strokeStyle = 'white';
+            ctx.lineWidth = logoSize * 0.06;
+            ctx.stroke();
+            
+            // Reset shadow
+            ctx.shadowColor = 'transparent';
+            ctx.shadowBlur = 0;
+            ctx.shadowOffsetX = 0;
+            ctx.shadowOffsetY = 0;
+            
+            // Draw AKI text
+            ctx.fillStyle = bgGradient;
+            ctx.font = `bold ${logoSize * 0.35}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            
+            // Add glow effect
+            ctx.shadowColor = '#667eea';
+            ctx.shadowBlur = 15;
+            ctx.fillText('AKI', logoX, logoY + logoSize * 0.05);
+            
+            // Reset shadow
+            ctx.shadowColor = 'transparent';
+            ctx.shadowBlur = 0;
+            
+            // Draw subtitle
+            ctx.fillStyle = 'white';
+            ctx.font = `${width * 0.025}px Arial`;
+            ctx.fillText('Conecta Personal', centerX, logoY + logoSize * 0.8);
+            
+            // Draw decorative dots around logo
+            const dotSize = logoSize * 0.08;
+            const dotDistance = logoSize * 0.6;
+            
+            // Accent gradient for dots
+            const dotGradient = ctx.createLinearGradient(0, 0, dotSize, dotSize);
+            dotGradient.addColorStop(0, '#f093fb');
+            dotGradient.addColorStop(1, '#f5576c');
+            
+            ctx.fillStyle = dotGradient;
+            ctx.globalAlpha = 0.8;
+            
+            // Draw decorative dots
+            ctx.beginPath();
+            ctx.arc(logoX - dotDistance, logoY - dotDistance, dotSize, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            ctx.beginPath();
+            ctx.arc(logoX + dotDistance, logoY - dotDistance, dotSize, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            ctx.beginPath();
+            ctx.arc(logoX - dotDistance, logoY + dotDistance, dotSize, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            ctx.beginPath();
+            ctx.arc(logoX + dotDistance, logoY + dotDistance, dotSize, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            // Center dot
+            ctx.globalAlpha = 0.9;
+            ctx.fillStyle = bgGradient;
+            ctx.beginPath();
+            ctx.arc(logoX, logoY, dotSize * 0.7, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            // Loading indicator at bottom
+            const loadingY = height * 0.85;
+            const loadingSize = width * 0.008;
+            
+            ctx.globalAlpha = 0.7;
+            ctx.fillStyle = 'white';
+            
+            ctx.beginPath();
+            ctx.arc(centerX, loadingY, loadingSize * 2, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            ctx.globalAlpha = 0.5;
+            ctx.beginPath();
+            ctx.arc(centerX + loadingSize * 4, loadingY, loadingSize * 1.5, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            ctx.globalAlpha = 0.3;
+            ctx.beginPath();
+            ctx.arc(centerX + loadingSize * 8, loadingY, loadingSize, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            ctx.globalAlpha = 1;
+        }
+        
+        function downloadSplash(canvasId, filename) {
+            const canvas = document.getElementById(canvasId);
+            const link = document.createElement('a');
+            link.download = filename;
+            link.href = canvas.toDataURL();
+            link.click();
+        }
+        
+        // Draw all splash screens
+        window.onload = function() {
+            drawAKISplash('splashPhone', 1242, 2208);
+            drawAKISplash('splashPhoneLand', 2208, 1242);
+            drawAKISplash('splashTablet', 1536, 2048);
+            drawAKISplash('splashTabletLand', 2048, 1536);
+        };
+    </script>
+</body>
+</html>
