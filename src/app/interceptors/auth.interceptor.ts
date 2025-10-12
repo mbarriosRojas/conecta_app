@@ -29,8 +29,11 @@ export class AuthInterceptor implements HttpInterceptor {
       '/api/users/login',
       '/api/users/register_user',
       '/api/provider/addView',
-             '/api/users/auth/google', // 🔥 Endpoint de Google Auth
-             '/api/users/auth/add-password' // 🔧 Endpoint para agregar contraseña
+      '/api/users/auth/google', // 🔥 Endpoint de Google Auth
+      '/api/users/auth/add-password', // 🔧 Endpoint para agregar contraseña
+      '/api/geofencing/promotions/nearby', // 🚀 Promociones públicas
+      '/api/geofencing/promotions', // 🚀 Promociones públicas
+      '/api/provider/provider/' // 🚀 Detalle de provider público
     ];
 
     // Verificar si es una ruta pública

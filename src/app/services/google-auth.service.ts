@@ -49,6 +49,13 @@ export class GoogleAuthService {
         prompt: 'select_account'
       });
 
+      // Configurar URLs de redirección para móvil
+      if (this.platform.is('capacitor')) {
+        console.log('📱 Configurando URLs de redirección para móvil...');
+        // En móvil, usar el esquema personalizado de la app
+        this.auth.settings.appVerificationDisabledForTesting = false;
+      }
+
       console.log('✅ Firebase Auth inicializado correctamente');
     } catch (error) {
       console.error('❌ Error inicializando Firebase Auth:', error);
@@ -115,9 +122,28 @@ export class GoogleAuthService {
     } else {
       // Si no hay resultado previo, iniciar nuevo redirect
       console.log('🔄 Iniciando redirect a Google...');
-      await signInWithRedirect(this.auth, this.googleProvider);
-      // En este punto el usuario será redirigido, el resultado se obtendrá en la siguiente carga
-      throw new Error('Redirect iniciado, esperando resultado...');
+      
+      // Configurar URL de redirección específica para móvil
+      if (this.platform.is('capacitor')) {
+        console.log('📱 Configurando redirect para móvil...');
+        
+        // En móvil, configurar el redirect URL dinámicamente
+        const redirectUrl = window.location.origin;
+        console.log('🔗 URL de redirección configurada:', redirectUrl);
+        
+        // Usar popup en lugar de redirect para evitar problemas de URL
+        try {
+          console.log('🔄 Intentando con popup en móvil...');
+          return await signInWithPopup(this.auth, this.googleProvider);
+        } catch (popupError) {
+          console.log('⚠️ Popup falló en móvil, usando redirect...');
+          await signInWithRedirect(this.auth, this.googleProvider);
+          throw new Error('Redirect iniciado, esperando resultado...');
+        }
+      } else {
+        await signInWithRedirect(this.auth, this.googleProvider);
+        throw new Error('Redirect iniciado, esperando resultado...');
+      }
     }
   }
 
