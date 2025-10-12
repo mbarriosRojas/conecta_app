@@ -29,15 +29,29 @@
     <!-- Formulario único sin tabs -->
     <form #loginForm="ngForm" (ngSubmit)="onSubmit()" class="form">
       
-      <!-- Nombre completo (solo en registro) -->
+      <!-- Nombre (solo en registro) -->
       <div class="form-group" *ngIf="!isLogin" [@slideIn]>
         <ion-item class="custom-item">
           <ion-icon name="person-outline" slot="start" class="form-icon"></ion-icon>
           <ion-input 
             type="text"
-            placeholder="Nombre completo"
-            [(ngModel)]="formData.fullName"
-            name="fullName"
+            placeholder="Nombre"
+            [(ngModel)]="formData.name"
+            name="name"
+            required>
+          </ion-input>
+        </ion-item>
+      </div>
+
+      <!-- Apellido (solo en registro) -->
+      <div class="form-group" *ngIf="!isLogin" [@slideIn]>
+        <ion-item class="custom-item">
+          <ion-icon name="person-outline" slot="start" class="form-icon"></ion-icon>
+          <ion-input 
+            type="text"
+            placeholder="Apellido"
+            [(ngModel)]="formData.lastname"
+            name="lastname"
             required>
           </ion-input>
         </ion-item>

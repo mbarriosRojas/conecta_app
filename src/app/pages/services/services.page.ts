@@ -7,6 +7,7 @@ import { IonicModule } from '@ionic/angular';
 import { ApiService } from '../../services/api.service';
 import { AuthService } from '../../services/auth.service';
 import { StorageService } from '../../services/storage.service';
+import { CacheService } from '../../services/cache.service';
 import { Provider } from '../../models/provider.model';
 import { firstValueFrom } from 'rxjs';
 
@@ -26,6 +27,7 @@ export class ServicesPage implements OnInit {
     private apiService: ApiService,
     private authService: AuthService,
     private storageService: StorageService,
+    private cacheService: CacheService,
     private loadingController: LoadingController,
     private toastController: ToastController,
     private alertController: AlertController
@@ -46,7 +48,17 @@ export class ServicesPage implements OnInit {
 
     try {
       console.log('Services - Calling getUserProviders API');
-      const response = await this.apiService.getUserProviders();
+      
+      // Usar Network-First con timeout corto para servicios del usuario
+      const response = await this.cacheService.networkFirst(
+        'user_services',
+        'user_services',
+        async () => {
+          return await this.apiService.getUserProviders();
+        },
+        { timeout: 5000 }
+      );
+      
       console.log('Services - getUserProviders response:', response);
       
       if (response?.data) {
@@ -64,6 +76,10 @@ export class ServicesPage implements OnInit {
   }
 
   async refresh(event?: any) {
+    // Invalidar cache para forzar carga fresca
+    await this.cacheService.invalidateCache('user_services');
+    await this.cacheService.invalidateCacheByPattern('providers_page');
+    
     await this.loadUserProviders();
     if (event) {
       event.target.complete();

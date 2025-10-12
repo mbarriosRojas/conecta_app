@@ -20,7 +20,7 @@
         
         <!-- Botón de Promociones -->
         <ion-button fill="clear" (click)="goToPromotionsPage()" class="promotions-button">
-          <ion-icon name="gift" color="tertiary"></ion-icon>
+          <ion-icon name="megaphone" color="tertiary"></ion-icon>
         </ion-button>
         
         <!-- Botón de filtro al lado del buscador -->
@@ -96,10 +96,10 @@
   <!-- Banner de Promociones Cercanas -->
   <div class="promotions-banner" (click)="goToPromotionsPage()">
     <div class="banner-icon">
-      <ion-icon name="gift"></ion-icon>
+      <ion-icon name="megaphone"></ion-icon>
     </div>
     <div class="banner-content">
-      <h3>🎁 Promociones Cerca de Ti</h3>
+      <h3>📢 Promociones Cerca de Ti</h3>
       <p>Descubre ofertas exclusivas en tu zona</p>
     </div>
     <ion-icon name="chevron-forward" class="banner-arrow"></ion-icon>
@@ -135,11 +135,11 @@
               <ion-icon [name]="getPromotionIcon(item.data.type)" color="tertiary"></ion-icon>
             </div>
             <div class="promo-content">
-              <h4>🎁 {{ item.data.businessName }}</h4>
+              <h4>📢 {{ item.data.businessName }}</h4>
               <p class="promo-text">{{ item.data.text }}</p>
               <div class="promo-meta">
                 <ion-badge color="tertiary" mode="ios">
-                  <ion-icon name="pricetag"></ion-icon>
+                  <ion-icon name="megaphone"></ion-icon>
                   Promoción
                 </ion-badge>
                 <span class="promo-distance">
@@ -276,14 +276,14 @@
   <div class="load-more-container" *ngIf="hasMoreData && !isLoading && !isLoadingMore">
     <ion-button 
       size="small"
-      fill="outline" 
+      fill="clear" 
       color="primary"
       (click)="loadMoreProviders()"
       [disabled]="isLoadingMore"
       class="load-more-button">
       <ion-spinner *ngIf="isLoadingMore" name="crescent" slot="start"></ion-spinner>
-      <ion-icon *ngIf="!isLoadingMore" name="add-circle-outline" slot="start"></ion-icon>
-      {{ isLoadingMore ? 'Cargando...' : 'Ver más servicios' }}
+      <ion-icon *ngIf="!isLoadingMore" name="chevron-down" slot="start"></ion-icon>
+      {{ isLoadingMore ? 'Cargando...' : 'Ver más' }}
     </ion-button>
   </div>
 

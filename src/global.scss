@@ -66,3 +66,170 @@ ion-app {
   --ion-safe-area-left: env(safe-area-inset-left);
   --ion-safe-area-right: env(safe-area-inset-right);
 }
+
+/* 🌙 Dark Mode - Variables personalizadas */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --whatsapp-background: #1a1a1a;
+    --whatsapp-border: #2d2d2d;
+    --light-gray: #2d2d2d;
+    --medium-gray: #a0a0a0;
+    --dark-gray: #e5e5e5;
+    --selected-purple: #9b59b6;
+  }
+
+  /* Headers con gradiente suave en modo oscuro */
+  ion-header {
+    ion-toolbar {
+      --background: linear-gradient(135deg, #2d2440 0%, #3d3450 100%) !important;
+      background: linear-gradient(135deg, #2d2440 0%, #3d3450 100%) !important;
+      --color: #c4b5fd !important;
+      
+      ion-title {
+        --color: #c4b5fd !important;
+      }
+      
+      ion-back-button, ion-button {
+        --color: #c4b5fd !important;
+        --color-focused: #d8ccff !important;
+        --color-hover: #d8ccff !important;
+      }
+    }
+  }
+
+  /* Contenido general */
+  ion-content {
+    --background: #1a1a1a;
+  }
+
+  /* Cards y containers */
+  ion-card, .whatsapp-service-item, .promotion-card, .service-card {
+    --background: #2d2d2d;
+    background: #2d2d2d;
+    border-color: #404040 !important;
+  }
+
+  /* Search bars */
+  ion-searchbar {
+    --background: #2d2d2d;
+    --color: #e5e5e5;
+    --placeholder-color: #a0a0a0;
+    --icon-color: #a0a0a0;
+  }
+
+  /* Inputs y selects */
+  ion-input, ion-textarea, ion-select {
+    --background: #2d2d2d;
+    --color: #e5e5e5;
+    --placeholder-color: #a0a0a0;
+  }
+
+  /* Items */
+  ion-item {
+    --background: #2d2d2d;
+    --color: #e5e5e5;
+    --border-color: #404040;
+  }
+
+  /* Modales */
+  ion-modal {
+    --background: #1a1a1a;
+    
+    ion-toolbar {
+      --background: #2d2d2d;
+      --color: #e5e5e5;
+    }
+  }
+
+  /* Buttons */
+  ion-button {
+    --background: #3d3d3d;
+    --color: #e5e5e5;
+  }
+
+  /* Categorías en modo oscuro */
+  .whatsapp-category-pill {
+    background: #2d2d2d !important;
+    
+    &.selected {
+      background: var(--selected-purple) !important;
+    }
+    
+    .category-name {
+      color: #e5e5e5 !important;
+    }
+  }
+
+  /* Promociones en modo oscuro */
+  .mini-promotion-card, .promotions-banner {
+    background: linear-gradient(135deg, #4a4a6a 0%, #5a5a7a 100%) !important;
+  }
+
+  /* Control de radio en promociones */
+  .radius-control {
+    background: linear-gradient(135deg, #2d2440 0%, #3d3450 100%) !important;
+    
+    h3, p, ion-icon {
+      color: #c4b5fd !important;
+    }
+  }
+
+  /* Textos generales */
+  h1, h2, h3, h4, h5, h6, p, span, div {
+    &:not([color]) {
+      color: #e5e5e5;
+    }
+  }
+
+  /* Loading containers */
+  .loading-container, .empty-state, .no-results {
+    background: #1a1a1a;
+    
+    h2, p {
+      color: #e5e5e5;
+    }
+  }
+
+  /* Banners */
+  .promotional-banner {
+    background: linear-gradient(135deg, #3d3d3d 0%, #4a4a4a 100%) !important;
+  }
+
+  /* Service items */
+  .whatsapp-service-item {
+    background: #2d2d2d;
+    border-bottom: 1px solid #404040 !important;
+    
+    &:hover {
+      background: #3d3d3d !important;
+    }
+    
+    &:active {
+      background: #353535 !important;
+    }
+  }
+
+  /* Profile page */
+  .profile-container {
+    background: #1a1a1a;
+  }
+
+  .data-item {
+    background: #2d2d2d;
+    border-color: #404040;
+    
+    .label {
+      color: #a0a0a0;
+    }
+    
+    .value {
+      color: #e5e5e5;
+    }
+  }
+
+  /* Buttons "Ver más" */
+  .load-more-container {
+    background: #1a1a1a;
+    border-top: 1px solid #404040;
+  }
+}

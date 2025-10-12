@@ -110,12 +110,32 @@ export class GoogleAuthService {
     const redirectResult = await getRedirectResult(this.auth);
     
     if (redirectResult) {
+      console.log('✅ Resultado de redirect obtenido:', redirectResult.user.email);
       return redirectResult;
     } else {
       // Si no hay resultado previo, iniciar nuevo redirect
+      console.log('🔄 Iniciando redirect a Google...');
       await signInWithRedirect(this.auth, this.googleProvider);
       // En este punto el usuario será redirigido, el resultado se obtendrá en la siguiente carga
       throw new Error('Redirect iniciado, esperando resultado...');
+    }
+  }
+
+  /**
+   * Verificar si hay un resultado de redirect pendiente
+   */
+  async checkRedirectResult(): Promise<UserCredential | null> {
+    try {
+      const redirectResult = await getRedirectResult(this.auth);
+      if (redirectResult) {
+        console.log('✅ Resultado de redirect encontrado:', redirectResult.user.email);
+        this.currentUser = redirectResult.user;
+        return redirectResult;
+      }
+      return null;
+    } catch (error) {
+      console.error('❌ Error verificando redirect result:', error);
+      return null;
     }
   }
 

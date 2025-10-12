@@ -5,6 +5,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { IonicModule } from '@ionic/angular';
 import { ApiService } from '../../services/api.service';
+import { CacheService } from '../../services/cache.service';
 import { Category, Provider, Question } from '../../models/provider.model';
 import { MapAddressComponent, AddressData } from '../../components/map-address/map-address.component';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
@@ -157,6 +158,7 @@ export class EditServicePage implements OnInit {
     private route: ActivatedRoute,
     public router: Router,
     private apiService: ApiService,
+    private cacheService: CacheService,
     private loadingController: LoadingController,
     private toastController: ToastController,
     private alertController: AlertController,
@@ -611,6 +613,11 @@ export class EditServicePage implements OnInit {
       const response = await this.apiService.updateUserProvider(this.providerId, formData).toPromise();
       
       if (response) {
+        // 🚀 INVALIDAR CACHE para que se muestre inmediatamente
+        await this.cacheService.invalidateCacheByPattern('providers_page');
+        await this.cacheService.invalidateCache('user_services');
+        await this.cacheService.invalidateCache(`provider_detail_${this.providerId}`);
+        
         this.showSuccessToast('Servicio actualizado correctamente');
         this.router.navigate(['/tabs/services']);
       }

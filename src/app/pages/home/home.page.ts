@@ -5,9 +5,11 @@ import { Router } from '@angular/router';
 import { take } from 'rxjs/operators';
 import { firstValueFrom } from 'rxjs';
 import { IonContent, IonRefresher, LoadingController, ToastController, AlertController, IonicModule } from '@ionic/angular';
+import { Keyboard } from '@capacitor/keyboard';
 import { ApiService } from '../../services/api.service';
 import { LocationService, LocationData } from '../../services/location.service';
 import { StorageService } from '../../services/storage.service';
+import { CacheService } from '../../services/cache.service';
 import { GeocodingService, LocationSuggestion } from '../../services/geocoding.service';
 import { PermissionService } from '../../services/permission.service';
 import { GeofencingService } from '../../services/geofencing.service';
@@ -113,6 +115,7 @@ export class HomePage implements OnInit, AfterViewInit {
     private apiService: ApiService,
     private locationService: LocationService,
     private storageService: StorageService,
+    private cacheService: CacheService,
     private geocodingService: GeocodingService,
     private permissionService: PermissionService,
     private geofencingService: GeofencingService,
@@ -341,78 +344,77 @@ export class HomePage implements OnInit, AfterViewInit {
   async loadCategories() {
     console.log('Home - loadCategories started');
     
-    // Primero intentar cargar desde cache
     try {
-      const cachedCategories = await this.storageService.getCategories();
-      if (cachedCategories && cachedCategories.length > 0) {
-        this.categories = cachedCategories;
-        console.log('Home - Using cached categories initially:', this.categories.length);
-        
-        // Reinicializar Swiper inmediatamente con cache
-        setTimeout(() => {
-          this.initializeSwiper();
-        }, 100);
-      }
-    } catch (cacheError) {
-      console.log('Home - No cached categories found');
-    }
-    
-    // Luego intentar cargar desde API en background
-    try {
-      console.log('Home - Fetching categories from API...');
-          // Timeout aumentado a 10 segundos para dar más tiempo
-          const categoriesPromise = firstValueFrom(this.apiService.getCategories());
-          const timeoutPromise = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Categories timeout')), 10000)
-          );
-      
-      const apiCategories = await Promise.race([categoriesPromise, timeoutPromise]) as any[] || [];
-      
-      if (apiCategories.length > 0) {
-        this.categories = apiCategories;
-        await this.storageService.saveCategories(this.categories);
-        console.log('Home - Categories loaded from API:', this.categories.length);
-        
-        // Reinicializar Swiper con nuevas categorías
-        setTimeout(() => {
-          this.initializeSwiper();
-        }, 100);
-      }
-        } catch (error: any) {
-          console.error('Home - Error loading categories from API:', error);
-          console.error('Home - Error details:', {
-            message: error?.message || 'Unknown error',
-            name: error?.name || 'Error',
-            stack: error?.stack
-          });
+      // Usar estrategia Cache-First: muestra cache inmediatamente y actualiza en background
+      this.categories = await this.cacheService.cacheFirst(
+        'categories',
+        'categories',
+        async () => {
+          const categories = await firstValueFrom(this.apiService.getCategories());
           
-          // Si no hay categorías del cache, usar categorías por defecto
-          if (this.categories.length === 0) {
-            console.log('Home - Using default categories due to API error');
-            this.categories = [
-              { _id: '1', name: 'Todos', image: 'assets/icons/grid.svg', background: '#f0f0f0', position: 1, favorite: true } as any,
-              { _id: '2', name: 'Restaurantes', image: 'assets/icons/cutlery.svg', background: '#ff6b6b', position: 2, favorite: true } as any,
-              { _id: '3', name: 'Servicios', image: 'assets/icons/service.svg', background: '#4ecdc4', position: 3, favorite: true } as any
-            ];
-          }
+          // También guardar en el storage antiguo para compatibilidad
+          await this.storageService.saveCategories(categories);
+          
+          return categories;
         }
+      );
+      
+      console.log('Home - Categories loaded:', this.categories.length);
+      
+      // Reinicializar Swiper
+      setTimeout(() => {
+        this.initializeSwiper();
+      }, 100);
+      
+    } catch (error: any) {
+      console.error('Home - Error loading categories:', error);
+      
+      // Fallback a categorías por defecto
+      this.categories = [
+        { _id: '1', name: 'Todos', image: 'assets/icons/grid.svg', background: '#f0f0f0', position: 1, favorite: true } as any,
+        { _id: '2', name: 'Restaurantes', image: 'assets/icons/cutlery.svg', background: '#ff6b6b', position: 2, favorite: true } as any,
+        { _id: '3', name: 'Servicios', image: 'assets/icons/service.svg', background: '#4ecdc4', position: 3, favorite: true } as any
+      ];
+      
+      setTimeout(() => {
+        this.initializeSwiper();
+      }, 100);
+    }
   }
 
   async loadCities() {
     console.log('Home - loadCities started');
     try {
-      this.cities = await firstValueFrom(this.apiService.getCities()) || [];
-      await this.storageService.saveCities(this.cities);
+      // Usar estrategia Cache-First
+      this.cities = await this.cacheService.cacheFirst(
+        'cities',
+        'cities',
+        async () => {
+          const cities = await firstValueFrom(this.apiService.getCities());
+          await this.storageService.saveCities(cities);
+          return cities || [];
+        }
+      );
+      
       console.log('Home - Cities loaded:', this.cities.length);
     } catch (error) {
       console.error('Home - Error loading cities:', error);
+      this.cities = [];
     }
   }
 
   async loadBanners() {
     console.log('Home - loadBanners started');
     try {
-      this.banners = await firstValueFrom(this.apiService.getBanners()) || [];
+      // Usar estrategia Cache-First
+      this.banners = await this.cacheService.cacheFirst(
+        'banners',
+        'banners',
+        async () => {
+          return await firstValueFrom(this.apiService.getBanners()) || [];
+        }
+      );
+      
       console.log('Home - Banners loaded:', this.banners.length);
       
       // Actualizar el fondo del banner con la primera imagen
@@ -431,6 +433,7 @@ export class HomePage implements OnInit, AfterViewInit {
       }, 100);
     } catch (error) {
       console.error('Error loading banners:', error);
+      this.banners = [];
     }
   }
 
@@ -447,11 +450,21 @@ export class HomePage implements OnInit, AfterViewInit {
     
     if (reset) {
       this.currentPage = 1; // Siempre empezar en página 1
-      this.providers = [];
+      
+      // 🚀 OPTIMIZACIÓN: Mostrar cache inmediatamente si existe
+      const cachedProviders = await this.cacheService.getCache<any>('providers_page_1');
+      if (cachedProviders && cachedProviders.data && cachedProviders.data.length > 0) {
+        console.log('⚡ Mostrando providers del cache inmediatamente...');
+        this.providers = cachedProviders.data;
+        this.mixProvidersWithPromotions();
+        // Continuar cargando datos frescos en background
+      } else {
+        this.providers = [];
+      }
+      
       this.hasMoreData = true;
       console.log('Home - Reset providers data, currentPage set to:', this.currentPage);
     }
-    // No incrementar aquí, se hace después de la consulta exitosa
 
     try {
       const currentFilters = { ...this.filters };
@@ -467,7 +480,16 @@ export class HomePage implements OnInit, AfterViewInit {
       console.log('Home - Loading providers with filters:', currentFilters, 'radius:', searchRadius);
       console.log('Home - About to request page:', pageToRequest, '(reset:', reset, ', currentPage:', this.currentPage, ')');
       
-      const response = await firstValueFrom(this.apiService.getProviders(currentFilters, searchRadius));
+      // Usar Network-First con timeout de 5 segundos
+      const cacheKey = `providers_page_${pageToRequest}`;
+      const response = await this.cacheService.networkFirst(
+        cacheKey,
+        'providers',
+        async () => {
+          return await firstValueFrom(this.apiService.getProviders(currentFilters, searchRadius));
+        },
+        { timeout: 5000 }
+      );
       
       console.log('Home - Received response:', response);
       
@@ -524,16 +546,18 @@ export class HomePage implements OnInit, AfterViewInit {
       
     } catch (error) {
       console.error('Home - Error loading providers:', error);
-      this.showErrorToast('Error al cargar proveedores');
-      this.showNoResults = true;
+      
+      // Si hay providers del cache mostrados, no mostrar error
+      if (this.providers.length === 0) {
+        this.showErrorToast('Error al cargar proveedores');
+        this.showNoResults = true;
+      }
     } finally {
       console.log('Home - loadProviders finished, setting isLoading to false');
       this.isLoading = false;
       // No resetear isLoadingMore aquí, se maneja en loadMore
       this.isRefreshing = false;
       this.isExpandingRadius = false;
-      
-        // Estado actualizado correctamente
     }
   }
 
@@ -542,6 +566,14 @@ export class HomePage implements OnInit, AfterViewInit {
     this.searchQuery = query;
     this.filters.search = query;
     await this.storageService.saveFilters(this.filters);
+    
+    // Ocultar el teclado después de buscar
+    try {
+      await Keyboard.hide();
+    } catch (error) {
+      // En navegador web no hay teclado nativo
+      console.log('Keyboard.hide not available in web');
+    }
     
     // Debounce search
     setTimeout(() => {
@@ -567,6 +599,10 @@ export class HomePage implements OnInit, AfterViewInit {
 
   async refresh(event: any) {
     this.isRefreshing = true;
+    
+    // Invalidar cache de providers para forzar carga fresca
+    await this.cacheService.invalidateCacheByPattern('providers_page');
+    
     await this.loadProviders(true);
     event.target.complete();
   }

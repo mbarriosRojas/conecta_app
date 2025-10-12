@@ -4,6 +4,7 @@ import { LoadingController, ToastController, AlertController, ActionSheetControl
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../services/api.service';
+import { CacheService } from '../../services/cache.service';
 import { LocationService, LocationData } from '../../services/location.service';
 import { GeocodingService, LocationSuggestion } from '../../services/geocoding.service';
 import { Provider, Product, Schedule } from '../../models/provider.model';
@@ -142,6 +143,7 @@ export class ProviderDetailPage implements OnInit, AfterViewInit, OnDestroy {
     private route: ActivatedRoute,
     private router: Router,
     private apiService: ApiService,
+    private cacheService: CacheService,
     private locationService: LocationService,
     private loadingController: LoadingController,
     private toastController: ToastController,
@@ -198,19 +200,29 @@ export class ProviderDetailPage implements OnInit, AfterViewInit, OnDestroy {
         throw new Error('ID de proveedor no encontrado');
       }
 
-      this.provider = await this.apiService.getProviderById(
-        providerId,
-        this.currentLocation?.latitude,
-        this.currentLocation?.longitude
-      ).toPromise() || null;
+      // Usar Network-First con timeout corto
+      this.provider = await this.cacheService.networkFirst(
+        `provider_detail_${providerId}`,
+        'provider_detail',
+        async () => {
+          return await this.apiService.getProviderById(
+            providerId,
+            this.currentLocation?.latitude,
+            this.currentLocation?.longitude
+          ).toPromise() || null;
+        },
+        { timeout: 5000 }
+      );
 
       if (this.provider) {
         console.log("data provider....", this.provider);
         // Actualizar URL del mapa
         this.updateMapUrl();
         
-        // Registrar vista del proveedor
-        await this.apiService.addView(providerId).toPromise();
+        // Registrar vista del proveedor (en background, no bloqueante)
+        this.apiService.addView(providerId).toPromise().catch(err => 
+          console.log('View registration failed silently:', err)
+        );
         
         // Cargar productos y categorías
         await this.loadProductCategories();

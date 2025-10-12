@@ -7,7 +7,8 @@ import { AuthService } from '../../services/auth.service';
 import { FirebaseAuthService } from '../../services/firebase-auth.service';
 
 interface FormData {
-  fullName?: string;
+  name?: string;
+  lastname?: string;
   phone?: string;
   email: string;
   password: string;
@@ -37,6 +38,8 @@ export class LoginPage implements OnInit {
   formData: FormData = {
     email: '',
     password: '',
+    name: '',
+    lastname: '',
     phone: '',
     confirmPassword: ''
   };
@@ -51,8 +54,41 @@ export class LoginPage implements OnInit {
     private firebaseAuthService: FirebaseAuthService
   ) {}
 
-  ngOnInit() {
+  async ngOnInit() {
     console.log('🚀 LoginPage: Página de login/registro cargada');
+    
+    // Verificar si hay un resultado de Google redirect pendiente
+    await this.checkGoogleRedirectResult();
+  }
+
+  /**
+   * Verificar si hay un resultado de Google redirect pendiente
+   */
+  private async checkGoogleRedirectResult() {
+    try {
+      const redirectResult = await this.googleAuthService.checkRedirectResult();
+      if (redirectResult) {
+        console.log('✅ Resultado de Google redirect encontrado, procesando...');
+        
+        // Registrar en backend y navegar al home
+        const backendResponse = await this.googleAuthService['registerOrLoginUser'](redirectResult.user);
+        
+        if (backendResponse && backendResponse.token) {
+          // Guardar token usando AuthService
+          await this.authService['setAuthData'](
+            backendResponse.data_user,
+            backendResponse.token
+          );
+          
+          console.log('✅ Login automático exitoso después de redirect');
+          this.showSuccessToast(`¡Bienvenido ${redirectResult.user.displayName || redirectResult.user.email}!`);
+          this.navigateToHome();
+        }
+      }
+    } catch (error: any) {
+      console.error('❌ Error procesando redirect result:', error);
+      // No mostrar error al usuario, es normal que no haya redirect result
+    }
   }
 
 
@@ -110,8 +146,13 @@ export class LoginPage implements OnInit {
     }
 
     if (!this.isLogin) {
-      if (!this.formData.fullName) {
-        this.showErrorToast('El nombre completo es requerido');
+      if (!this.formData.name) {
+        this.showErrorToast('El nombre es requerido');
+        return false;
+      }
+      
+      if (!this.formData.lastname) {
+        this.showErrorToast('El apellido es requerido');
         return false;
       }
       
@@ -151,17 +192,13 @@ export class LoginPage implements OnInit {
     console.log('📝 Realizando registro...');
     
     try {
-      const nameParts = (this.formData.fullName || '').split(' ');
-      const name = nameParts[0] || '';
-      const lastname = nameParts.slice(1).join(' ') || '';
-      
       // Validar que el nombre no esté vacío
-      if (!name.trim()) {
+      if (!this.formData.name?.trim()) {
         throw new Error('El nombre es requerido');
       }
       
       // Validar que el apellido no esté vacío
-      if (!lastname.trim()) {
+      if (!this.formData.lastname?.trim()) {
         throw new Error('El apellido es requerido');
       }
       
@@ -172,8 +209,8 @@ export class LoginPage implements OnInit {
       }
       
       const response = await this.authService.register({
-        name,
-        lastname,
+        name: this.formData.name.trim(),
+        lastname: this.formData.lastname.trim(),
         email: this.formData.email,
         password: this.formData.password,
         phone: phone || undefined // Enviar undefined si está vacío
@@ -318,6 +355,8 @@ export class LoginPage implements OnInit {
     this.formData = { 
       email: this.formData.email, 
       password: '', 
+      name: '',
+      lastname: '',
       phone: '',
       confirmPassword: '' 
     };

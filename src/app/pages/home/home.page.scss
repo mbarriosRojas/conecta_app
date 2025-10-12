@@ -4,7 +4,7 @@
 .home-content {
   --background: #f5f5f5;
   padding: 0;
-  padding-top: env(safe-area-inset-top);
+  --padding-top: 0;
 }
 
 // Header con safe area y diseño suave
@@ -1875,42 +1875,39 @@ ion-col {
 
 // Estilos para el botón "Ver más"
 .load-more-container {
-  padding: 20px;
-  text-align: center;
+  padding: 16px 20px;
+  text-align: right;
   background: #ffffff;
   border-top: 1px solid #e0e0e0;
   margin-top: 10px;
 
   .load-more-button {
-    --border-radius: 12px;
-    --border-width: 2px;
-    --border-color: var(--ion-color-primary);
+    --border-radius: 20px;
     --color: var(--ion-color-primary);
     --background: transparent;
     --background-activated: rgba(var(--ion-color-primary-rgb), 0.1);
-    height: 50px;
-    font-weight: 600;
-    font-size: 16px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    height: 36px;
+    font-weight: 500;
+    font-size: 14px;
+    min-width: auto;
+    padding: 0 16px;
     transition: all 0.3s ease;
 
     &:hover {
       --background: rgba(var(--ion-color-primary-rgb), 0.05);
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     }
 
     &:active {
-      transform: translateY(0);
+      transform: scale(0.95);
     }
 
     ion-icon {
-      font-size: 20px;
-      margin-inline-end: 8px;
+      font-size: 16px;
+      margin-inline-end: 6px;
     }
 
     ion-spinner {
-      margin-inline-end: 8px;
+      margin-inline-end: 6px;
     }
   }
 }
