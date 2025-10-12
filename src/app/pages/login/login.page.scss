@@ -1,0 +1,369 @@
+.login-content {
+  --background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+// Background decorativo
+.background-shapes {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1;
+  overflow: hidden;
+
+  .shape {
+    position: absolute;
+    border-radius: 50%;
+    opacity: 0.1;
+    animation: float 6s ease-in-out infinite;
+
+    &.shape-1 {
+      width: 200px;
+      height: 200px;
+      background: white;
+      top: -50px;
+      right: -50px;
+      animation-delay: 0s;
+    }
+
+    &.shape-2 {
+      width: 150px;
+      height: 150px;
+      background: white;
+      bottom: 100px;
+      left: -30px;
+      animation-delay: 2s;
+    }
+
+    &.shape-3 {
+      width: 100px;
+      height: 100px;
+      background: white;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      animation-delay: 4s;
+    }
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-20px) rotate(180deg);
+  }
+}
+
+// Sección del logo
+.logo-section {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  padding: 60px 20px 40px;
+  
+  .logo-container {
+    margin-bottom: 20px;
+    
+    .logo-circle {
+      width: 80px;
+      height: 80px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 50%;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(10px);
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      
+      .logo-text {
+        font-size: 32px;
+        font-weight: bold;
+        color: white;
+      }
+    }
+  }
+
+  .app-title {
+    color: white;
+    font-size: 28px;
+    font-weight: 600;
+    margin: 0 0 8px 0;
+  }
+
+  .app-subtitle {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 16px;
+    margin: 0;
+  }
+}
+
+// Contenedor del formulario
+.form-container {
+  position: relative;
+  z-index: 2;
+  background: white;
+  border-radius: 30px 30px 0 0;
+  padding: 30px 20px;
+  margin-top: 20px;
+  min-height: calc(100vh - 280px);
+  box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.1);
+}
+
+// Tabs
+.form-tabs {
+  display: flex;
+  background: #f8f9fa;
+  border-radius: 15px;
+  padding: 4px;
+  margin-bottom: 30px;
+
+  .tab-button {
+    flex: 1;
+    padding: 12px;
+    border: none;
+    background: transparent;
+    border-radius: 12px;
+    font-weight: 500;
+    color: #666;
+    transition: all 0.3s ease;
+
+    &.active {
+      background: white;
+      color: #667eea;
+      box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+    }
+  }
+}
+
+// Formulario
+.form {
+  .form-group {
+    margin-bottom: 20px;
+
+    .custom-item {
+      --background: #f8f9fa;
+      --border-radius: 15px;
+      --padding-start: 16px;
+      --padding-end: 16px;
+      --padding-top: 16px;
+      --padding-bottom: 16px;
+      margin-bottom: 16px;
+      border-radius: 15px;
+
+      .form-icon {
+        color: #667eea;
+        margin-right: 12px;
+      }
+
+      .password-toggle {
+        color: #999;
+        cursor: pointer;
+        padding: 8px;
+      }
+
+      ion-input {
+        --color: #333;
+        --placeholder-color: #999;
+        font-size: 16px;
+      }
+    }
+  }
+
+  .submit-button {
+    --background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --background-hover: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+    --border-radius: 15px;
+    --padding-top: 16px;
+    --padding-bottom: 16px;
+    margin-top: 20px;
+    font-weight: 600;
+    font-size: 16px;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+  }
+}
+
+// Divider
+.divider {
+  position: relative;
+  text-align: center;
+  margin: 30px 0;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: #e0e0e0;
+  }
+
+  span {
+    background: white;
+    padding: 0 20px;
+    color: #999;
+    font-size: 14px;
+    position: relative;
+    z-index: 1;
+  }
+}
+
+// Botón de Google
+.google-button {
+  --border-color: #ddd;
+  --color: #333;
+  --border-radius: 15px;
+  --padding-top: 16px;
+  --padding-bottom: 16px;
+  margin-bottom: 20px;
+  font-weight: 500;
+  font-size: 16px;
+
+  ion-icon {
+    color: #4285f4;
+    margin-right: 8px;
+  }
+}
+
+// Olvidé mi contraseña
+.forgot-password {
+  text-align: center;
+  margin-top: 20px;
+
+  .forgot-link {
+    background: none;
+    border: none;
+    color: #667eea;
+    font-size: 14px;
+    text-decoration: underline;
+    cursor: pointer;
+  }
+}
+
+// Footer
+.footer {
+  text-align: center;
+  padding: 20px;
+  color: #666;
+  font-size: 14px;
+
+  .link-button {
+    background: none;
+    border: none;
+    color: #667eea;
+    font-weight: 500;
+    cursor: pointer;
+  }
+}
+
+// Animaciones
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// Responsive
+@media (max-height: 700px) {
+  .logo-section {
+    padding: 40px 20px 20px;
+    
+    .logo-container .logo-circle {
+      width: 60px;
+      height: 60px;
+      
+      .logo-text {
+        font-size: 24px;
+      }
+    }
+    
+    .app-title {
+      font-size: 24px;
+    }
+  }
+  
+  .form-container {
+    padding: 20px;
+    min-height: auto;
+  }
+}
+
+// Estados de carga
+ion-button[disabled] {
+  opacity: 0.6;
+}
+
+// Efectos de hover y focus
+.custom-item:focus-within {
+  --background: #f0f2ff;
+  border: 2px solid rgba(102, 126, 234, 0.2);
+}
+
+// Mejoras de accesibilidad
+.form-icon,
+.password-toggle {
+  transition: color 0.2s ease;
+}
+
+.form-icon:focus,
+.password-toggle:focus {
+  color: #667eea;
+}
+
+// Botón de volver flotante
+.back-fab {
+  top: 20px;
+  left: 20px;
+  z-index: 1000;
+
+  ion-fab-button {
+    --background: rgba(255, 255, 255, 0.9);
+    --background-activated: rgba(255, 255, 255, 0.8);
+    --color: #667eea;
+    --box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    --border-radius: 50%;
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+
+    &:hover {
+      --background: rgba(255, 255, 255, 1);
+      --box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+      transform: scale(1.05);
+    }
+
+    &:active {
+      transform: scale(0.95);
+    }
+
+    ion-icon {
+      font-size: 1.2em;
+    }
+  }
+}
+
+// Animación para el botón flotante
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.back-fab {
+  animation: fadeInUp 0.5s ease-out 0.3s both;
+}

@@ -1,8 +1,92 @@
-// Radius Control
+// Estilos principales - fondo normal
+ion-content {
+  --background: #f5f5f5;
+  --padding-top: env(safe-area-inset-top);
+}
+
+// Animación del fondo
+@keyframes backgroundShift {
+  0%, 100% {
+    transform: translateX(0) translateY(0);
+  }
+  25% {
+    transform: translateX(-10px) translateY(-5px);
+  }
+  50% {
+    transform: translateX(5px) translateY(-10px);
+  }
+  75% {
+    transform: translateX(-5px) translateY(5px);
+  }
+}
+
+// Header con safe area y degradado suave
+ion-header {
+  ion-toolbar {
+    --padding-top: env(safe-area-inset-top);
+    --padding-start: 0;
+    --padding-end: 0;
+    --padding-bottom: 0;
+    --background: linear-gradient(135deg, #e8e4ff 0%, #f3f1ff 100%) !important;
+    background: linear-gradient(135deg, #e8e4ff 0%, #f3f1ff 100%) !important;
+    --color: #5a4fcf;
+    --border-width: 0;
+    --min-height: 56px;
+    
+    ion-title {
+      --color: #5a4fcf;
+      font-weight: 600;
+    }
+    
+    ion-back-button {
+      --color: #5a4fcf;
+      --color-focused: #4a3fb8;
+      --color-hover: #4a3fb8;
+    }
+    
+    ion-button {
+      --color: #5a4fcf;
+      --color-focused: #4a3fb8;
+      --color-hover: #4a3fb8;
+    }
+  }
+}
+
+// Radius Control - Card del slider con fondo suave
 .radius-control {
-  background: var(--ion-color-light);
-  padding: 16px;
+  background: linear-gradient(135deg, #f0edff 0%, #f8f6ff 100%);
+  border: 1px solid #e8e4ff;
+  border-radius: 16px;
+  padding: 20px;
+  margin: 16px;
+  margin-top: 16px;
   margin-bottom: 8px;
+  box-shadow: 0 4px 16px rgba(90, 79, 207, 0.1);
+  position: relative;
+  overflow: hidden;
+  
+  // Fondo animado con partículas sutiles
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: 
+      radial-gradient(circle at 20% 80%, rgba(90, 79, 207, 0.05) 0%, transparent 50%),
+      radial-gradient(circle at 80% 20%, rgba(90, 79, 207, 0.03) 0%, transparent 50%),
+      radial-gradient(circle at 40% 40%, rgba(90, 79, 207, 0.04) 0%, transparent 50%);
+    animation: backgroundShift 20s ease-in-out infinite;
+    z-index: 0;
+  }
+  
+  // Contenido sobre el fondo animado
+  > * {
+    position: relative;
+    z-index: 1;
+    color: #5a4fcf;
+  }
 
   .radius-header {
     display: flex;
@@ -17,6 +101,13 @@
 
       ion-icon {
         font-size: 32px;
+        color: #5a4fcf;
+      }
+      
+      .radius-value {
+        color: #5a4fcf;
+        font-weight: bold;
+        font-size: 18px;
       }
 
       .radius-text {
@@ -137,14 +228,17 @@
 
 // Promotions List
 .promotions-list {
-  padding: 8px;
+  padding: 0 16px 16px 16px;
 
   .promotion-card {
-    background: white;
-    border-radius: 12px;
-    margin-bottom: 12px;
-    padding: 16px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 16px;
+    margin-bottom: 16px;
+    padding: 20px;
+    border-left: 4px solid transparent;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
     transition: all 0.3s ease;
     cursor: pointer;
 
@@ -159,18 +253,28 @@
       gap: 12px;
       margin-bottom: 12px;
 
-      .promotion-number {
-        width: 32px;
-        height: 32px;
-        background: var(--ion-color-primary);
-        color: white;
-        border-radius: 50%;
+      .service-image-container {
+        width: 48px;
+        height: 48px;
+        border-radius: 8px;
+        overflow: hidden;
+        flex-shrink: 0;
+        background: #f5f5f5;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-weight: bold;
-        font-size: 14px;
-        flex-shrink: 0;
+
+        .service-image {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          border-radius: 8px;
+        }
+
+        .service-icon {
+          font-size: 24px;
+          color: #9e9e9e;
+        }
       }
 
       .promotion-info {
@@ -290,11 +394,39 @@
   animation: slideUp 0.3s ease-out;
 
   .info-card {
+    border-radius: 12px;
+    border-left: 4px solid transparent;
+    padding: 16px;
+
     .card-header {
       display: flex;
-      justify-content: space-between;
       align-items: flex-start;
+      gap: 12px;
       margin-bottom: 12px;
+
+      .service-image-container {
+        width: 56px;
+        height: 56px;
+        border-radius: 12px;
+        overflow: hidden;
+        flex-shrink: 0;
+        background: #f5f5f5;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        .service-image {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          border-radius: 12px;
+        }
+
+        .service-icon {
+          font-size: 28px;
+          color: #9e9e9e;
+        }
+      }
 
       .business-info {
         flex: 1;
@@ -308,6 +440,14 @@
           overflow: hidden;
           text-overflow: ellipsis;
           white-space: nowrap;
+        }
+
+        .promotion-type {
+          margin-bottom: 8px;
+
+          ion-badge {
+            font-size: 12px;
+          }
         }
 
         .promotion-meta {

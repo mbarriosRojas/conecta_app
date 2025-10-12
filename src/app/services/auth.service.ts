@@ -172,11 +172,18 @@ export class AuthService {
   async getToken(): Promise<string | null> {
     console.log('AuthService - getToken called');
     
-    // Esperar a que la inicialización termine antes de obtener el token
+    // Esperar a que la inicialización termine antes de obtener el token (con timeout)
     if (this.initializationPromise) {
       console.log('AuthService - getToken: waiting for initialization...');
-      await this.initializationPromise;
-      console.log('AuthService - getToken: initialization completed');
+      try {
+        await Promise.race([
+          this.initializationPromise,
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Initialization timeout')), 3000))
+        ]);
+        console.log('AuthService - getToken: initialization completed');
+      } catch (error) {
+        console.warn('AuthService - getToken: initialization timeout or error, continuing anyway:', error);
+      }
     }
     
     const token = await this.storageService.get('auth_token');
@@ -244,7 +251,14 @@ export class AuthService {
   // Método para esperar a que la inicialización termine
   async waitForInitialization(): Promise<void> {
     if (this.initializationPromise) {
-      await this.initializationPromise;
+      try {
+        await Promise.race([
+          this.initializationPromise,
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Initialization timeout')), 3000))
+        ]);
+      } catch (error) {
+        console.warn('AuthService - waitForInitialization: timeout or error, continuing anyway:', error);
+      }
     }
   }
 

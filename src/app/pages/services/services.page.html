@@ -1,21 +1,19 @@
 
+<ion-header [translucent]="false">
+  <ion-toolbar>
+    <ion-title>Mis Servicios</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="createNewService()" fill="clear">
+        <ion-icon name="add-circle"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
 
 <ion-content [fullscreen]="true">
   <ion-refresher slot="fixed" (ionRefresh)="refresh($event)">
     <ion-refresher-content></ion-refresher-content>
   </ion-refresher>
-
-  <!-- Header estilo WhatsApp -->
-  <div class="whatsapp-header">
-    <div class="header-title">
-      <h1>Mis Servicios</h1>
-    </div>
-    <div class="header-actions">
-      <ion-button fill="clear" (click)="createNewService()">
-        <ion-icon name="add-circle"></ion-icon>
-      </ion-button>
-    </div>
-  </div>
 
   <!-- Lista de servicios estilo WhatsApp -->
   <div class="whatsapp-services-container" *ngIf="!isLoading && providers.length > 0">

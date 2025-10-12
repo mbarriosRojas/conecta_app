@@ -1,3 +1,29 @@
+// Header con diseño suave
+ion-header {
+  ion-toolbar {
+    --padding-top: env(safe-area-inset-top);
+    --padding-start: 0;
+    --padding-end: 0;
+    --padding-bottom: 0;
+    --background: linear-gradient(135deg, #e8e4ff 0%, #f3f1ff 100%) !important;
+    background: linear-gradient(135deg, #e8e4ff 0%, #f3f1ff 100%) !important;
+    --color: #5a4fcf;
+    --border-width: 0;
+    --min-height: 56px;
+    
+    ion-title {
+      --color: #5a4fcf;
+      font-weight: 600;
+    }
+    
+    ion-back-button {
+      --color: #5a4fcf;
+      --color-focused: #4a3fb8;
+      --color-hover: #4a3fb8;
+    }
+  }
+}
+
 .schedule-item {
   margin-bottom: 16px;
   padding: 12px;

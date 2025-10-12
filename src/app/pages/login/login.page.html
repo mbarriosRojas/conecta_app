@@ -1,0 +1,160 @@
+<ion-content [fullscreen]="true" class="login-content">
+  <!-- Botón de volver flotante -->
+  <ion-fab vertical="top" horizontal="start" slot="fixed" class="back-fab">
+    <ion-fab-button (click)="goBackToHome()" color="light" size="small">
+      <ion-icon name="arrow-back"></ion-icon>
+    </ion-fab-button>
+  </ion-fab>
+
+  <!-- Background decorativo -->
+  <div class="background-shapes">
+    <div class="shape shape-1"></div>
+    <div class="shape shape-2"></div>
+    <div class="shape shape-3"></div>
+  </div>
+
+  <!-- Logo y título -->
+  <div class="logo-section">
+    <div class="logo-container">
+      <div class="logo-circle">
+        <span class="logo-text">AKI</span>
+      </div>
+    </div>
+    <h1 class="app-title">Conecta Personal</h1>
+    <p class="app-subtitle">Encuentra servicios cerca de ti</p>
+  </div>
+
+  <!-- Formulario principal -->
+  <div class="form-container">
+    <!-- Formulario único sin tabs -->
+    <form #loginForm="ngForm" (ngSubmit)="onSubmit()" class="form">
+      
+      <!-- Nombre completo (solo en registro) -->
+      <div class="form-group" *ngIf="!isLogin" [@slideIn]>
+        <ion-item class="custom-item">
+          <ion-icon name="person-outline" slot="start" class="form-icon"></ion-icon>
+          <ion-input 
+            type="text"
+            placeholder="Nombre completo"
+            [(ngModel)]="formData.fullName"
+            name="fullName"
+            required>
+          </ion-input>
+        </ion-item>
+      </div>
+
+      <!-- Teléfono (solo en registro) -->
+      <div class="form-group" *ngIf="!isLogin" [@slideIn]>
+        <ion-item class="custom-item">
+          <ion-icon name="call-outline" slot="start" class="form-icon"></ion-icon>
+          <ion-input 
+            type="tel"
+            placeholder="Teléfono (opcional)"
+            [(ngModel)]="formData.phone"
+            name="phone">
+          </ion-input>
+        </ion-item>
+      </div>
+
+      <!-- Email -->
+      <div class="form-group">
+        <ion-item class="custom-item">
+          <ion-icon name="mail-outline" slot="start" class="form-icon"></ion-icon>
+          <ion-input 
+            type="email" 
+            placeholder="Correo electrónico"
+            [(ngModel)]="formData.email"
+            name="email"
+            required>
+          </ion-input>
+        </ion-item>
+      </div>
+
+      <!-- Contraseña -->
+      <div class="form-group">
+        <ion-item class="custom-item">
+          <ion-icon name="lock-closed-outline" slot="start" class="form-icon"></ion-icon>
+          <ion-input 
+            [type]="showPassword ? 'text' : 'password'"
+            placeholder="Contraseña"
+            [(ngModel)]="formData.password"
+            name="password"
+            required>
+          </ion-input>
+          <ion-icon 
+            [name]="showPassword ? 'eye-off-outline' : 'eye-outline'"
+            slot="end"
+            (click)="togglePassword()"
+            class="password-toggle">
+          </ion-icon>
+        </ion-item>
+      </div>
+
+      <!-- Confirmar contraseña (solo en registro) -->
+      <div class="form-group" *ngIf="!isLogin" [@slideIn]>
+        <ion-item class="custom-item">
+          <ion-icon name="lock-closed-outline" slot="start" class="form-icon"></ion-icon>
+          <ion-input 
+            [type]="showConfirmPassword ? 'text' : 'password'"
+            placeholder="Confirmar contraseña"
+            [(ngModel)]="formData.confirmPassword"
+            name="confirmPassword"
+            required>
+          </ion-input>
+          <ion-icon 
+            [name]="showConfirmPassword ? 'eye-off-outline' : 'eye-outline'"
+            slot="end"
+            (click)="toggleConfirmPassword()"
+            class="password-toggle">
+          </ion-icon>
+        </ion-item>
+      </div>
+
+      <!-- Botón principal -->
+      <ion-button 
+        expand="block" 
+        type="submit"
+        [disabled]="!loginForm.form.valid || isLoading"
+        class="submit-button">
+        <ion-spinner *ngIf="isLoading" name="crescent"></ion-spinner>
+        <span *ngIf="!isLoading">{{ isLogin ? 'Iniciar Sesión' : 'Crear Cuenta' }}</span>
+      </ion-button>
+    </form>
+
+    <!-- Divider -->
+    <div class="divider">
+      <span>o</span>
+    </div>
+
+    <!-- Login con Google -->
+    <ion-button 
+      expand="block" 
+      fill="outline"
+      (click)="loginWithGoogle()"
+      [disabled]="isLoading"
+      class="google-button">
+      <ion-icon name="logo-google" slot="start"></ion-icon>
+      {{ isLogin ? 'Continuar con Google' : 'Registrarse con Google' }}
+    </ion-button>
+
+    <!-- Olvidé mi contraseña (solo en login) -->
+    <div class="forgot-password" *ngIf="isLogin">
+      <button type="button" (click)="forgotPassword()" class="forgot-link">
+        ¿Olvidaste tu contraseña?
+      </button>
+    </div>
+    <div class="footer">
+      <p *ngIf="isLogin">
+        ¿No tienes cuenta? 
+        <button type="button" (click)="toggleMode()" class="link-button">Regístrate aquí</button>
+      </p>
+      <p *ngIf="!isLogin">
+        ¿Ya tienes cuenta? 
+        <button type="button" (click)="toggleMode()" class="link-button">Inicia sesión aquí</button>
+      </p>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  
+</ion-content>

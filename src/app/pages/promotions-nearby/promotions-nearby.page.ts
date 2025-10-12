@@ -26,6 +26,16 @@ interface Promotion {
   score: number;
   startDate: string;
   endDate: string;
+  // Información del servicio
+  service?: {
+    _id: string;
+    name: string;
+    images?: string[];
+    category?: {
+      _id: string;
+      name: string;
+    };
+  };
 }
 
 @Component({
@@ -55,6 +65,7 @@ export class PromotionsNearbyPage implements OnInit {
   markers: any[] = [];
   userMarker: any;
   radiusCircle: any;
+  directionsRenderer: any;
   showMapModal = false;
   selectedPromotion: Promotion | null = null;
 
@@ -216,9 +227,65 @@ export class PromotionsNearbyPage implements OnInit {
   }
 
   /**
+   * Obtiene la primera imagen del servicio
+   */
+  getServiceImage(promo: Promotion): string | null {
+    if (promo.service?.images && promo.service.images.length > 0) {
+      return promo.service.images[0];
+    }
+    // Retornar null para mostrar ícono por defecto
+    return null;
+  }
+
+  /**
+   * Verifica si la promoción tiene imagen del servicio
+   */
+  hasServiceImage(promo: Promotion): boolean {
+    return !!(promo.service?.images && promo.service.images.length > 0);
+  }
+
+  /**
+   * Obtiene el color de fondo según el tipo de promoción
+   */
+  getPromotionBackgroundColor(type: string): string {
+    switch (type) {
+      case 'DISCOUNT':
+        return '#e8f5e8'; // Verde claro
+      case 'OFFER':
+        return '#fff3e0'; // Naranja claro
+      case 'EVENT':
+        return '#f3e5f5'; // Morado claro
+      case 'GENERAL':
+        return '#e3f2fd'; // Azul claro
+      default:
+        return '#f5f5f5'; // Gris claro
+    }
+  }
+
+  /**
+   * Obtiene el color del borde según el tipo de promoción
+   */
+  getPromotionBorderColor(type: string): string {
+    switch (type) {
+      case 'DISCOUNT':
+        return '#4caf50'; // Verde
+      case 'OFFER':
+        return '#ff9800'; // Naranja
+      case 'EVENT':
+        return '#9c27b0'; // Morado
+      case 'GENERAL':
+        return '#2196f3'; // Azul
+      default:
+        return '#9e9e9e'; // Gris
+    }
+  }
+
+  /**
    * Navega al detalle del proveedor
    */
   goToProvider(businessID: string) {
+    
+    // Navegar al detalle del proveedor
     this.router.navigate(['/provider-detail', businessID]);
   }
 
@@ -255,6 +322,16 @@ export class PromotionsNearbyPage implements OnInit {
       this.userMarker.setMap(null);
       this.userMarker = null;
     }
+    
+    if (this.radiusCircle) {
+      this.radiusCircle.setMap(null);
+      this.radiusCircle = null;
+    }
+    
+    if (this.directionsRenderer) {
+      this.directionsRenderer.setMap(null);
+      this.directionsRenderer = null;
+    }
   }
 
   /**
@@ -262,6 +339,11 @@ export class PromotionsNearbyPage implements OnInit {
    */
   async contactViaWhatsApp(promo: Promotion) {
     try {
+      // Cerrar el modal del mapa si está abierto
+      if (this.showMapModal) {
+        this.closeMapModal();
+      }
+      
       // Aquí deberías obtener el número de teléfono del proveedor
       // Por ahora usaremos un número de ejemplo
       const phoneNumber = '+584121234567'; // Número de ejemplo
@@ -412,47 +494,60 @@ export class PromotionsNearbyPage implements OnInit {
 
     // Marcadores de promociones
     this.promotions.forEach((promo, index) => {
+      // Crear ícono personalizado con imagen del servicio o ícono por defecto
+      let markerIcon;
+      
+      if (this.hasServiceImage(promo)) {
+        // Marcador con imagen del servicio
+        markerIcon = {
+          url: this.getServiceImage(promo),
+          scaledSize: new google.maps.Size(40, 40),
+          anchor: new google.maps.Point(20, 20)
+        };
+      } else {
+        // Marcador circular simple con color según tipo
+        markerIcon = {
+          path: google.maps.SymbolPath.CIRCLE,
+          scale: 14,
+          fillColor: this.getMarkerColor(promo.type),
+          fillOpacity: 0.9,
+          strokeColor: '#ffffff',
+          strokeWeight: 3
+        };
+      }
+
       const marker = new google.maps.Marker({
         position: {
           lat: promo.location.coordinates[1],
           lng: promo.location.coordinates[0]
         },
         map: this.map,
-        title: promo.businessName,
-        label: {
-          text: this.truncatePromotionName(promo.businessName),
-          color: 'white',
-          fontWeight: 'bold',
-          fontSize: '12px'
-        },
-        icon: {
-          url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
-            <svg xmlns="http://www.w3.org/2000/svg" width="120" height="40" viewBox="0 0 120 40">
-              <rect x="2" y="2" width="116" height="36" rx="18" fill="${this.getMarkerColor(promo.type)}" stroke="white" stroke-width="2"/>
-            </svg>
-          `),
-          scaledSize: new google.maps.Size(120, 40),
-          anchor: new google.maps.Point(60, 20),
-          labelOrigin: new google.maps.Point(60, 20)
-        }
+        title: `${promo.businessName} - ${promo.type}`,
+        icon: markerIcon
       });
 
       marker.addListener('click', () => {
+        // Resetear todos los marcadores al color original
+        this.resetAllMarkers();
+        
+        // Cambiar el marcador seleccionado a color destacado
+        this.highlightMarker(marker, promo);
+        
         this.selectedPromotion = promo;
         
-        const infoWindow = new google.maps.InfoWindow({
-          content: `
-            <div style="padding: 8px;">
-              <h3 style="margin: 0 0 8px 0; font-size: 14px; font-weight: bold;">${promo.businessName}</h3>
-              <p style="margin: 0 0 4px 0; font-size: 12px;">${promo.text}</p>
-              <p style="margin: 0; font-size: 11px; color: #666;">📍 ${promo.distanceFormatted}</p>
-            </div>
-          `
-        });
+        // Limpiar ruta anterior si existe
+        if (this.directionsRenderer) {
+          this.directionsRenderer.setMap(null);
+        }
         
-        infoWindow.open(this.map, marker);
+        // Dibujar ruta desde ubicación actual hasta la promoción
+        this.drawRouteToPromotion(promo);
       });
 
+      // Guardar información del marcador para poder restaurarlo
+      (marker as any).originalIcon = markerIcon;
+      (marker as any).promotion = promo;
+      
       this.markers.push(marker);
     });
   }
@@ -468,6 +563,80 @@ export class PromotionsNearbyPage implements OnInit {
       'GENERAL': '#3880ff'
     };
     return colors[type] || '#3880ff';
+  }
+
+  /**
+   * Resetea todos los marcadores a su estado original
+   */
+  resetAllMarkers() {
+    this.markers.forEach(marker => {
+      const originalIcon = (marker as any).originalIcon;
+      if (originalIcon) {
+        marker.setIcon(originalIcon);
+      }
+    });
+  }
+
+  /**
+   * Destaca un marcador específico cambiando su apariencia
+   */
+  highlightMarker(marker: any, promo: Promotion) {
+    // Crear ícono destacado (más grande y con borde especial)
+    let highlightedIcon;
+    
+    if (this.hasServiceImage(promo)) {
+      // Marcador con imagen del servicio pero más grande y con borde
+      highlightedIcon = {
+        url: this.getServiceImage(promo),
+        scaledSize: new google.maps.Size(50, 50), // Más grande
+        anchor: new google.maps.Point(25, 25)
+      };
+    } else {
+      // Marcador circular destacado
+      highlightedIcon = {
+        path: google.maps.SymbolPath.CIRCLE,
+        scale: 18, // Más grande
+        fillColor: this.getMarkerColor(promo.type),
+        fillOpacity: 1,
+        strokeColor: '#ffffff',
+        strokeWeight: 4 // Borde más grueso
+      };
+    }
+    
+    marker.setIcon(highlightedIcon);
+  }
+
+  /**
+   * Dibuja la ruta desde la ubicación actual hasta la promoción seleccionada
+   */
+  drawRouteToPromotion(promo: Promotion) {
+    if (!this.currentLocation || !this.map) return;
+
+    const directionsService = new google.maps.DirectionsService();
+    this.directionsRenderer = new google.maps.DirectionsRenderer({
+      suppressMarkers: true, // No mostrar marcadores adicionales
+      polylineOptions: {
+        strokeColor: '#4285F4',
+        strokeWeight: 4,
+        strokeOpacity: 0.8
+      }
+    });
+
+    this.directionsRenderer.setMap(this.map);
+
+    const request = {
+      origin: new google.maps.LatLng(this.currentLocation.lat, this.currentLocation.lng),
+      destination: new google.maps.LatLng(promo.location.coordinates[1], promo.location.coordinates[0]),
+      travelMode: google.maps.TravelMode.DRIVING
+    };
+
+    directionsService.route(request, (result: any, status: any) => {
+      if (status === 'OK') {
+        this.directionsRenderer.setDirections(result);
+      } else {
+        console.error('Error al calcular la ruta:', status);
+      }
+    });
   }
 
   /**

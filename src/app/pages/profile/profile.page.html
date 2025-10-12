@@ -1,0 +1,134 @@
+
+<ion-content [fullscreen]="false" class="profile-content">
+  <div class="profile-container" *ngIf="user && !isLoading">
+    
+    <!-- Header del perfil -->
+    <div class="profile-header">
+      <div class="profile-avatar-container">
+        <img 
+          [src]="user.profileImage || 'assets/icon/aki-logo.svg'" 
+          alt="Foto de perfil"
+          class="profile-avatar">
+        <button class="change-photo-btn" (click)="changeProfilePicture()">
+          <ion-icon name="camera-outline"></ion-icon>
+        </button>
+      </div>
+      
+      <div class="profile-info">
+        <h2>{{ user.name }} {{ user.lastname }}</h2>
+        <p class="user-email">{{ user.email }}</p>
+      </div>
+    </div>
+
+    <!-- Datos del usuario -->
+    <div class="profile-data">
+      <ion-card>
+        <ion-card-header>
+          <ion-card-title>
+            <ion-icon name="person-outline"></ion-icon>
+            Información Personal
+          </ion-card-title>
+          <ion-button 
+            *ngIf="!isEditing" 
+            fill="clear" 
+            size="small" 
+            (click)="toggleEdit()">
+            <ion-icon name="create-outline" slot="start"></ion-icon>
+            Editar
+          </ion-button>
+        </ion-card-header>
+
+        <ion-card-content>
+          <div class="data-grid">
+            
+            <!-- Nombre -->
+            <div class="data-item">
+              <label>Nombre</label>
+              <ion-input 
+                *ngIf="isEditing"
+                [(ngModel)]="editData.name"
+                placeholder="Nombre"
+                class="edit-input">
+              </ion-input>
+              <span *ngIf="!isEditing" class="data-value">{{ user.name }}</span>
+            </div>
+
+            <!-- Apellido -->
+            <div class="data-item">
+              <label>Apellido</label>
+              <ion-input 
+                *ngIf="isEditing"
+                [(ngModel)]="editData.lastname"
+                placeholder="Apellido"
+                class="edit-input">
+              </ion-input>
+              <span *ngIf="!isEditing" class="data-value">{{ user.lastname }}</span>
+            </div>
+
+            <!-- Email -->
+            <div class="data-item">
+              <label>Email</label>
+              <span class="data-value email-value">{{ user.email }}</span>
+              <ion-note>El email no se puede cambiar</ion-note>
+            </div>
+
+            <!-- Teléfono -->
+            <div class="data-item">
+              <label>Teléfono</label>
+              <ion-input 
+                *ngIf="isEditing"
+                [(ngModel)]="editData.phone"
+                placeholder="Teléfono"
+                type="tel"
+                class="edit-input">
+              </ion-input>
+              <span *ngIf="!isEditing" class="data-value">{{ user.phone || 'No especificado' }}</span>
+            </div>
+
+
+          </div>
+
+          <!-- Botones de acción -->
+          <div class="edit-actions" *ngIf="isEditing">
+            <ion-button 
+              expand="block" 
+              (click)="saveProfile()" 
+              [disabled]="isLoading"
+              class="save-btn">
+              <ion-spinner *ngIf="isLoading" name="crescent"></ion-spinner>
+              <span *ngIf="!isLoading">Guardar Cambios</span>
+            </ion-button>
+            
+            <ion-button 
+              expand="block" 
+              fill="outline" 
+              (click)="toggleEdit()"
+              class="cancel-btn">
+              Cancelar
+            </ion-button>
+          </div>
+
+          <!-- Botón de cerrar sesión -->
+          <div class="logout-section" *ngIf="!isEditing">
+            <ion-button 
+              expand="block" 
+              fill="outline" 
+              color="danger"
+              (click)="logout()"
+              class="logout-btn">
+              <ion-icon name="log-out-outline" slot="start"></ion-icon>
+              Cerrar Sesión
+            </ion-button>
+          </div>
+        </ion-card-content>
+      </ion-card>
+    </div>
+
+  </div>
+
+  <!-- Loading spinner -->
+  <div class="loading-container" *ngIf="isLoading">
+    <ion-spinner name="crescent"></ion-spinner>
+    <p>Cargando perfil...</p>
+  </div>
+</ion-content>

@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { take } from 'rxjs/operators';
 import { firstValueFrom } from 'rxjs';
-import { IonContent, IonInfiniteScroll, IonRefresher, LoadingController, ToastController, AlertController, IonicModule } from '@ionic/angular';
+import { IonContent, IonRefresher, LoadingController, ToastController, AlertController, IonicModule } from '@ionic/angular';
 import { ApiService } from '../../services/api.service';
 import { LocationService, LocationData } from '../../services/location.service';
 import { StorageService } from '../../services/storage.service';
@@ -33,7 +33,6 @@ interface FeedItem {
 })
 export class HomePage implements OnInit, AfterViewInit {
   @ViewChild(IonContent) content!: IonContent;
-  @ViewChild(IonInfiniteScroll) infiniteScroll!: IonInfiniteScroll;
   @ViewChild('bannersSlider', { static: false }) bannersSlider!: ElementRef;
 
   providers: Provider[] = [];
@@ -126,6 +125,10 @@ export class HomePage implements OnInit, AfterViewInit {
 
   async ngOnInit() {
     await this.initializeApp();
+    
+    // Hacer disponible el método de emergencia globalmente para debugging
+    (window as any).forceLoadMoreManual = () => this.forceLoadMoreManual();
+    console.log('🚨 Emergency method available: window.forceLoadMoreManual()');
   }
 
   ngAfterViewInit() {
@@ -453,13 +456,16 @@ export class HomePage implements OnInit, AfterViewInit {
     try {
       const currentFilters = { ...this.filters };
       currentFilters.limit = environment.itemsPerPage;
-      currentFilters.page = this.currentPage;
+      
+      // Para paginación: si es reset, usar página 1; si no, usar currentPage + 1
+      const pageToRequest = reset ? 1 : this.currentPage + 1;
+      currentFilters.page = pageToRequest;
       
       // Usar el radio especificado o el radio actual
       const searchRadius = radius || this.currentRadius;
       
       console.log('Home - Loading providers with filters:', currentFilters, 'radius:', searchRadius);
-      console.log('Home - About to request page:', this.currentPage);
+      console.log('Home - About to request page:', pageToRequest, '(reset:', reset, ', currentPage:', this.currentPage, ')');
       
       const response = await firstValueFrom(this.apiService.getProviders(currentFilters, searchRadius));
       
@@ -495,16 +501,17 @@ export class HomePage implements OnInit, AfterViewInit {
         // Actualizar información de paginación
         this.hasMoreData = response.pagination?.hasNextPage || false;
         
-        // Incrementar página solo después de carga exitosa
-        if (!reset) {
-          this.currentPage++;
-          console.log('Home - Page incremented to:', this.currentPage);
+        // Actualizar currentPage basado en la página que se solicitó exitosamente
+        if (reset) {
+          this.currentPage = 1; // Asegurar que esté en página 1 después de reset
+        } else {
+          this.currentPage = pageToRequest; // Usar la página que se solicitó
         }
+        console.log('Home - Current page updated to:', this.currentPage);
         
         console.log('Home - Providers loaded:', this.providers.length, 'Has more:', this.hasMoreData);
         console.log('Home - State after load - currentPage:', this.currentPage, 'hasMoreData:', this.hasMoreData, 'isLoadingMore:', this.isLoadingMore, 'isLoading:', this.isLoading);
         console.log('Home - Pagination info:', response.pagination);
-        this.logInfiniteScrollState();
       } else {
         if (reset) {
           this.providers = [];
@@ -526,13 +533,7 @@ export class HomePage implements OnInit, AfterViewInit {
       this.isRefreshing = false;
       this.isExpandingRadius = false;
       
-      // Forzar actualización del componente infinite scroll después de cada carga
-      setTimeout(() => {
-        if (this.infiniteScroll && this.hasMoreData) {
-          this.infiniteScroll.disabled = false;
-          console.log('Home - Forced infiniteScroll.disabled = false after loadProviders');
-        }
-      }, 100);
+        // Estado actualizado correctamente
     }
   }
 
@@ -563,56 +564,6 @@ export class HomePage implements OnInit, AfterViewInit {
     this.loadProviders(true);
   }
 
-  async loadMore(event: any) {
-    console.log('🚀 Home - loadMore called - SCROLL INFINITE TRIGGERED!');
-    console.log('Home - Event received:', event);
-    this.logInfiniteScrollState();
-    
-    // Verificar condiciones antes de proceder
-    if (!this.hasMoreData) {
-      console.log('Home - loadMore skipped: no more data available');
-      event.target.complete();
-      return;
-    }
-    
-    if (this.isLoadingMore) {
-      console.log('Home - loadMore skipped: already loading more');
-      event.target.complete();
-      return;
-    }
-    
-    if (this.isLoading) {
-      console.log('Home - loadMore skipped: main loading in progress');
-      event.target.complete();
-      return;
-    }
-
-    console.log('Home - All checks passed, proceeding with loadMore');
-    this.isLoadingMore = true;
-    
-    try {
-      console.log('Home - Calling loadProviders(false) for page:', this.currentPage + 1);
-      await this.loadProviders(false);
-      console.log('Home - loadProviders completed successfully in loadMore');
-    } catch (error) {
-      console.error('Home - Error in loadMore:', error);
-      this.hasMoreData = false; // En caso de error, detener el scroll infinito
-    } finally {
-      this.isLoadingMore = false;
-      event.target.complete();
-      console.log('Home - loadMore completed, isLoadingMore set to false');
-      
-      // Forzar actualización del componente infinite scroll
-      setTimeout(() => {
-        if (this.infiniteScroll) {
-          this.infiniteScroll.disabled = false;
-          console.log('Home - Forced infiniteScroll.disabled = false');
-        }
-      }, 100);
-      
-      this.logInfiniteScrollState();
-    }
-  }
 
   async refresh(event: any) {
     this.isRefreshing = true;
@@ -620,48 +571,70 @@ export class HomePage implements OnInit, AfterViewInit {
     event.target.complete();
   }
 
-  // Método para debuggear el estado del infinite scroll
-  logInfiniteScrollState() {
-    console.log('Home - Infinite Scroll State Debug:');
-    console.log('  - hasMoreData:', this.hasMoreData);
-    console.log('  - isLoadingMore:', this.isLoadingMore);
-    console.log('  - isLoading:', this.isLoading);
-    console.log('  - currentPage:', this.currentPage);
-    console.log('  - totalProviders:', this.providers.length);
-    console.log('  - infiniteScroll disabled:', (!this.hasMoreData || this.isLoadingMore));
-    console.log('  - itemsPerPage:', environment.itemsPerPage);
-    console.log('  - expectedNextPage:', this.currentPage + 1);
+
+  // Método para cargar más proveedores usando el botón "Ver más"
+  async loadMoreProviders() {
+    console.log('🔘 Botón "Ver más" presionado');
     
-    // Verificar el estado del componente ion-infinite-scroll
-    if (this.infiniteScroll) {
-      console.log('  - infiniteScroll component exists:', !!this.infiniteScroll);
-      console.log('  - infiniteScroll disabled state:', this.infiniteScroll.disabled);
-      console.log('  - infiniteScroll threshold:', this.infiniteScroll.threshold);
-    } else {
-      console.log('  - infiniteScroll component: NOT FOUND');
+    // Verificar condiciones antes de proceder
+    if (!this.hasMoreData) {
+      console.log('🔘 No hay más datos disponibles');
+      return;
+    }
+    
+    if (this.isLoadingMore) {
+      console.log('🔘 Ya está cargando más datos');
+      return;
+    }
+    
+    if (this.isLoading) {
+      console.log('🔘 Carga principal en progreso');
+      return;
+    }
+
+    console.log('🔘 Iniciando carga de más proveedores...');
+    this.isLoadingMore = true;
+    
+    try {
+      console.log('🔘 Cargando página:', this.currentPage + 1);
+      await this.loadProviders(false);
+      console.log('🔘 Carga completada exitosamente');
+      
+    } catch (error) {
+      console.error('🔘 Error cargando más proveedores:', error);
+      this.showErrorToast('Error al cargar más servicios');
+      
+    } finally {
+      this.isLoadingMore = false;
+      console.log('🔘 Estado de carga completado');
     }
   }
 
-  // Método para forzar el scroll infinito (debug)
-  async forceLoadMore() {
-    console.log('Home - Force loadMore called');
+  // Método de emergencia para forzar carga manual (llamable desde consola)
+  async forceLoadMoreManual() {
+    console.log('🚨 FORCE LOAD MORE MANUAL - Emergency method called');
+    
     if (this.hasMoreData && !this.isLoadingMore && !this.isLoading) {
-      console.log('Home - Forcing loadMore execution');
-      await this.loadMore({ target: { complete: () => console.log('Force complete called') } });
+      console.log('🚨 Executing manual load...');
+      try {
+        this.isLoadingMore = true;
+        await this.loadProviders(false);
+        console.log('🚨 Manual load completed successfully');
+      } catch (error) {
+        console.error('🚨 Error in manual load:', error);
+      } finally {
+        this.isLoadingMore = false;
+      }
     } else {
-      console.log('Home - Cannot force loadMore - conditions not met');
-      this.logInfiniteScrollState();
+      console.log('🚨 Cannot load - conditions not met:', {
+        hasMoreData: this.hasMoreData,
+        isLoadingMore: this.isLoadingMore,
+        isLoading: this.isLoading
+      });
     }
   }
 
-  // Método para forzar la habilitación del infinite scroll
-  forceEnableInfiniteScroll() {
-    if (this.infiniteScroll && this.hasMoreData) {
-      this.infiniteScroll.disabled = false;
-      console.log('Home - Manually enabled infinite scroll');
-      this.logInfiniteScrollState();
-    }
-  }
+
 
   // Método para verificar la posición del scroll
   async checkScrollPosition() {

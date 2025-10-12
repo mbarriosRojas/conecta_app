@@ -7,17 +7,22 @@
   padding-top: env(safe-area-inset-top);
 }
 
-// Header con safe area
+// Header con safe area y diseño suave
 ion-header {
   ion-toolbar {
     --padding-top: env(safe-area-inset-top);
     --padding-start: 0;
     --padding-end: 0;
     --padding-bottom: 0;
+    --background: linear-gradient(135deg, #e8e4ff 0%, #f3f1ff 100%) !important;
+    background: linear-gradient(135deg, #e8e4ff 0%, #f3f1ff 100%) !important;
+    --color: #5a4fcf;
+    --border-width: 0;
+    --min-height: 56px;
     
     .whatsapp-header {
       padding-top: env(safe-area-inset-top);
-      background: var(--whatsapp-background);
+      background: transparent;
     }
   }
 }
@@ -127,7 +132,7 @@ ion-header {
   }
   
   .filter-button {
-    --color: var(--medium-gray);
+    --color: #5a4fcf;
     --background: transparent;
     --padding-start: 8px;
     --padding-end: 8px;
@@ -136,6 +141,7 @@ ion-header {
     
     ion-icon {
       font-size: 22px;
+      color: #5a4fcf;
     }
   }
 }
@@ -1552,6 +1558,7 @@ ion-col {
   margin: 0;
   font-size: 1.5rem;
   font-weight: 600;
+  color: #5a4fcf;
 }
 
 .search-filter-container {
@@ -1576,6 +1583,11 @@ ion-col {
   --padding-end: 8px;
   height: 40px;
   width: 40px;
+  --color: #5a4fcf;
+  
+  ion-icon {
+    color: #5a4fcf;
+  }
 }
 
 /* Opcional: Para que el botón tenga el mismo alto que el searchbar */
@@ -1858,5 +1870,65 @@ ion-col {
         }
       }
     }
+  }
+}
+
+// Estilos para el botón "Ver más"
+.load-more-container {
+  padding: 20px;
+  text-align: center;
+  background: #ffffff;
+  border-top: 1px solid #e0e0e0;
+  margin-top: 10px;
+
+  .load-more-button {
+    --border-radius: 12px;
+    --border-width: 2px;
+    --border-color: var(--ion-color-primary);
+    --color: var(--ion-color-primary);
+    --background: transparent;
+    --background-activated: rgba(var(--ion-color-primary-rgb), 0.1);
+    height: 50px;
+    font-weight: 600;
+    font-size: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+
+    &:hover {
+      --background: rgba(var(--ion-color-primary-rgb), 0.05);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    &:active {
+      transform: translateY(0);
+    }
+
+    ion-icon {
+      font-size: 20px;
+      margin-inline-end: 8px;
+    }
+
+    ion-spinner {
+      margin-inline-end: 8px;
+    }
+  }
+}
+
+.loading-more-container {
+  padding: 30px;
+  text-align: center;
+  background: #ffffff;
+  border-top: 1px solid #e0e0e0;
+
+  ion-spinner {
+    margin-bottom: 10px;
+  }
+
+  p {
+    margin: 0;
+    color: var(--ion-color-medium);
+    font-size: 14px;
+    font-weight: 500;
   }
 }

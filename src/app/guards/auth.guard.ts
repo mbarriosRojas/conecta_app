@@ -1,30 +1,53 @@
 import { Injectable } from '@angular/core';
-import { CanActivate, Router } from '@angular/router';
+import { CanActivate, Router, ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
 import { AuthService } from '../services/auth.service';
-import { Observable } from 'rxjs';
-import { map, take } from 'rxjs/operators';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthGuard implements CanActivate {
+  
   constructor(
     private authService: AuthService,
     private router: Router
   ) {}
 
-  canActivate(): Observable<boolean> {
-    return this.authService.isAuthenticated$.pipe(
-      take(1),
-      map(isAuthenticated => {
-        if (isAuthenticated) {
-          return true;
-        } else {
-          // Redirigir al tab3 donde está la pantalla de login integrada
-          this.router.navigate(['/tabs/tab3']);
-          return false;
-        }
-      })
-    );
+  async canActivate(
+    route: ActivatedRouteSnapshot,
+    state: RouterStateSnapshot
+  ): Promise<boolean> {
+    
+    try {
+      console.log('🔐 AuthGuard: Verificando autenticación para:', state.url);
+      
+      // Esperar a que la inicialización termine con timeout más largo
+      await this.authService.waitForInitialization();
+      
+      // Verificar estado de autenticación
+      const isAuthenticated = this.authService.isAuthenticated();
+      console.log('🔐 AuthGuard: Usuario autenticado:', isAuthenticated);
+      
+      if (!isAuthenticated) {
+        console.log('🔐 AuthGuard: No autenticado, redirigiendo al login');
+        // Si no está autenticado, redirigir al login
+        this.router.navigate(['/login'], { 
+          queryParams: { returnUrl: state.url },
+          replaceUrl: true 
+        });
+        return false;
+      }
+      
+      console.log('🔐 AuthGuard: Acceso permitido');
+      return true;
+      
+    } catch (error) {
+      console.error('🔐 AuthGuard: Error verificando autenticación:', error);
+      // En caso de error, redirigir al login
+      this.router.navigate(['/login'], { 
+        queryParams: { returnUrl: state.url },
+        replaceUrl: true 
+      });
+      return false;
+    }
   }
 }

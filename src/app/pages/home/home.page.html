@@ -1,5 +1,5 @@
 
-<ion-header [translucent]="true">
+<ion-header [translucent]="false">
   <ion-toolbar>
     <div class="whatsapp-header">
       <!-- Título -->
@@ -31,7 +31,7 @@
     </div>
   </ion-toolbar>
 </ion-header>
-<ion-content [fullscreen]="true" class="home-content">
+<ion-content [fullscreen]="false" class="home-content">
 
 
   <!-- Banner promocional -->
@@ -272,36 +272,27 @@
       </div>
     </ng-template>
   </div>
-  <!-- Infinite Scroll -->
-  <ion-infinite-scroll 
-    threshold="100px" 
-    (ionInfinite)="loadMore($event)"
-    [disabled]="!hasMoreData || isLoadingMore">
-    <ion-infinite-scroll-content
-      loadingSpinner="bubbles"
-      loadingText="Cargando más proveedores...">
-    </ion-infinite-scroll-content>
-  </ion-infinite-scroll>
-
-  <!-- Botones de debug temporal -->
-  <div style="position: fixed; bottom: 100px; right: 20px; z-index: 1000;">
-    <div style="display: flex; flex-direction: column; gap: 5px;">
-      <ion-button 
-        size="small" 
-        color="primary" 
-        (click)="forceLoadMore()"
-        *ngIf="hasMoreData && !isLoadingMore">
-        Force Load More
-      </ion-button>
-      <ion-button 
-        size="small" 
-        color="secondary" 
-        (click)="forceEnableInfiniteScroll()"
-        *ngIf="hasMoreData">
-        Enable Infinite Scroll
-      </ion-button>
-    </div>
+  <!-- Botón Ver Más -->
+  <div class="load-more-container" *ngIf="hasMoreData && !isLoading && !isLoadingMore">
+    <ion-button 
+      size="small"
+      fill="outline" 
+      color="primary"
+      (click)="loadMoreProviders()"
+      [disabled]="isLoadingMore"
+      class="load-more-button">
+      <ion-spinner *ngIf="isLoadingMore" name="crescent" slot="start"></ion-spinner>
+      <ion-icon *ngIf="!isLoadingMore" name="add-circle-outline" slot="start"></ion-icon>
+      {{ isLoadingMore ? 'Cargando...' : 'Ver más servicios' }}
+    </ion-button>
   </div>
+
+  <!-- Indicador de carga cuando está cargando más -->
+  <div class="loading-more-container" *ngIf="isLoadingMore">
+    <ion-spinner name="crescent" color="primary"></ion-spinner>
+    <p>Cargando más servicios...</p>
+  </div>
+
 
   <!-- Componente de no resultados (tipo Tinder) -->
   <app-no-results-expand

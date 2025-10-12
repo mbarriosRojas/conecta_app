@@ -1,7 +1,7 @@
 export const environment = {
   production: false,
-  apiUrl: 'https://conecta-backend-b5yg.onrender.com', // Backend en Render
-  //apiUrl: 'http://localhost:8080', // Backend local
+  //apiUrl: 'https://conecta-backend-b5yg.onrender.com', // Backend en Render
+  apiUrl: 'http://localhost:8080', // Backend local
   appName: 'Providers',
   version: '1.0.0',
   defaultRadius: 20000, // 20km en metros
@@ -10,7 +10,7 @@ export const environment = {
   maxRetries: 3,
   retryDelay: 1000,
   
-  // Firebase Configuration
+  // Firebase Configuration - Credenciales reales
   firebase: {
     apiKey: "AIzaSyCQ-3oqcAjVF4okuy6wMOTZwj244fpWwVI",
     authDomain: "aki-app-2d2d8.firebaseapp.com",

@@ -1,14 +1,9 @@
-<ion-header [translucent]="true">
-  <ion-toolbar color="primary">
+<ion-header [translucent]="false">
+  <ion-toolbar>
     <ion-buttons slot="start">
-      <ion-back-button defaultHref="/tabs/home"></ion-back-button>
+      <ion-back-button defaultHref="/tabs/home" text=""></ion-back-button>
     </ion-buttons>
     <ion-title>{{ provider?.name || 'Detalle del Negocio' }}</ion-title>
-    <ion-buttons slot="end">
-      <ion-button (click)="shareProvider()">
-        <ion-icon name="share-outline"></ion-icon>
-      </ion-button>
-    </ion-buttons>
   </ion-toolbar>
 </ion-header>
 
