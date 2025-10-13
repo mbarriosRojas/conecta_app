@@ -231,7 +231,109 @@ ion-card-header {
   }
 }
 
-// Información adicional
+// Instrucciones interactivas del mapa
+.map-instructions {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+  
+  .instruction-card {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    padding: 12px;
+    background: linear-gradient(135deg, #f8f9ff 0%, #e8f4fd 100%);
+    border-radius: 12px;
+    border: 1px solid var(--ion-color-primary-tint);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+    
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+    
+    ion-icon {
+      margin-right: 10px;
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+    
+    .instruction-content {
+      flex: 1;
+      
+      h4 {
+        margin: 0 0 4px 0;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--ion-color-primary);
+        line-height: 1.2;
+      }
+      
+      p {
+        margin: 0;
+        font-size: 11px;
+        color: var(--ion-color-medium);
+        line-height: 1.3;
+      }
+    }
+  }
+}
+
+// Indicador de marcador personalizado
+.marker-indicator {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 1000;
+  
+  .marker-pulse {
+    width: 40px;
+    height: 40px;
+    border: 3px solid var(--ion-color-danger);
+    border-radius: 50%;
+    background: rgba(255, 0, 0, 0.1);
+    animation: markerPulse 2s infinite;
+  }
+  
+  .marker-center {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 24px;
+    height: 24px;
+    background: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    
+    ion-icon {
+      font-size: 16px;
+    }
+  }
+}
+
+@keyframes markerPulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.4;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+}
+
+// Información adicional (mantener para compatibilidad)
 .map-info {
   display: flex;
   align-items: flex-start;
@@ -261,6 +363,30 @@ ion-card-header {
   
   .map-container {
     margin: 12px 0;
+  }
+  
+  .map-instructions {
+    flex-direction: column;
+    gap: 8px;
+    
+    .instruction-card {
+      padding: 10px;
+      
+      ion-icon {
+        font-size: 18px;
+        margin-right: 8px;
+      }
+      
+      .instruction-content {
+        h4 {
+          font-size: 12px;
+        }
+        
+        p {
+          font-size: 10px;
+        }
+      }
+    }
   }
   
   .action-buttons {

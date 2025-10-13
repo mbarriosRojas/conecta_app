@@ -218,6 +218,12 @@ export class LoginPage implements OnInit {
       
       console.log('✅ Registro exitoso:', response);
       
+      // 🔥 IMPORTANTE: El AuthService ya maneja automáticamente el login
+      // después del registro, pero necesitamos esperar a que se complete
+      await this.authService.waitForInitialization();
+      
+      console.log('✅ Usuario autenticado automáticamente después del registro');
+      
     } catch (error: any) {
       console.error('❌ Error en registro:', error);
       throw error;

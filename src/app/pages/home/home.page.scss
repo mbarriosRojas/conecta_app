@@ -74,6 +74,54 @@ ion-header {
   padding: 8px 16px 16px 16px;
   background: var(--whatsapp-background);
   
+  // 🔍 Wrapper para searchbar con indicador de carga
+  .searchbar-wrapper {
+    flex: 1;
+    position: relative;
+    
+    .whatsapp-searchbar {
+      width: 100%;
+      --background: #f0f0f0;
+      --color: var(--dark-gray);
+      --placeholder-color: var(--medium-gray);
+      --icon-color: var(--medium-gray);
+      --clear-button-color: var(--medium-gray);
+      --border-radius: 20px;
+      height: 40px;
+      font-size: 16px;
+      
+      .searchbar-input {
+        background: #f0f0f0;
+        border-radius: 20px;
+        color: var(--dark-gray);
+        padding: 8px 16px;
+        height: 40px;
+        font-size: 16px;
+        
+        &::placeholder {
+          color: var(--medium-gray);
+        }
+      }
+    }
+    
+    // 🔍 Indicador de carga en el searchbar
+    .search-loading-indicator {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+      
+      ion-spinner {
+        width: 20px;
+        height: 20px;
+      }
+    }
+  }
+  
   .whatsapp-searchbar {
     flex: 1;
     --background: #f0f0f0;
@@ -325,6 +373,36 @@ ion-header {
   top: 0;
   z-index: 10;
   transition: all 0.3s ease;
+  position: relative; // Para el overlay
+  
+  // 🔍 Overlay de carga para categorías
+  .category-loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(4px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    z-index: 100;
+    
+    ion-spinner {
+      width: 24px;
+      height: 24px;
+    }
+    
+    p {
+      margin: 0;
+      font-size: 13px;
+      color: var(--ion-color-primary);
+      font-weight: 500;
+    }
+  }
   
   // Regla específica para elementos seleccionados
   .whatsapp-category-pill.selected {
@@ -338,6 +416,12 @@ ion-header {
     overflow-y: hidden;
     scrollbar-width: none;
     -ms-overflow-style: none;
+    transition: opacity 0.3s ease;
+    
+    &.loading {
+      opacity: 0.5;
+      pointer-events: none;
+    }
     
     &::-webkit-scrollbar {
       display: none;
@@ -380,6 +464,13 @@ ion-header {
     .category-image {
       filter: brightness(0) invert(1) !important;
     }
+  }
+  
+  // 🔍 Estado deshabilitado durante carga
+  &.disabled {
+    opacity: 0.5;
+    pointer-events: none;
+    cursor: not-allowed;
   }
   
   .category-icon {
@@ -1107,6 +1198,30 @@ ion-col {
     .categories-slider {
       background: #2d2d2d;
     }
+    
+    // 🔍 Overlay en modo oscuro
+    .category-loading-overlay {
+      background: rgba(45, 45, 45, 0.95);
+      
+      p {
+        color: #c4b5fd;
+      }
+    }
+  }
+  
+  // 🔍 Overlay de servicios en modo oscuro
+  .whatsapp-services-container {
+    .services-loading-overlay {
+      background: rgba(26, 26, 26, 0.95);
+      
+      .loading-content {
+        background: #2d2d2d;
+        
+        p {
+          color: #c4b5fd;
+        }
+      }
+    }
   }
   
   .recent-section,
@@ -1164,6 +1279,47 @@ ion-col {
 .whatsapp-services-container {
   background: var(--whatsapp-background);
   padding: 0;
+  position: relative; // Para el overlay
+  min-height: 200px; // Para que el overlay tenga espacio
+  
+  // 🔍 Overlay de carga para lista de servicios
+  .services-loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(6px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    
+    .loading-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      padding: 24px;
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+      
+      ion-spinner {
+        width: 40px;
+        height: 40px;
+      }
+      
+      p {
+        margin: 0;
+        font-size: 15px;
+        color: var(--ion-color-primary);
+        font-weight: 600;
+        text-align: center;
+      }
+    }
+  }
   
   .whatsapp-service-item {
     display: flex;

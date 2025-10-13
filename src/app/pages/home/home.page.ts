@@ -59,6 +59,8 @@ export class HomePage implements OnInit, AfterViewInit {
   
   isLoading = false;
   isLoadingMore = false;
+  isSearching = false; // 🔍 Nuevo: estado para búsquedas
+  isFilteringCategory = false; // 🔍 Nuevo: estado para filtrado por categoría
   hasMoreData = true;
   currentPage = 1; // Empezar en página 1 (backend usa páginas 1-based)
   searchQuery = '';
@@ -493,10 +495,52 @@ export class HomePage implements OnInit, AfterViewInit {
       
       console.log('Home - Received response:', response);
       
+      // 🚀 NUEVO: Procesar productos encontrados si existen
+      let foundProducts: any[] = [];
+      if (response && (response as any).productsFound && (response as any).productsFound.products) {
+        foundProducts = (response as any).productsFound.products;
+        console.log('🔍 [PRODUCTS FOUND] Productos encontrados:', foundProducts.length);
+        foundProducts.forEach((product, index) => {
+          console.log(`   ${index + 1}. "${product.name}" - ${product.category} - $${product.price}`);
+        });
+      }
+      
       if (response && response.data && response.data.length > 0) {
         if (reset) {
           this.providers = response.data;
           this.currentRadius = searchRadius;
+          
+          // 🚀 NUEVO: Agregar productos encontrados a la lista de providers para mostrarlos
+          if (foundProducts.length > 0) {
+            // Convertir productos a formato de provider para mostrarlos en la lista
+            const productProviders = foundProducts.map(product => ({
+              _id: `product_${product._id}`,
+              name: product.name,
+              description: product.description || `Producto: ${product.name}`,
+              logo: product.images && product.images.length > 0 ? product.images[0] : 'assets/images/default-product.png',
+              images: product.images || [],
+              categoryId: product.category,
+              address: product.address,
+              rating: 0,
+              views: 0,
+              verified: false,
+              stand_out: product.featured || false,
+              distance: product.address?.location?.coordinates ? this.calculateDistance(
+                this.currentLocation?.latitude || 0,
+                this.currentLocation?.longitude || 0,
+                product.address.location.coordinates[1],
+                product.address.location.coordinates[0]
+              ) : 0,
+              isProduct: true, // 🚀 Marcar como producto para diferenciarlo
+              originalProduct: product, // 🚀 Guardar datos originales del producto
+              providerName: product.providerName, // 🚀 NUEVO: Nombre del proveedor
+              providerId: product.providerId // 🚀 NUEVO: ID del proveedor para navegación
+            }));
+            
+            // Agregar productos al inicio de la lista
+            this.providers = [...productProviders, ...this.providers] as any[];
+            console.log('🔍 [PRODUCTS ADDED] Productos agregados a la lista:', productProviders.length);
+          }
           
           // Mostrar componente de no resultados si no hay datos
           this.showNoResults = false;
@@ -575,10 +619,14 @@ export class HomePage implements OnInit, AfterViewInit {
       console.log('Keyboard.hide not available in web');
     }
     
+    // 🔍 Mostrar estado de búsqueda
+    this.isSearching = true;
+    
     // Debounce search
-    setTimeout(() => {
+    setTimeout(async () => {
       if (this.searchQuery === query) {
-        this.loadProviders(true);
+        await this.loadProviders(true);
+        this.isSearching = false;
       }
     }, 500);
   }
@@ -767,7 +815,7 @@ export class HomePage implements OnInit, AfterViewInit {
     this.showFilterModal = false;
   }
 
-  applyFilters() {
+  async applyFilters() {
     // Aplicar filtros temporales a los filtros reales
     this.selectedCategory = this.tempSelectedCategory;
     this.selectedCity = this.tempSelectedCity;
@@ -797,9 +845,20 @@ export class HomePage implements OnInit, AfterViewInit {
       this.filters.lng = this.currentLocation.longitude;
     }
     
-    this.storageService.saveFilters(this.filters);
+    await this.storageService.saveFilters(this.filters);
     this.closeFilterModal();
-    this.loadProviders(true);
+    
+    // 🔍 Mostrar loader mientras se aplican filtros
+    const loading = await this.loadingController.create({
+      message: 'Aplicando filtros...',
+      spinner: 'crescent',
+      duration: 10000
+    });
+    await loading.present();
+    
+    await this.loadProviders(true);
+    await loading.dismiss();
+    
     this.showSuccessToast('Filtros aplicados');
   }
 
@@ -984,12 +1043,18 @@ export class HomePage implements OnInit, AfterViewInit {
     return Math.min(size, maxSize);
   }
 
-  selectCategory(category: Category | null) {
+  async selectCategory(category: Category | null) {
+    // 🔍 Mostrar estado de carga para categoría
+    this.isFilteringCategory = true;
     this.selectedCategory = category;
     this.filters.categoryId = category?._id || '';
-    this.storageService.saveFilters(this.filters);
-    this.loadProviders(true);
+    await this.storageService.saveFilters(this.filters);
+    
     const categoryName = category ? category.name : 'Todos';
+    console.log(`🔍 Filtrando por categoría: ${categoryName}`);
+    
+    await this.loadProviders(true);
+    this.isFilteringCategory = false;
   }
 
   onImageError(event: any) {
@@ -1087,6 +1152,22 @@ export class HomePage implements OnInit, AfterViewInit {
       position: 'bottom'
     });
     await toast.present();
+  }
+
+  // 🚀 NUEVO: Función para calcular distancia entre dos puntos
+  private calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+    const R = 6371e3; // Earth's radius in meters
+    const φ1 = lat1 * Math.PI / 180;
+    const φ2 = lat2 * Math.PI / 180;
+    const Δφ = (lat2 - lat1) * Math.PI / 180;
+    const Δλ = (lon2 - lon1) * Math.PI / 180;
+
+    const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+              Math.cos(φ1) * Math.cos(φ2) *
+              Math.sin(Δλ/2) * Math.sin(Δλ/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+
+    return R * c; // Distance in meters
   }
 
   /**

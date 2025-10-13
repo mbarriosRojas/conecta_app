@@ -6,6 +6,7 @@ import { FormsModule } from '@angular/forms';
 import { IonicModule } from '@ionic/angular';
 import { ApiService } from '../../services/api.service';
 import { CacheService } from '../../services/cache.service';
+import { AuthService } from '../../services/auth.service';
 import { Category, Question } from '../../models/provider.model';
 import { MapAddressComponent, AddressData } from '../../components/map-address/map-address.component';
 
@@ -75,6 +76,7 @@ export class CreateServicePage implements OnInit {
     public router: Router,
     private apiService: ApiService,
     private cacheService: CacheService,
+    private authService: AuthService,
     private loadingController: LoadingController,
     private toastController: ToastController
   ) {}
@@ -169,6 +171,17 @@ export class CreateServicePage implements OnInit {
 
     try {
       const formData = new FormData();
+      
+      // 🔥 IMPORTANTE: Agregar userId del usuario autenticado
+      const currentUser = this.authService.getCurrentUser();
+      if (currentUser) {
+        formData.append('userId', currentUser.id);
+        console.log('✅ Agregando userId al formulario:', currentUser.id);
+      } else {
+        console.error('❌ No se encontró usuario autenticado');
+        this.showErrorToast('Debes estar logueado para crear un servicio');
+        return;
+      }
       
       // Basic information
       formData.append('name', this.formData.name);

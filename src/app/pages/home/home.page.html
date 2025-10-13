@@ -9,14 +9,20 @@
       
       <!-- Contenedor del buscador y filtro -->
       <div class="search-filter-container">
-        <ion-searchbar
-          [(ngModel)]="searchQuery"
-          (ionInput)="onSearch($event)"
-          placeholder="Buscar servicios..."
-          show-clear-button="focus"
-          debounce="300"
-          class="whatsapp-searchbar">
-        </ion-searchbar>
+        <div class="searchbar-wrapper">
+          <ion-searchbar
+            [(ngModel)]="searchQuery"
+            (ionInput)="onSearch($event)"
+            placeholder="Buscar servicios o productos..."
+            show-clear-button="focus"
+            debounce="300"
+            class="whatsapp-searchbar">
+          </ion-searchbar>
+          <!-- 🔍 Indicador de búsqueda activa -->
+          <div class="search-loading-indicator" *ngIf="isSearching">
+            <ion-spinner name="crescent" color="primary"></ion-spinner>
+          </div>
+        </div>
         
         <!-- Botón de Promociones -->
         <ion-button fill="clear" (click)="goToPromotionsPage()" class="promotions-button">
@@ -68,11 +74,18 @@
 
   <!-- Categorías estilo WhatsApp -->
   <div class="categories-section">
-    <div class="categories-container">
+    <!-- 🔍 Overlay de carga para categorías -->
+    <div class="category-loading-overlay" *ngIf="isFilteringCategory">
+      <ion-spinner name="crescent" color="primary"></ion-spinner>
+      <p>Filtrando...</p>
+    </div>
+    
+    <div class="categories-container" [class.loading]="isFilteringCategory">
       <!-- Categoría "Todos" -->
       <div class="whatsapp-category-pill" 
-           [class.selected]="!selectedCategory" 
-           (click)="selectCategory(null)">
+           [class.selected]="!selectedCategory"
+           [class.disabled]="isFilteringCategory"
+           (click)="!isFilteringCategory && selectCategory(null)">
         <ion-icon name="grid-outline" class="category-icon"></ion-icon>
         <span class="category-name">Todos</span>
       </div>
@@ -80,8 +93,9 @@
       <!-- Categorías del API -->
       <div class="whatsapp-category-pill" 
            *ngFor="let category of categories"
-           [class.selected]="selectedCategory?._id === category._id" 
-           (click)="selectCategory(category)">
+           [class.selected]="selectedCategory?._id === category._id"
+           [class.disabled]="isFilteringCategory"
+           (click)="!isFilteringCategory && selectCategory(category)">
         <img 
           [src]="category.image || 'assets/images/default-category.png'" 
           [alt]="category.name"
@@ -124,6 +138,14 @@
   <!-- Lista de servicios y promociones estilo WhatsApp -->
   <div class="whatsapp-services-container" *ngIf="feedItems.length > 0 || providers.length > 0">
     
+    <!-- 🔍 Overlay de carga para búsqueda/filtrado -->
+    <div class="services-loading-overlay" *ngIf="isSearching || isFilteringCategory || (isLoading && providers.length > 0)">
+      <div class="loading-content">
+        <ion-spinner name="crescent" color="primary"></ion-spinner>
+        <p>{{ isSearching ? 'Buscando...' : (isFilteringCategory ? 'Filtrando...' : 'Cargando...') }}</p>
+      </div>
+    </div>
+    
     <!-- Iterar sobre feedItems si hay promociones mezcladas, sino sobre providers -->
     <ng-container *ngIf="feedItems.length > 0; else providersOnly">
       <ng-container *ngFor="let item of feedItems; trackBy: trackByFeedItemId">
@@ -165,6 +187,10 @@
             
             <!-- Badges -->
             <div class="avatar-badges">
+              <!-- 🚀 NUEVO: Badge para productos -->
+              <ion-badge *ngIf="item.data.isProduct" class="product-badge" color="tertiary">
+                <ion-icon name="cube-outline"></ion-icon>
+              </ion-badge>
               <ion-badge *ngIf="item.data.verified" class="verified-badge" color="success">
                 <ion-icon name="checkmark-circle"></ion-icon>
               </ion-badge>
@@ -183,6 +209,22 @@
             
             <div class="service-message">
               <p class="service-description">{{ item.data.description | slice:0:60 }}{{ item.data.description.length > 60 ? '...' : '' }}</p>
+              
+              <!-- 🚀 NUEVO: Mostrar precio para productos -->
+              <div *ngIf="item.data.isProduct && item.data.originalProduct?.price" class="product-price">
+                <ion-badge color="primary" mode="ios">
+                  <ion-icon name="pricetag-outline"></ion-icon>
+                  ${{ item.data.originalProduct.price | number:'1.0-0' }}
+                </ion-badge>
+              </div>
+              
+              <!-- 🚀 NUEVO: Mostrar nombre del proveedor para productos -->
+              <div *ngIf="item.data.isProduct && item.data.providerName" class="product-provider">
+                <ion-badge color="secondary" mode="ios" (click)="goToProvider(item.data.providerId)">
+                  <ion-icon name="storefront-outline"></ion-icon>
+                  {{ item.data.providerName }}
+                </ion-badge>
+              </div>
             </div>
             
             <div class="service-meta">
@@ -196,10 +238,6 @@
                 <span>{{ item.data.rating | number:'1.1-1' }}</span>
               </div>
               
-              <div class="meta-item">
-                <ion-icon name="eye-outline"></ion-icon>
-                <span>{{ item.data.views }}</span>
-              </div>
             </div>
           </div>
 

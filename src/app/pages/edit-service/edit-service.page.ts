@@ -6,6 +6,7 @@ import { FormsModule } from '@angular/forms';
 import { IonicModule } from '@ionic/angular';
 import { ApiService } from '../../services/api.service';
 import { CacheService } from '../../services/cache.service';
+import { AuthService } from '../../services/auth.service';
 import { Category, Provider, Question } from '../../models/provider.model';
 import { MapAddressComponent, AddressData } from '../../components/map-address/map-address.component';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
@@ -159,6 +160,7 @@ export class EditServicePage implements OnInit {
     public router: Router,
     private apiService: ApiService,
     private cacheService: CacheService,
+    private authService: AuthService,
     private loadingController: LoadingController,
     private toastController: ToastController,
     private alertController: AlertController,
@@ -570,6 +572,17 @@ export class EditServicePage implements OnInit {
     try {
       const formData = new FormData();
       
+      // 🔥 IMPORTANTE: Agregar userId del usuario autenticado
+      const currentUser = this.authService.getCurrentUser();
+      if (currentUser) {
+        formData.append('userId', currentUser.id);
+        console.log('✅ Agregando userId al formulario de edición:', currentUser.id);
+      } else {
+        console.error('❌ No se encontró usuario autenticado');
+        this.showErrorToast('Debes estar logueado para editar un servicio');
+        return;
+      }
+      
       // Basic information
       formData.append('name', this.formData.name);
       formData.append('description', this.formData.description);
@@ -774,8 +787,10 @@ export class EditServicePage implements OnInit {
         formData.append('tags', JSON.stringify(tags));
       }
 
-      // Imágenes
+      // 🔥 Imágenes - Agregar logging para debugging
+      console.log('📸 Agregando imágenes al FormData:', this.productFormData.images.length);
       this.productFormData.images.forEach((image, index) => {
+        console.log(`📸 Imagen ${index + 1}:`, image.name, image.size, 'bytes');
         formData.append('images', image);
       });
 
@@ -817,6 +832,13 @@ export class EditServicePage implements OnInit {
       return false;
     }
     
+    // 🔥 IMPORTANTE: Validar que se hayan seleccionado imágenes
+    if (!this.productFormData.images || this.productFormData.images.length === 0) {
+      this.showErrorToast('Debe seleccionar al menos una imagen para el producto');
+      return false;
+    }
+    
+    console.log('✅ Validación de producto exitosa, imágenes:', this.productFormData.images.length);
     return true;
   }
 
