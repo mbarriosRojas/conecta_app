@@ -18,8 +18,9 @@ const config: CapacitorConfig = {
       permissions: ['read', 'write']
     },
     StatusBar: {
-      style: 'default',
-      backgroundColor: '#667eea'
+      style: 'light',
+      backgroundColor: '#667eea',
+      overlaysWebView: false
     },
     SplashScreen: {
       launchShowDuration: 3000,

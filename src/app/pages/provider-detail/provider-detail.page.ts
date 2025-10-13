@@ -230,16 +230,9 @@ export class ProviderDetailPage implements OnInit, AfterViewInit, OnDestroy {
           console.log('View registration failed silently:', err)
         );
         
-        // Cargar productos y categorías solo si el usuario está autenticado
-        const isAuthenticated = this.authService.isAuthenticated();
-        if (isAuthenticated) {
-          await this.loadProductCategories();
-          await this.loadProducts();
-        } else {
-          console.log('Usuario no autenticado, omitiendo carga de productos');
-          // Cargar solo las categorías básicas
-          this.productCategories = ['all'];
-        }
+        // Los productos y categorías son públicos, cargar siempre
+        await this.loadProductCategories();
+        await this.loadProducts();
         
         // Inicializar swiper de categorías después de cargar las categorías
         setTimeout(() => {
@@ -425,30 +418,21 @@ export class ProviderDetailPage implements OnInit, AfterViewInit, OnDestroy {
 
   setActiveSection(section: string) {
     this.activeSection = section;
-    const isAuthenticated = this.authService.isAuthenticated();
     
-    if (section === 'catalog' && this.products.length === 0 && isAuthenticated) {
+    // El catálogo es público, cargar sin verificar autenticación
+    if (section === 'catalog' && this.products.length === 0) {
       this.loadProducts(true);
-    } else if (section === 'catalog' && !isAuthenticated) {
-      // Mostrar mensaje de que necesita autenticarse para ver productos
-      this.showInfoToast('Inicia sesión para ver el catálogo de productos');
     }
     
-    if (section === 'promo' && this.promotions.length === 0 && isAuthenticated) {
+    // Las promociones son públicas, cargar sin verificar autenticación
+    if (section === 'promo' && this.promotions.length === 0) {
       this.loadPromotions();
-    } else if (section === 'promo' && !isAuthenticated) {
-      // Mostrar mensaje de que necesita autenticarse para ver promociones
-      this.showInfoToast('Inicia sesión para ver las promociones');
     }
   }
 
   onCategoryChange() {
-    const isAuthenticated = this.authService.isAuthenticated();
-    if (isAuthenticated) {
-      this.loadProducts(true);
-    } else {
-      this.showInfoToast('Inicia sesión para ver los productos');
-    }
+    // Los productos son públicos, cargar sin verificar autenticación
+    this.loadProducts(true);
   }
 
   async callProvider() {
@@ -666,11 +650,9 @@ export class ProviderDetailPage implements OnInit, AfterViewInit, OnDestroy {
 
     onProductCategoryChange(category: string) {
       this.selectedCategory = category;
-      const isAuthenticated = this.authService.isAuthenticated();
-      if (this.provider && isAuthenticated) {
+      // Los productos son públicos, cargar sin verificar autenticación
+      if (this.provider) {
         this.loadProducts(true);
-      } else if (!isAuthenticated) {
-        this.showInfoToast('Inicia sesión para ver los productos');
       }
     }
 

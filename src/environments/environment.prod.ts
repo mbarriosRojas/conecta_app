@@ -1,7 +1,7 @@
 export const environment = {
   production: true,
-  //apiUrl: 'http://localhost:8080', // Backend local
-  apiUrl: 'https://conecta-backend-b5yg.onrender.com', // Backend en Render
+  apiUrl: 'http://localhost:8080', // Backend local
+  //apiUrl: 'https://conecta-backend-b5yg.onrender.com', // Backend en Render
   appName: 'Providers',
   version: '1.0.0',
   defaultRadius: 20000, // 20km en metros

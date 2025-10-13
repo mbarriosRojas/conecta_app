@@ -40,35 +40,26 @@
 <ion-content [fullscreen]="false" class="home-content">
 
 
-  <!-- Banner promocional -->
-  <div class="promotional-banner" [style.background-image]="banners.length > 0 ? 'url(' + banners[0].image + ')' : ''">
-    <div class="banner-overlay">
-      <div class="banner-content">
-        <div class="banner-image">
-          <!-- Banners dinámicos del API -->
-          <div class="banners-slider" #bannersSlider *ngIf="banners.length > 0">
-            <div class="swiper-wrapper">
-              <div class="swiper-slide" *ngFor="let banner of banners">
-                <div class="banner-item" [style.background-image]="'url(' + banner.image + ')'">
-                  <div class="banner-overlay" *ngIf="banner.link">
-                    <div class="banner-content">
-                      <div class="banner-actions">
-                        <ion-button fill="solid" color="light" size="small" (click)="openBannerLink(banner.link)">
-                          Ver más
-                        </ion-button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+  <!-- Banner promocional slider -->
+  <div class="promotional-banner-container" *ngIf="banners.length > 0">
+    <div class="banners-slider" #bannersSlider>
+      <div class="swiper-wrapper">
+        <div class="swiper-slide" *ngFor="let banner of banners">
+          <div class="banner-slide" [style.background-image]="'url(' + banner.image + ')'" (click)="banner.link && openBannerLink(banner.link)">
+            <div class="banner-overlay">
+              <div class="banner-content" *ngIf="banner.title || banner.description">
+                <h2 class="banner-title" *ngIf="banner.title">{{ banner.title }}</h2>
+                <p class="banner-description" *ngIf="banner.description">{{ banner.description }}</p>
+                <ion-button fill="solid" color="light" size="small" *ngIf="banner.link">
+                  Ver más
+                </ion-button>
               </div>
             </div>
-            <!-- Paginación -->
-            <div class="swiper-pagination"></div>
           </div>
-          <!-- Ícono por defecto si no hay banners -->
-          <img src="assets/images/service-icon.svg" alt="Servicios" class="service-icon" *ngIf="banners.length === 0">
         </div>
       </div>
+      <!-- Paginación con bullets -->
+      <div class="swiper-pagination banner-pagination"></div>
     </div>
   </div>
 

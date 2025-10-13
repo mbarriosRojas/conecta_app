@@ -35,10 +35,19 @@ export class AppComponent implements OnInit {
   private async initializeStatusBar() {
     try {
       if (this.platform.is('capacitor')) {
-        await StatusBar.setStyle({ style: Style.Default });
+        // Configurar para que NO se superponga con el contenido
+        await StatusBar.setOverlaysWebView({ overlay: false });
+        
+        // Estilo ligero para status bar (iconos oscuros en fondo claro)
+        await StatusBar.setStyle({ style: Style.Light });
+        
+        // Color de fondo del status bar
         await StatusBar.setBackgroundColor({ color: '#667eea' });
+        
+        // Mostrar el status bar
         await StatusBar.show();
-        console.log('✅ StatusBar configurado para AKI');
+        
+        console.log('✅ StatusBar configurado con safe area');
       }
     } catch (error) {
       console.error('❌ Error inicializando StatusBar:', error);

@@ -19,6 +19,7 @@ import { environment } from '../../../environments/environment';
 import { NoResultsExpandComponent } from '../../components/no-results-expand/no-results-expand.component';
 import Swiper from 'swiper';
 import { SwiperOptions } from 'swiper/types';
+import { Pagination, Autoplay } from 'swiper/modules';
 
 // Interface para items del feed (proveedores o promociones)
 interface FeedItem {
@@ -92,18 +93,21 @@ export class HomePage implements OnInit, AfterViewInit {
 
   // Configuración del swiper para banners
   bannersSwiperConfig: SwiperOptions = {
+    modules: [Pagination, Autoplay],
     slidesPerView: 1,
     spaceBetween: 0,
     autoplay: {
-      delay: 3000,
+      delay: 4000,
       disableOnInteraction: false,
     },
     loop: true,
-    effect: 'fade',
-    fadeEffect: {
-      crossFade: true
+    pagination: {
+      el: '.swiper-pagination',
+      clickable: true,
+      dynamicBullets: false,
     },
-    allowTouchMove: false, // Deshabilitar touch para el ícono pequeño
+    grabCursor: true,
+    allowTouchMove: true, // Habilitar swipe
     on: {
       slideChange: () => {
         this.updateBannerBackground();
@@ -1105,15 +1109,9 @@ export class HomePage implements OnInit, AfterViewInit {
   }
 
   updateBannerBackground() {
+    // Actualizar índice del banner actual
     if (this.bannersSwiper && this.banners.length > 0) {
       this.currentBannerIndex = this.bannersSwiper.realIndex;
-      // Forzar actualización del DOM
-      setTimeout(() => {
-        const bannerElement = document.querySelector('.promotional-banner') as HTMLElement;
-        if (bannerElement && this.banners[this.currentBannerIndex]) {
-          bannerElement.style.backgroundImage = `url(${this.banners[this.currentBannerIndex].image})`;
-        }
-      }, 100);
     }
   }
 

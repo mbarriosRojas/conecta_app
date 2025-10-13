@@ -201,29 +201,9 @@
   <!-- Sección de Catálogo -->
   <div class="section-content" *ngIf="activeSection === 'catalog'">
     
-    <!-- Mensaje de autenticación requerida -->
-    <ion-card class="auth-required-card" *ngIf="!authService.isAuthenticated()">
-      <ion-card-content>
-        <div class="auth-required-message">
-          <ion-icon name="lock-closed-outline" color="primary" size="large"></ion-icon>
-          <h3>Inicia sesión para ver el catálogo</h3>
-          <p>Necesitas iniciar sesión para acceder al catálogo de productos de este negocio.</p>
-          <ion-button 
-            expand="block" 
-            fill="solid" 
-            color="primary"
-            routerLink="/login">
-            <ion-icon name="log-in-outline" slot="start"></ion-icon>
-            Iniciar sesión
-          </ion-button>
-        </div>
-      </ion-card-content>
-    </ion-card>
-
-    <!-- Contenido del catálogo para usuarios autenticados -->
-    <div *ngIf="authService.isAuthenticated()">
-      <!-- Filtros de productos con slider -->
-      <div class="product-filters" *ngIf="productCategories.length > 0">
+    <!-- Contenido del catálogo (público, sin requerir autenticación) -->
+    <!-- Filtros de productos con slider -->
+    <div class="product-filters" *ngIf="productCategories.length > 0">
         <div class="category-slider-container">
           <div class="category-slider" #categorySlider>
             <div class="swiper-wrapper">
@@ -305,44 +285,23 @@
         <p>Cargando productos...</p>
       </div>
 
-      <!-- Botón para cargar más productos -->
-      <div class="load-more" *ngIf="hasMoreProducts && !isLoadingProducts">
-        <ion-button 
-          expand="block" 
-          fill="outline" 
-          (click)="loadProducts()">
-          <ion-icon name="add" slot="start"></ion-icon>
-          Cargar más productos
-        </ion-button>
-      </div>
+    <!-- Botón para cargar más productos -->
+    <div class="load-more" *ngIf="hasMoreProducts && !isLoadingProducts">
+      <ion-button 
+        expand="block" 
+        fill="outline" 
+        (click)="loadProducts()">
+        <ion-icon name="add" slot="start"></ion-icon>
+        Cargar más productos
+      </ion-button>
     </div>
   </div>
 
   <!-- Sección de Promociones -->
   <div class="section-content" *ngIf="activeSection === 'promo'">
     
-    <!-- Mensaje de autenticación requerida -->
-    <ion-card class="auth-required-card" *ngIf="!authService.isAuthenticated()">
-      <ion-card-content>
-        <div class="auth-required-message">
-          <ion-icon name="lock-closed-outline" color="primary" size="large"></ion-icon>
-          <h3>Inicia sesión para ver las promociones</h3>
-          <p>Necesitas iniciar sesión para acceder a las promociones de este negocio.</p>
-          <ion-button 
-            expand="block" 
-            fill="solid" 
-            color="primary"
-            routerLink="/login">
-            <ion-icon name="log-in-outline" slot="start"></ion-icon>
-            Iniciar sesión
-          </ion-button>
-        </div>
-      </ion-card-content>
-    </ion-card>
-
-    <!-- Contenido de promociones para usuarios autenticados -->
-    <div *ngIf="authService.isAuthenticated()">
-      <ion-card class="promotions-card" *ngIf="promotions.length > 0">
+    <!-- Contenido de promociones (público, sin requerir autenticación) -->
+    <ion-card class="promotions-card" *ngIf="promotions.length > 0">
       <ion-card-header>
         <ion-card-title>
           <ion-icon name="pricetag-outline" color="primary"></ion-icon>
@@ -410,7 +369,6 @@
         </div>
       </ion-card-content>
     </ion-card>
-    </div>
   </div>
 
 </ion-content>
