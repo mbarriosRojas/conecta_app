@@ -446,4 +446,12 @@ export class ApiService {
         catchError(this.handleError.bind(this))
       );
   }
+
+  // 🚀 NUEVO: Método para obtener promociones/cupones por proveedor
+  getPromotionsByProvider(providerId: string): Observable<any> {
+    return this.http.get(`${this.baseUrl}/api/coupons/provider/${providerId}`)
+      .pipe(
+        catchError(this.handleError.bind(this))
+      );
+  }
 }

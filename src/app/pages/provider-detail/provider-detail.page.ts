@@ -7,6 +7,7 @@ import { ApiService } from '../../services/api.service';
 import { CacheService } from '../../services/cache.service';
 import { LocationService, LocationData } from '../../services/location.service';
 import { GeocodingService, LocationSuggestion } from '../../services/geocoding.service';
+import { AuthService } from '../../services/auth.service';
 import { Provider, Product, Schedule } from '../../models/provider.model';
 import { environment } from '../../../environments/environment';
 import Swiper from 'swiper';
@@ -51,7 +52,11 @@ export class ProviderDetailPage implements OnInit, AfterViewInit, OnDestroy {
   currentPage = 1;
   hasMoreProducts = true;
   isLoadingProducts = false;
-  activeSection = 'info'; // 'info', 'catalog', 'share'
+  activeSection = 'info'; // 'info', 'catalog', 'promo'
+  
+  // 🚀 NUEVO: Variables para promociones
+  promotions: any[] = [];
+  isLoadingPromotions = false;
   
   // Swiper configurations
   imagesSwiperConfig: SwiperOptions = {
@@ -145,6 +150,7 @@ export class ProviderDetailPage implements OnInit, AfterViewInit, OnDestroy {
     private apiService: ApiService,
     private cacheService: CacheService,
     private locationService: LocationService,
+    public authService: AuthService,
     private loadingController: LoadingController,
     private toastController: ToastController,
     private alertController: AlertController,
@@ -224,9 +230,16 @@ export class ProviderDetailPage implements OnInit, AfterViewInit, OnDestroy {
           console.log('View registration failed silently:', err)
         );
         
-        // Cargar productos y categorías
-        await this.loadProductCategories();
-        await this.loadProducts();
+        // Cargar productos y categorías solo si el usuario está autenticado
+        const isAuthenticated = this.authService.isAuthenticated();
+        if (isAuthenticated) {
+          await this.loadProductCategories();
+          await this.loadProducts();
+        } else {
+          console.log('Usuario no autenticado, omitiendo carga de productos');
+          // Cargar solo las categorías básicas
+          this.productCategories = ['all'];
+        }
         
         // Inicializar swiper de categorías después de cargar las categorías
         setTimeout(() => {
@@ -412,13 +425,30 @@ export class ProviderDetailPage implements OnInit, AfterViewInit, OnDestroy {
 
   setActiveSection(section: string) {
     this.activeSection = section;
-    if (section === 'catalog' && this.products.length === 0) {
+    const isAuthenticated = this.authService.isAuthenticated();
+    
+    if (section === 'catalog' && this.products.length === 0 && isAuthenticated) {
       this.loadProducts(true);
+    } else if (section === 'catalog' && !isAuthenticated) {
+      // Mostrar mensaje de que necesita autenticarse para ver productos
+      this.showInfoToast('Inicia sesión para ver el catálogo de productos');
+    }
+    
+    if (section === 'promo' && this.promotions.length === 0 && isAuthenticated) {
+      this.loadPromotions();
+    } else if (section === 'promo' && !isAuthenticated) {
+      // Mostrar mensaje de que necesita autenticarse para ver promociones
+      this.showInfoToast('Inicia sesión para ver las promociones');
     }
   }
 
   onCategoryChange() {
-    this.loadProducts(true);
+    const isAuthenticated = this.authService.isAuthenticated();
+    if (isAuthenticated) {
+      this.loadProducts(true);
+    } else {
+      this.showInfoToast('Inicia sesión para ver los productos');
+    }
   }
 
   async callProvider() {
@@ -590,6 +620,16 @@ export class ProviderDetailPage implements OnInit, AfterViewInit, OnDestroy {
     await toast.present();
   }
 
+  async showInfoToast(message: string) {
+    const toast = await this.toastController.create({
+      message,
+      duration: 3000,
+      color: 'primary',
+      position: 'bottom'
+    });
+    await toast.present();
+  }
+
   async showSuccessToast(message: string) {
     const toast = await this.toastController.create({
       message,
@@ -626,8 +666,11 @@ export class ProviderDetailPage implements OnInit, AfterViewInit, OnDestroy {
 
     onProductCategoryChange(category: string) {
       this.selectedCategory = category;
-      if (this.provider) {
+      const isAuthenticated = this.authService.isAuthenticated();
+      if (this.provider && isAuthenticated) {
         this.loadProducts(true);
+      } else if (!isAuthenticated) {
+        this.showInfoToast('Inicia sesión para ver los productos');
       }
     }
 
@@ -865,4 +908,62 @@ export class ProviderDetailPage implements OnInit, AfterViewInit, OnDestroy {
       // Cerrar el modal después de abrir WhatsApp
       this.closeProductModal();
     }
+
+  // 🚀 NUEVO: Método para cargar promociones del proveedor
+  async loadPromotions() {
+    if (!this.provider?._id) return;
+
+    this.isLoadingPromotions = true;
+    
+    try {
+      const response = await this.apiService.getPromotionsByProvider(this.provider._id).toPromise();
+      
+      if (response && response.success) {
+        this.promotions = response.data || [];
+        console.log('Promociones cargadas:', this.promotions.length);
+      } else {
+        this.promotions = [];
+        console.log('No se encontraron promociones');
+      }
+    } catch (error) {
+      console.error('Error cargando promociones:', error);
+      this.promotions = [];
+      
+      // Mostrar toast de error
+      const toast = await this.toastController.create({
+        message: 'Error al cargar promociones',
+        duration: 3000,
+        position: 'bottom',
+        color: 'danger'
+      });
+      await toast.present();
+    } finally {
+      this.isLoadingPromotions = false;
+    }
+  }
+
+  // 🚀 NUEVO: Método para copiar código de promoción
+  async copyPromotionCode(code: string) {
+    try {
+      await navigator.clipboard.writeText(code);
+      
+      const toast = await this.toastController.create({
+        message: `Código "${code}" copiado al portapapeles`,
+        duration: 2000,
+        position: 'bottom',
+        color: 'success'
+      });
+      await toast.present();
+    } catch (error) {
+      console.error('Error copiando código:', error);
+      
+      const toast = await this.toastController.create({
+        message: 'Error al copiar código',
+        duration: 3000,
+        position: 'bottom',
+        color: 'danger'
+      });
+      await toast.present();
+    }
+  }
 }

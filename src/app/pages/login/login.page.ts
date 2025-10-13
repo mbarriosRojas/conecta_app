@@ -1,6 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
-import { LoadingController, ToastController, AlertController } from '@ionic/angular';
+import { LoadingController, ToastController, AlertController, IonicModule } from '@ionic/angular';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { trigger, transition, style, animate } from '@angular/animations';
 import { GoogleAuthService } from '../../services/google-auth.service';
 import { AuthService } from '../../services/auth.service';
@@ -19,7 +21,8 @@ interface FormData {
   selector: 'app-login',
   templateUrl: './login.page.html',
   styleUrls: ['./login.page.scss'],
-  standalone: false,
+  standalone: true,
+  imports: [CommonModule, FormsModule, IonicModule],
   animations: [
     trigger('slideIn', [
       transition(':enter', [
@@ -43,6 +46,7 @@ export class LoginPage implements OnInit {
     phone: '',
     confirmPassword: ''
   };
+
 
   constructor(
     private router: Router,
@@ -133,7 +137,18 @@ export class LoginPage implements OnInit {
         return;
       }
       
-      this.showErrorToast(error?.message || 'Error en la autenticación');
+      // 🚀 NUEVO: Mostrar mensaje específico del backend si está disponible
+      let errorMessage = 'Error en la autenticación';
+      
+      if (error?.error?.message) {
+        // Mensaje del backend (ej: "El usuario ya existe")
+        errorMessage = error.error.message;
+      } else if (error?.message) {
+        // Mensaje del error HTTP
+        errorMessage = error.message;
+      }
+      
+      this.showErrorToast(errorMessage);
     } finally {
       this.isLoading = false;
     }
@@ -342,7 +357,7 @@ export class LoginPage implements OnInit {
   private async showErrorToast(message: string) {
     const toast = await this.toastController.create({
       message: message,
-      duration: 4000,
+      duration: 6000, // 🚀 NUEVO: Aumentado de 4000 a 6000ms para mejor visibilidad
       position: 'top',
       color: 'danger',
       buttons: [
@@ -366,5 +381,7 @@ export class LoginPage implements OnInit {
       phone: '',
       confirmPassword: '' 
     };
+    
   }
+
 }

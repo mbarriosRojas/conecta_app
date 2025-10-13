@@ -81,6 +81,15 @@ ion-app {
   /* Headers con gradiente suave en modo oscuro */
   ion-header {
     ion-toolbar {
+      --padding-top: env(safe-area-inset-top);
+      --padding-start: env(safe-area-inset-left);
+      --padding-end: env(safe-area-inset-right);
+      --min-height: calc(56px + env(safe-area-inset-top));
+      
+      /* Fallback para navegadores que no soportan env() */
+      padding-top: constant(safe-area-inset-top); /* iOS 11.0 */
+      padding-top: env(safe-area-inset-top); /* iOS 11.2+ */
+      
       --background: linear-gradient(135deg, #2d2440 0%, #3d3450 100%) !important;
       background: linear-gradient(135deg, #2d2440 0%, #3d3450 100%) !important;
       --color: #c4b5fd !important;
@@ -94,6 +103,7 @@ ion-app {
         --color-focused: #d8ccff !important;
         --color-hover: #d8ccff !important;
       }
+     
     }
   }
 

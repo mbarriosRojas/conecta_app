@@ -3,6 +3,7 @@ import { BrowserModule } from '@angular/platform-browser';
 import { RouteReuseStrategy } from '@angular/router';
 import { HttpClientModule, HTTP_INTERCEPTORS } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
+import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 
 import { IonicModule, IonicRouteStrategy } from '@ionic/angular';
 import { IonicStorageModule } from '@ionic/storage-angular';
@@ -40,6 +41,7 @@ import { AuthInterceptor } from './interceptors/auth.interceptor';
       useClass: AuthInterceptor,
       multi: true
     },
+    provideAnimationsAsync(), // 🚀 NUEVO: Habilitar animaciones
     ApiService,
     LocationService,
     StorageService,

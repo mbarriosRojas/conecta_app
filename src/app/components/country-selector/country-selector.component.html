@@ -1,0 +1,51 @@
+<div class="country-selector">
+  <!-- Selector de país -->
+  <div class="country-dropdown" (click)="toggleDropdown($event)">
+    <div class="country-display">
+      <span class="flag">{{ selectedCountry?.flag }}</span>
+      <span class="dial-code">{{ selectedCountry?.dialCode }}</span>
+      <ion-icon [name]="isOpen ? 'chevron-up' : 'chevron-down'" class="dropdown-icon"></ion-icon>
+    </div>
+  </div>
+
+  <!-- Input de teléfono -->
+  <div class="phone-input-container">
+    <ion-input
+      type="tel"
+      [placeholder]="selectedCountry?.mask || '0000-0000000'"
+      [value]="getMaskedPhoneNumber()"
+      (ionInput)="onPhoneNumberChange($event)"
+      class="phone-input">
+    </ion-input>
+  </div>
+
+  <!-- Dropdown de países -->
+  <div class="countries-dropdown" *ngIf="isOpen" (click)="$event.stopPropagation()">
+    <div class="search-container">
+      <ion-searchbar
+        [value]="searchTerm"
+        (ionInput)="onSearchChange($event)"
+        placeholder="Buscar país..."
+        show-clear-button="focus"
+        class="country-search">
+      </ion-searchbar>
+    </div>
+    
+    <div class="countries-list">
+      <div 
+        *ngFor="let country of filteredCountries" 
+        class="country-option"
+        (click)="selectCountry(country)"
+        [class.selected]="selectedCountry?.code === country.code">
+        <span class="flag">{{ country.flag }}</span>
+        <span class="country-name">{{ country.name }}</span>
+        <span class="dial-code">{{ country.dialCode }}</span>
+      </div>
+
+      <!-- Mensaje cuando no hay resultados -->
+      <div *ngIf="filteredCountries.length === 0" class="no-results">
+        <p>No se encontraron países</p>
+      </div>
+    </div>
+  </div>
+</div>
