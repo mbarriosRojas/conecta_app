@@ -171,6 +171,8 @@ export class PromotionsNearbyPage implements OnInit {
     // Actualizar el círculo del mapa si existe
     if (this.map) {
       this.updateMapRadius();
+      // 🔥 Ajustar zoom del mapa según el radio para mostrar el área completa
+      this.adjustMapZoom();
     }
   }
 
@@ -459,11 +461,16 @@ export class PromotionsNearbyPage implements OnInit {
 
     this.map = new google.maps.Map(mapElement, {
       center: { lat: this.currentLocation.lat, lng: this.currentLocation.lng },
-      zoom: 14,
+      zoom: 14, // Zoom inicial, se ajustará automáticamente
       mapTypeControl: false,
       streetViewControl: false,
       fullscreenControl: true
     });
+
+    // 🔥 Ajustar zoom inicial según el radio actual
+    setTimeout(() => {
+      this.adjustMapZoom();
+    }, 100); // Pequeño delay para asegurar que el mapa esté completamente cargado
 
     // Marcador del usuario
     this.userMarker = new google.maps.Marker({
@@ -679,6 +686,40 @@ export class PromotionsNearbyPage implements OnInit {
       strokeOpacity: 0.5,
       strokeWeight: 2
     });
+  }
+
+  /**
+   * 🔥 Ajusta el zoom del mapa según el radio para mostrar el área completa
+   */
+  private adjustMapZoom() {
+    if (!this.map || !this.currentLocation) return;
+
+    // Calcular el nivel de zoom basado en el radio en metros
+    const radiusMeters = this.currentRadius;
+    
+    // Tabla de zoom levels predefinidos para mejor experiencia visual
+    let targetZoom: number;
+    
+    if (radiusMeters <= 500) {
+      targetZoom = 18; // Muy cercano - nivel de calle
+    } else if (radiusMeters <= 1000) {
+      targetZoom = 17; // Cercano - barrio
+    } else if (radiusMeters <= 2000) {
+      targetZoom = 16; // Medio-cercano - distrito
+    } else if (radiusMeters <= 5000) {
+      targetZoom = 14; // Medio - ciudad pequeña
+    } else if (radiusMeters <= 8000) {
+      targetZoom = 13; // Lejano - ciudad mediana
+    } else if (radiusMeters <= 10000) {
+      targetZoom = 12; // Muy lejano - ciudad grande
+    } else {
+      targetZoom = 11; // Extremo - región
+    }
+    
+    console.log(`🗺️ Ajustando zoom: Radio=${radiusMeters}m, Zoom=${targetZoom}`);
+    
+    // Aplicar el nuevo zoom con animación suave
+    this.map.setZoom(targetZoom);
   }
 
   /**

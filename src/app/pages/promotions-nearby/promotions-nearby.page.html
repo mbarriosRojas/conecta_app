@@ -9,6 +9,7 @@
         <ion-icon name="map" slot="icon-only"></ion-icon>
       </ion-button>
     </ion-buttons>
+    
   </ion-toolbar>
 </ion-header>
 
@@ -44,13 +45,13 @@
       [(ngModel)]="currentRadius"
       (ionChange)="onRadiusChange($event)"
       min="500"
-      max="5000"
+      max="10000"
       step="100"
       pin="true"
       [pinFormatter]="formatRadiusPin"
       color="primary">
       <ion-label slot="start">500m</ion-label>
-      <ion-label slot="end">5km</ion-label>
+      <ion-label slot="end">10km</ion-label>
     </ion-range>
   </div>
 
@@ -102,7 +103,7 @@
           </ion-icon>
         </div>
         <div class="promotion-info">
-          <h3>{{ promo.businessName }}</h3>
+          <h3>{{ promo.text }}</h3>
           <div class="promotion-meta">
             <ion-badge [color]="getPromotionColor(promo.type)" mode="ios">
               <ion-icon [name]="getPromotionIcon(promo.type)"></ion-icon>
@@ -117,8 +118,11 @@
         <ion-icon name="chevron-forward" color="medium"></ion-icon>
       </div>
 
-      <div class="promotion-content">
-        <p class="promotion-text">{{ promo.text }}</p>
+      <div class="promotion-info">
+        <ion-badge color="light" mode="ios">
+          <ion-icon name="storefront-outline"></ion-icon>
+          {{ promo.businessName }}
+        </ion-badge>
       </div>
 
       <div class="promotion-footer">
@@ -135,13 +139,14 @@
     <ng-template>
       <ion-header>
         <ion-toolbar>
-          <ion-title>Exclusivas en tu zona</ion-title>
+          <ion-title>Promociones en tu zona</ion-title>
           <ion-buttons slot="end">
             <ion-button (click)="closeMapModal()" class="close-button">
               <ion-icon name="close" slot="icon-only"></ion-icon>
             </ion-button>
           </ion-buttons>
         </ion-toolbar>
+        
       </ion-header>
 
       <ion-content>
@@ -211,16 +216,14 @@
         <!-- Información de la búsqueda con slider -->
         <div class="search-info" *ngIf="!selectedPromotion">
           <div class="info-content">
-            <ion-icon name="information-circle" color="primary"></ion-icon>
             <div class="info-text">
-              <h4>{{ totalPromotions }} promociones encontradas</h4>
-              <p>Radio: {{ formatRadiusPin(currentRadius) }}</p>
-            </div>
-          </div>
-          
-          <!-- Slider de radio integrado en la card -->
-          <div class="radius-slider-integrated">
-            <ion-range
+              <div class="row">
+                <div class="col-12">
+                  <h4>
+                    <span style="font-weight:lighter">{{ totalPromotions }} promociones encontradas en </span>{{ formatRadiusPin(currentRadius) }}</h4>
+                </div>
+                <div class="col-12">
+                  <ion-range
               [(ngModel)]="currentRadius"
               (ionChange)="onMapRadiusChange($event)"
               min="500"
@@ -232,7 +235,13 @@
               <ion-label slot="start">500m</ion-label>
               <ion-label slot="end">10km</ion-label>
             </ion-range>
+                </div>
+              </div>
+             
+            </div>
+            
           </div>
+          
         </div>
 
       </ion-content>
