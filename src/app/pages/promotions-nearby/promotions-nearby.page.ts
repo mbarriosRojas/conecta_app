@@ -498,17 +498,18 @@ export class PromotionsNearbyPage implements OnInit {
       let markerIcon;
       
       if (this.hasServiceImage(promo)) {
-        // Marcador con imagen del servicio
+        // 🔥 Marcador con imagen del servicio
+        const imageUrl = this.getServiceImage(promo);
         markerIcon = {
-          url: this.getServiceImage(promo),
-          scaledSize: new google.maps.Size(40, 40),
-          anchor: new google.maps.Point(20, 20)
+          url: imageUrl,
+          scaledSize: new google.maps.Size(45, 45), // Tamaño moderado
+          anchor: new google.maps.Point(22, 22) // Centro del marcador
         };
       } else {
         // Marcador circular simple con color según tipo
         markerIcon = {
           path: google.maps.SymbolPath.CIRCLE,
-          scale: 14,
+          scale: 16, // Más grande para mejor visibilidad
           fillColor: this.getMarkerColor(promo.type),
           fillOpacity: 0.9,
           strokeColor: '#ffffff',
@@ -523,7 +524,8 @@ export class PromotionsNearbyPage implements OnInit {
         },
         map: this.map,
         title: `${promo.businessName} - ${promo.type}`,
-        icon: markerIcon
+        icon: markerIcon,
+        optimized: false // Permite mejor renderizado de imágenes personalizadas
       });
 
       marker.addListener('click', () => {
@@ -565,6 +567,7 @@ export class PromotionsNearbyPage implements OnInit {
     return colors[type] || '#3880ff';
   }
 
+
   /**
    * Resetea todos los marcadores a su estado original
    */
@@ -585,20 +588,21 @@ export class PromotionsNearbyPage implements OnInit {
     let highlightedIcon;
     
     if (this.hasServiceImage(promo)) {
-      // Marcador con imagen del servicio pero más grande y con borde
+      // 🔥 Marcador con imagen del servicio más grande al seleccionar
+      const imageUrl = this.getServiceImage(promo);
       highlightedIcon = {
-        url: this.getServiceImage(promo),
-        scaledSize: new google.maps.Size(50, 50), // Más grande
-        anchor: new google.maps.Point(25, 25)
+        url: imageUrl,
+        scaledSize: new google.maps.Size(55, 55), // Más grande al seleccionar
+        anchor: new google.maps.Point(27, 27) // Centro ajustado
       };
     } else {
       // Marcador circular destacado
       highlightedIcon = {
         path: google.maps.SymbolPath.CIRCLE,
-        scale: 18, // Más grande
+        scale: 20, // Más grande
         fillColor: this.getMarkerColor(promo.type),
         fillOpacity: 1,
-        strokeColor: '#ffffff',
+        strokeColor: '#FFD700', // Borde dorado para destacar
         strokeWeight: 4 // Borde más grueso
       };
     }

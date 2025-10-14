@@ -10,12 +10,16 @@
 <ion-content [fullscreen]="false">
   <form (ngSubmit)="onSubmit()" #serviceForm="ngForm">
     
-    <!-- Información básica -->
-    <ion-card>
-      <ion-card-header>
-        <ion-card-title>Información Básica</ion-card-title>
+    <!-- Información básica - Sección desplegable -->
+    <ion-card class="expandable-card">
+      <ion-card-header (click)="toggleSection('basic')" class="expandable-header">
+        <ion-card-title>
+          <ion-icon name="information-circle-outline"></ion-icon>
+          Información Básica
+        </ion-card-title>
+        <ion-icon [name]="expandedSections.basic ? 'chevron-up' : 'chevron-down'" class="expand-icon"></ion-icon>
       </ion-card-header>
-      <ion-card-content>
+      <ion-card-content *ngIf="expandedSections.basic" class="expandable-content">
         <ion-item>
           <ion-label position="stacked">Nombre del servicio *</ion-label>
           <ion-input [(ngModel)]="formData.name" name="name" required></ion-input>
@@ -34,20 +38,19 @@
             </ion-select-option>
           </ion-select>
         </ion-item>
-
-        <ion-item>
-          <ion-label position="stacked">Slug (URL amigable)</ion-label>
-          <ion-input [(ngModel)]="formData.slug" name="slug" placeholder="mi-servicio-unico"></ion-input>
-        </ion-item>
       </ion-card-content>
     </ion-card>
 
-    <!-- Contacto -->
-    <ion-card>
-      <ion-card-header>
-        <ion-card-title>Información de Contacto</ion-card-title>
+    <!-- Contacto - Sección desplegable -->
+    <ion-card class="expandable-card">
+      <ion-card-header (click)="toggleSection('contact')" class="expandable-header">
+        <ion-card-title>
+          <ion-icon name="call-outline"></ion-icon>
+          Información de Contacto
+        </ion-card-title>
+        <ion-icon [name]="expandedSections.contact ? 'chevron-up' : 'chevron-down'" class="expand-icon"></ion-icon>
       </ion-card-header>
-      <ion-card-content>
+      <ion-card-content *ngIf="expandedSections.contact" class="expandable-content">
         <ion-item>
           <ion-label position="stacked">Teléfono de contacto *</ion-label>
           <ion-input [(ngModel)]="formData.phone_contact" name="phone_contact" type="tel" required></ion-input>
@@ -67,20 +70,19 @@
           <ion-label position="stacked">Sitio web</ion-label>
           <ion-input [(ngModel)]="formData.site_web" name="site_web" type="url" placeholder="https://"></ion-input>
         </ion-item>
-
-        <ion-item>
-          <ion-label position="stacked">Video (YouTube, Vimeo, etc.)</ion-label>
-          <ion-input [(ngModel)]="formData.video" name="video" type="url"></ion-input>
-        </ion-item>
       </ion-card-content>
     </ion-card>
 
-    <!-- Redes sociales -->
-    <ion-card>
-      <ion-card-header>
-        <ion-card-title>Redes Sociales</ion-card-title>
+    <!-- Redes sociales - Sección desplegable -->
+    <ion-card class="expandable-card">
+      <ion-card-header (click)="toggleSection('social')" class="expandable-header">
+        <ion-card-title>
+          <ion-icon name="share-social-outline"></ion-icon>
+          Redes Sociales
+        </ion-card-title>
+        <ion-icon [name]="expandedSections.social ? 'chevron-up' : 'chevron-down'" class="expand-icon"></ion-icon>
       </ion-card-header>
-      <ion-card-content>
+      <ion-card-content *ngIf="expandedSections.social" class="expandable-content">
         <ion-item>
           <ion-label position="stacked">Facebook</ion-label>
           <ion-input [(ngModel)]="formData.facebook" name="facebook" placeholder="https://facebook.com/mi-pagina"></ion-input>
@@ -111,12 +113,16 @@
       (addressChanged)="onAddressChanged($event)">
     </app-map-address>
 
-    <!-- Horarios -->
-    <ion-card>
-      <ion-card-header>
-        <ion-card-title>Horarios de Atención</ion-card-title>
+    <!-- Horarios - Sección desplegable -->
+    <ion-card class="expandable-card">
+      <ion-card-header (click)="toggleSection('schedule')" class="expandable-header">
+        <ion-card-title>
+          <ion-icon name="time-outline"></ion-icon>
+          Horarios de Atención
+        </ion-card-title>
+        <ion-icon [name]="expandedSections.schedule ? 'chevron-up' : 'chevron-down'" class="expand-icon"></ion-icon>
       </ion-card-header>
-      <ion-card-content>
+      <ion-card-content *ngIf="expandedSections.schedule" class="expandable-content">
         <div *ngFor="let schedule of formData.schedule; let i = index" class="schedule-item">
           <ion-item>
             <ion-checkbox [(ngModel)]="schedule.active" name="schedule{{i}}active"></ion-checkbox>
@@ -138,12 +144,16 @@
       </ion-card-content>
     </ion-card>
 
-    <!-- Preguntas frecuentes -->
-    <ion-card>
-      <ion-card-header>
-        <ion-card-title>Preguntas Frecuentes</ion-card-title>
+    <!-- Preguntas frecuentes - Sección desplegable -->
+    <ion-card class="expandable-card">
+      <ion-card-header (click)="toggleSection('questions')" class="expandable-header">
+        <ion-card-title>
+          <ion-icon name="help-circle-outline"></ion-icon>
+          Preguntas Frecuentes
+        </ion-card-title>
+        <ion-icon [name]="expandedSections.questions ? 'chevron-up' : 'chevron-down'" class="expand-icon"></ion-icon>
       </ion-card-header>
-      <ion-card-content>
+      <ion-card-content *ngIf="expandedSections.questions" class="expandable-content">
         <div *ngFor="let question of formData.questions; let i = index" class="question-item">
           <ion-item>
             <ion-label position="stacked">Pregunta</ion-label>
@@ -168,26 +178,85 @@
       </ion-card-content>
     </ion-card>
 
-    <!-- Imágenes -->
-    <ion-card>
-      <ion-card-header>
-        <ion-card-title>Imágenes</ion-card-title>
+    <!-- Imágenes - Sección desplegable -->
+    <ion-card class="expandable-card">
+      <ion-card-header (click)="toggleSection('images')" class="expandable-header">
+        <ion-card-title>
+          <ion-icon name="images-outline"></ion-icon>
+          Imágenes del Servicio
+        </ion-card-title>
+        <ion-icon [name]="expandedSections.images ? 'chevron-up' : 'chevron-down'" class="expand-icon"></ion-icon>
       </ion-card-header>
-      <ion-card-content>
-        <ion-item>
-          <ion-label position="stacked">Logo del servicio</ion-label>
-          <ion-input type="file" accept="image/*" (change)="onLogoSelected($event)"></ion-input>
-        </ion-item>
+      <ion-card-content *ngIf="expandedSections.images" class="expandable-content">
+        
+        <!-- Logo del servicio -->
+        <div class="image-upload-section">
+          <ion-label class="section-label">Logo del servicio</ion-label>
+          
+          <div class="image-preview-container">
+            <div class="image-preview" *ngIf="logoPreview">
+              <img [src]="logoPreview" alt="Logo preview" class="preview-image">
+              <ion-button 
+                fill="clear" 
+                color="danger" 
+                size="small" 
+                class="remove-image-btn"
+                (click)="removeLogo()">
+                <ion-icon name="trash"></ion-icon>
+              </ion-button>
+            </div>
+            
+            <div class="upload-area" *ngIf="!logoPreview" (click)="triggerLogoUpload()">
+              <ion-icon name="add-circle-outline" size="large" color="medium"></ion-icon>
+              <p>Seleccionar logo</p>
+            </div>
+          </div>
+          
+          <input 
+            #logoInput
+            type="file" 
+            accept="image/*" 
+            (change)="onLogoSelected($event)"
+            style="display: none;">
+        </div>
 
-        <ion-item>
-          <ion-label position="stacked">Imágenes del servicio *</ion-label>
-          <ion-input type="file" accept="image/*" multiple (change)="onImagesSelected($event)"></ion-input>
-        </ion-item>
+        <!-- Imágenes del servicio -->
+        <div class="image-upload-section">
+          <ion-label class="section-label">Imágenes del servicio *</ion-label>
+          
+          <div class="images-grid">
+            <div class="image-preview" *ngFor="let image of imagesPreviews; let i = index">
+              <img [src]="image" alt="Image preview" class="preview-image">
+              <ion-button 
+                fill="clear" 
+                color="danger" 
+                size="small" 
+                class="remove-image-btn"
+                (click)="removeImage(i)">
+                <ion-icon name="trash"></ion-icon>
+              </ion-button>
+            </div>
+            
+            <div class="upload-area" *ngIf="imagesPreviews.length < 10" (click)="triggerImagesUpload()">
+              <ion-icon name="add-circle-outline" size="large" color="medium"></ion-icon>
+              <p>Agregar imagen</p>
+            </div>
+          </div>
+          
+          <input 
+            #imagesInput
+            type="file" 
+            accept="image/*" 
+            multiple
+            (change)="onImagesSelected($event)"
+            style="display: none;">
+        </div>
 
         <ion-note color="medium">
           <p>• Selecciona al menos una imagen del servicio</p>
           <p>• Formatos recomendados: JPG, PNG</p>
           <p>• Tamaño máximo: 5MB por imagen</p>
+          <p>• Máximo 10 imágenes</p>
         </ion-note>
       </ion-card-content>
     </ion-card>

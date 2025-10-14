@@ -21,6 +21,20 @@ export class CreateServicePage implements OnInit {
   categories: Category[] = [];
   isLoading = false;
   
+  // Control de secciones desplegables
+  expandedSections = {
+    basic: true,      // Información básica siempre abierta
+    contact: false,
+    social: false,
+    schedule: false,
+    questions: false,
+    images: false
+  };
+  
+  // Previsualización de imágenes
+  logoPreview: string | null = null;
+  imagesPreviews: string[] = [];
+  
   // Datos iniciales para el componente de dirección
   initialAddressData: Partial<AddressData> = {
     country: 'Colombia',
@@ -36,14 +50,12 @@ export class CreateServicePage implements OnInit {
     phone_number: '',
     email: '',
     site_web: '',
-    video: '',
     facebook: '',
     instagram: '',
     tiktok: '',
     linkedin: '',
     isHighlighted: false,
     isVerified: false,
-    slug: '',
     schedule: [
       { day: 'Lunes', active: true, start: '08:00', end: '18:00' },
       { day: 'Martes', active: true, start: '08:00', end: '18:00' },
@@ -84,6 +96,12 @@ export class CreateServicePage implements OnInit {
   ngOnInit() {
     this.loadCategories();
     // Inicializar con ubicación por defecto (Bogotá)
+  }
+
+  // Método para controlar secciones desplegables
+  toggleSection(section: string) {
+    this.expandedSections[section as keyof typeof this.expandedSections] = 
+      !this.expandedSections[section as keyof typeof this.expandedSections];
   }
 
   async loadCategories() {
@@ -137,12 +155,53 @@ export class CreateServicePage implements OnInit {
     const file = event.target.files[0];
     if (file) {
       this.selectedLogo = file;
+      // Crear previsualización
+      const reader = new FileReader();
+      reader.onload = (e: any) => {
+        this.logoPreview = e.target.result;
+      };
+      reader.readAsDataURL(file);
     }
   }
 
   onImagesSelected(event: any) {
     const files = Array.from(event.target.files) as File[];
     this.selectedImages = files;
+    
+    // Crear previsualizaciones
+    this.imagesPreviews = [];
+    files.forEach(file => {
+      const reader = new FileReader();
+      reader.onload = (e: any) => {
+        this.imagesPreviews.push(e.target.result);
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  // Métodos para manejar previsualización de imágenes
+  triggerLogoUpload() {
+    const logoInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    if (logoInput) {
+      logoInput.click();
+    }
+  }
+
+  triggerImagesUpload() {
+    const imagesInput = document.querySelectorAll('input[type="file"]')[1] as HTMLInputElement;
+    if (imagesInput) {
+      imagesInput.click();
+    }
+  }
+
+  removeLogo() {
+    this.selectedLogo = null;
+    this.logoPreview = null;
+  }
+
+  removeImage(index: number) {
+    this.selectedImages.splice(index, 1);
+    this.imagesPreviews.splice(index, 1);
   }
 
   addQuestion() {
@@ -191,10 +250,8 @@ export class CreateServicePage implements OnInit {
       formData.append('phone_number', this.formData.phone_number);
       formData.append('email', this.formData.email);
       formData.append('site_web', this.formData.site_web);
-      formData.append('video', this.formData.video);
       formData.append('isHighlighted', this.formData.isHighlighted.toString());
       formData.append('isVerified', this.formData.isVerified.toString());
-      formData.append('slug', this.formData.slug);
 
       // Social media
       formData.append('facebook', this.formData.facebook);

@@ -18,109 +18,103 @@
     <!-- Contenedor principal con estilo WhatsApp -->
     <div class="whatsapp-container">
       
-      <!-- Sección: Información del Servicio -->
-      <div class="settings-section">
-        <div class="section-title">Información del Servicio</div>
-        
-        <div class="settings-item">
-          <div class="item-icon">
-            <ion-icon name="business"></ion-icon>
+      <!-- Sección: Información del Servicio - Card expandible -->
+      <ion-card class="expandable-card">
+        <ion-card-header (click)="toggleSection('basic')" class="expandable-header">
+          <ion-card-title>
+            <ion-icon name="business-outline"></ion-icon>
+            Información del Servicio
+          </ion-card-title>
+          <ion-icon [name]="expandedSections.basic ? 'chevron-up' : 'chevron-down'" class="expand-icon"></ion-icon>
+        </ion-card-header>
+        <ion-card-content *ngIf="expandedSections.basic" class="expandable-content">
+          <div class="settings-item">
+            <div class="item-icon">
+              <ion-icon name="business"></ion-icon>
+            </div>
+            <div class="item-content">
+              <div class="item-label">Nombre del servicio</div>
+              <ion-input [(ngModel)]="formData.name" name="name" required placeholder="Nombre de tu servicio"></ion-input>
+            </div>
           </div>
-          <div class="item-content">
-            <div class="item-label">Nombre del servicio</div>
-            <ion-input [(ngModel)]="formData.name" name="name" required placeholder="Nombre de tu servicio"></ion-input>
-          </div>
-        </div>
 
-        <div class="settings-item">
-          <div class="item-icon">
-            <ion-icon name="document-text"></ion-icon>
+          <div class="settings-item">
+            <div class="item-icon">
+              <ion-icon name="document-text"></ion-icon>
+            </div>
+            <div class="item-content">
+              <div class="item-label">Descripción</div>
+              <ion-textarea [(ngModel)]="formData.description" name="description" required rows="3" placeholder="Describe tu servicio"></ion-textarea>
+            </div>
           </div>
-          <div class="item-content">
-            <div class="item-label">Descripción</div>
-            <ion-textarea [(ngModel)]="formData.description" name="description" required rows="3" placeholder="Describe tu servicio"></ion-textarea>
-          </div>
-        </div>
 
-        <div class="settings-item">
-          <div class="item-icon">
-            <ion-icon name="grid"></ion-icon>
+          <div class="settings-item">
+            <div class="item-icon">
+              <ion-icon name="grid"></ion-icon>
+            </div>
+            <div class="item-content">
+              <div class="item-label">Categoría</div>
+              <ion-select [(ngModel)]="formData.categoryId" name="categoryId" required placeholder="Selecciona una categoría">
+                <ion-select-option *ngFor="let category of categories" [value]="category._id">
+                  {{ category.name }}
+                </ion-select-option>
+              </ion-select>
+            </div>
           </div>
-          <div class="item-content">
-            <div class="item-label">Categoría</div>
-            <ion-select [(ngModel)]="formData.categoryId" name="categoryId" required placeholder="Selecciona una categoría">
-              <ion-select-option *ngFor="let category of categories" [value]="category._id">
-                {{ category.name }}
-              </ion-select-option>
-            </ion-select>
-          </div>
-        </div>
+        </ion-card-content>
+      </ion-card>
 
-        <div class="settings-item">
-          <div class="item-icon">
-            <ion-icon name="link"></ion-icon>
+      <!-- Sección: Información de Contacto - Card expandible -->
+      <ion-card class="expandable-card">
+        <ion-card-header (click)="toggleSection('contact')" class="expandable-header">
+          <ion-card-title>
+            <ion-icon name="call-outline"></ion-icon>
+            Información de Contacto
+          </ion-card-title>
+          <ion-icon [name]="expandedSections.contact ? 'chevron-up' : 'chevron-down'" class="expand-icon"></ion-icon>
+        </ion-card-header>
+        <ion-card-content *ngIf="expandedSections.contact" class="expandable-content">
+          <div class="settings-item">
+            <div class="item-icon">
+              <ion-icon name="call"></ion-icon>
+            </div>
+            <div class="item-content">
+              <div class="item-label">Teléfono de contacto</div>
+              <ion-input [(ngModel)]="formData.phone_contact" name="phone_contact" type="tel" required placeholder="Número principal"></ion-input>
+            </div>
           </div>
-          <div class="item-content">
-            <div class="item-label">URL amigable (Slug)</div>
-            <ion-input [(ngModel)]="formData.slug" name="slug" placeholder="mi-servicio-unico"></ion-input>
-          </div>
-        </div>
-      </div>
 
-      <!-- Sección: Información de Contacto -->
-      <div class="settings-section">
-        <div class="section-title">Información de Contacto</div>
-        
-        <div class="settings-item">
-          <div class="item-icon">
-            <ion-icon name="call"></ion-icon>
+          <div class="settings-item">
+            <div class="item-icon">
+              <ion-icon name="phone-portrait"></ion-icon>
+            </div>
+            <div class="item-content">
+              <div class="item-label">Teléfono adicional</div>
+              <ion-input [(ngModel)]="formData.phone_number" name="phone_number" type="tel" placeholder="Número secundario"></ion-input>
+            </div>
           </div>
-          <div class="item-content">
-            <div class="item-label">Teléfono de contacto</div>
-            <ion-input [(ngModel)]="formData.phone_contact" name="phone_contact" type="tel" required placeholder="Número principal"></ion-input>
-          </div>
-        </div>
 
-        <div class="settings-item">
-          <div class="item-icon">
-            <ion-icon name="phone-portrait"></ion-icon>
+          <div class="settings-item">
+            <div class="item-icon">
+              <ion-icon name="mail"></ion-icon>
+            </div>
+            <div class="item-content">
+              <div class="item-label">Email</div>
+              <ion-input [(ngModel)]="formData.email" name="email" type="email" placeholder="correo@ejemplo.com"></ion-input>
+            </div>
           </div>
-          <div class="item-content">
-            <div class="item-label">Teléfono adicional</div>
-            <ion-input [(ngModel)]="formData.phone_number" name="phone_number" type="tel" placeholder="Número secundario"></ion-input>
-          </div>
-        </div>
 
-        <div class="settings-item">
-          <div class="item-icon">
-            <ion-icon name="mail"></ion-icon>
+          <div class="settings-item">
+            <div class="item-icon">
+              <ion-icon name="globe"></ion-icon>
+            </div>
+            <div class="item-content">
+              <div class="item-label">Sitio web</div>
+              <ion-input [(ngModel)]="formData.site_web" name="site_web" type="url" placeholder="https://mi-sitio.com"></ion-input>
+            </div>
           </div>
-          <div class="item-content">
-            <div class="item-label">Email</div>
-            <ion-input [(ngModel)]="formData.email" name="email" type="email" placeholder="correo@ejemplo.com"></ion-input>
-          </div>
-        </div>
-
-        <div class="settings-item">
-          <div class="item-icon">
-            <ion-icon name="globe"></ion-icon>
-          </div>
-          <div class="item-content">
-            <div class="item-label">Sitio web</div>
-            <ion-input [(ngModel)]="formData.site_web" name="site_web" type="url" placeholder="https://mi-sitio.com"></ion-input>
-          </div>
-        </div>
-
-        <div class="settings-item">
-          <div class="item-icon">
-            <ion-icon name="videocam"></ion-icon>
-          </div>
-          <div class="item-content">
-            <div class="item-label">Video promocional</div>
-            <ion-input [(ngModel)]="formData.video" name="video" type="url" placeholder="YouTube, Vimeo, etc."></ion-input>
-          </div>
-        </div>
-      </div>
+        </ion-card-content>
+      </ion-card>
 
       <!-- Sección: Redes Sociales -->
       <div class="settings-section">

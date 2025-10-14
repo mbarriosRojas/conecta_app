@@ -137,7 +137,7 @@
         <ion-toolbar>
           <ion-title>Exclusivas en tu zona</ion-title>
           <ion-buttons slot="end">
-            <ion-button (click)="closeMapModal()">
+            <ion-button (click)="closeMapModal()" class="close-button">
               <ion-icon name="close" slot="icon-only"></ion-icon>
             </ion-button>
           </ion-buttons>
@@ -178,7 +178,7 @@
                   </span>
                 </div>
               </div>
-              <ion-button fill="clear" size="small" (click)="selectedPromotion = null">
+              <ion-button fill="clear" size="small" (click)="selectedPromotion = null" class="close-card-button">
                 <ion-icon name="close"></ion-icon>
               </ion-button>
             </div>

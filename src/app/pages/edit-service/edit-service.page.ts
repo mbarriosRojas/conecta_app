@@ -25,6 +25,18 @@ export class EditServicePage implements OnInit {
   provider: Provider | null = null;
   isLoading = false;
   
+  // Control de secciones desplegables
+  expandedSections = {
+    basic: true,      // Información básica siempre abierta
+    contact: false,
+    social: false,
+    schedule: false,
+    questions: false,
+    images: false,
+    products: false,
+    geomarketing: false
+  };
+  
   // Datos iniciales para el componente de dirección
   initialAddressData: Partial<AddressData> = {
     country: 'Colombia'
@@ -179,6 +191,12 @@ export class EditServicePage implements OnInit {
       // Cargar estadísticas de geofencing después de cargar el provider
       await this.loadGeofenceStats();
     }
+  }
+
+  // Método para controlar secciones desplegables
+  toggleSection(section: string) {
+    this.expandedSections[section as keyof typeof this.expandedSections] = 
+      !this.expandedSections[section as keyof typeof this.expandedSections];
   }
 
   async loadCategories() {

@@ -41,20 +41,20 @@
 
     <!-- Mapa -->
     <div class="map-container" *ngIf="showMap">
-      <!-- Instrucciones interactivas mejoradas -->
+      <!-- Instrucciones mejoradas -->
       <div class="map-instructions">
         <div class="instruction-card">
-          <ion-icon name="hand-left-outline" color="primary"></ion-icon>
-          <div class="instruction-content">
-            <h4>📍 Arrastra el marcador rojo</h4>
-            <p>Para ajustar la ubicación exacta de tu servicio</p>
-          </div>
-        </div>
-        <div class="instruction-card">
-          <ion-icon name="search-outline" color="secondary"></ion-icon>
+          <ion-icon name="search-outline" color="primary"></ion-icon>
           <div class="instruction-content">
             <h4>🔍 Busca tu dirección</h4>
             <p>Usa el campo de búsqueda para encontrar tu ubicación</p>
+          </div>
+        </div>
+        <div class="instruction-card">
+          <ion-icon name="hand-left-outline" color="secondary"></ion-icon>
+          <div class="instruction-content">
+            <h4>📍 Arrastra el marcador rojo</h4>
+            <p>Para ajustar la ubicación exacta de tu servicio</p>
           </div>
         </div>
       </div>
@@ -71,13 +71,6 @@
         <p>Cargando mapa...</p>
       </div>
       
-      <!-- Indicador de marcador personalizado -->
-      <div class="marker-indicator" *ngIf="!isMapLoading">
-        <div class="marker-pulse"></div>
-        <div class="marker-center">
-          <ion-icon name="location" color="danger"></ion-icon>
-        </div>
-      </div>
     </div>
 
     <!-- Información de la dirección seleccionada -->
