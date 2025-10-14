@@ -2,13 +2,27 @@
 <ion-header [translucent]="false">
   <ion-toolbar>
     <div class="whatsapp-header">
-      <!-- Título -->
-      <div class="header-title">
-        <h1>Akí</h1>
+      <!-- Título con botones -->
+      <div class="header-title-row">
+        <div class="header-title">
+          <h1>Akí</h1>
+        </div>
+        
+        <div class="header-buttons">
+          <!-- Botón de Promociones -->
+          <ion-button fill="clear" (click)="goToPromotionsPage()" class="promotions-button">
+            <ion-icon name="megaphone" color="tertiary"></ion-icon>
+          </ion-button>
+          
+          <!-- Botón de filtro -->
+          <ion-button fill="clear" (click)="openFilterModal()" class="filter-button">
+            <ion-icon name="funnel-outline"></ion-icon>
+          </ion-button>
+        </div>
       </div>
       
-      <!-- Contenedor del buscador y filtro -->
-      <div class="search-filter-container">
+      <!-- Buscador completo -->
+      <div class="search-container">
         <div class="searchbar-wrapper">
           <ion-searchbar
             [(ngModel)]="searchQuery"
@@ -23,16 +37,6 @@
             <ion-spinner name="crescent" color="primary"></ion-spinner>
           </div>
         </div>
-        
-        <!-- Botón de Promociones -->
-        <ion-button fill="clear" (click)="goToPromotionsPage()" class="promotions-button">
-          <ion-icon name="megaphone" color="tertiary"></ion-icon>
-        </ion-button>
-        
-        <!-- Botón de filtro al lado del buscador -->
-        <ion-button fill="clear" (click)="openFilterModal()" class="filter-button">
-          <ion-icon name="funnel-outline"></ion-icon>
-        </ion-button>
       </div>
     </div>
   </ion-toolbar>

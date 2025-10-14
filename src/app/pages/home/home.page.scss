@@ -67,131 +67,7 @@ ion-header {
   }
 }
 */
-.search-filter-container {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 16px 16px 16px;
-  background: var(--whatsapp-background);
-  
-  // 🔍 Wrapper para searchbar con indicador de carga
-  .searchbar-wrapper {
-    flex: 1;
-    position: relative;
-    
-    .whatsapp-searchbar {
-      width: 100%;
-      --background: #f0f0f0;
-      --color: var(--dark-gray);
-      --placeholder-color: var(--medium-gray);
-      --icon-color: var(--medium-gray);
-      --clear-button-color: var(--medium-gray);
-      --border-radius: 20px;
-      height: 40px;
-      font-size: 16px;
-      
-      .searchbar-input {
-        background: #f0f0f0;
-        border-radius: 20px;
-        color: var(--dark-gray);
-        padding: 8px 16px;
-        height: 40px;
-        font-size: 16px;
-        
-        &::placeholder {
-          color: var(--medium-gray);
-        }
-      }
-    }
-    
-    // 🔍 Indicador de carga en el searchbar
-    .search-loading-indicator {
-      position: absolute;
-      right: 12px;
-      top: 50%;
-      transform: translateY(-50%);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 10;
-      
-      ion-spinner {
-        width: 20px;
-        height: 20px;
-      }
-    }
-  }
-  
-  .whatsapp-searchbar {
-    flex: 1;
-    --background: #f0f0f0;
-    --color: var(--dark-gray);
-    --placeholder-color: var(--medium-gray);
-    --icon-color: var(--medium-gray);
-    --clear-button-color: var(--medium-gray);
-    --border-radius: 20px;
-    height: 40px;
-    font-size: 16px;
-    
-    .searchbar-input {
-      background: #f0f0f0;
-      border-radius: 20px;
-      color: var(--dark-gray);
-      padding: 8px 16px;
-      height: 40px;
-      font-size: 16px;
-      
-      &::placeholder {
-        color: var(--medium-gray);
-      }
-    }
-  }
-  
-  .promotions-button {
-    --color: white;
-    --padding-start: 8px;
-    --padding-end: 8px;
-    height: 40px;
-    width: 40px;
-    position: relative;
-    border-radius: 20px;
-    transition: all 0.3s ease;
-    
-    ion-icon {
-      font-size: 24px;
-      color: white;
-      animation: pulse 2s infinite;
-    }
-    
-    &:hover {
-      --background: #7d3c98;
-      transform: scale(1.05);
-    }
-    
-    @keyframes pulse {
-      0%, 100% {
-        transform: scale(1);
-      }
-      50% {
-        transform: scale(1.1);
-      }
-    }
-  }
-  
-  .filter-button {
-    --color: #5a4fcf;
-    --background: transparent;
-    --padding-start: 8px;
-    --padding-end: 8px;
-    height: 40px;
-    width: 40px;
-    
-    ion-icon {
-      font-size: 22px;
-      color: #5a4fcf;
-    }
-  }
-}
+// Estilos antiguos removidos - ver estilos actualizados al final del archivo
 
 
 // Banner promocional slider
@@ -1706,39 +1582,96 @@ ion-col {
     padding: 0 16px;
   }
 }
+// Header estilo WhatsApp reorganizado
 .whatsapp-header {
   display: flex;
   flex-direction: column;
   width: 100%;
+  background: var(--whatsapp-background);
 }
 
-.header-title {
-  padding: 8px 16px;
-}
-
-.header-title h1 {
-  margin: 0;
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: #5a4fcf;
-}
-
-.search-filter-container {
+// Fila del título con botones
+.header-title-row {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 0 16px 8px;
+  justify-content: space-between;
+  padding: 8px 16px;
+  
+  .header-title {
+    flex: 1;
+    
+    h1 {
+      margin: 0;
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: #5a4fcf;
+    }
+  }
+  
+  .header-buttons {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+}
+
+// Contenedor del buscador (100% ancho)
+.search-container {
+  padding: 0 16px 12px 16px;
   width: 100%;
+  
+  .searchbar-wrapper {
+    width: 100%;
+    position: relative;
+    
+    .whatsapp-searchbar {
+      width: 100%;
+      --background: #f0f0f0;
+      --color: var(--dark-gray);
+      --placeholder-color: var(--medium-gray);
+      --icon-color: var(--medium-gray);
+      --clear-button-color: var(--medium-gray);
+      --border-radius: 20px;
+      --box-shadow: none;
+      height: 40px;
+      font-size: 16px;
+      padding: 0;
+      
+      .searchbar-input {
+        background: #f0f0f0;
+        border-radius: 20px;
+        color: var(--dark-gray);
+        padding: 8px 16px;
+        height: 40px;
+        font-size: 16px;
+        
+        &::placeholder {
+          color: var(--medium-gray);
+        }
+      }
+    }
+    
+    // Indicador de carga en el searchbar
+    .search-loading-indicator {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+      
+      ion-spinner {
+        width: 20px;
+        height: 20px;
+      }
+    }
+  }
 }
 
-.whatsapp-searchbar {
-  flex: 1;
-  --background: #f0f0f0;
-  --border-radius: 20px;
-  --box-shadow: none;
-  padding: 0;
-}
-
+// Estilos para los botones del header
+.promotions-button,
 .filter-button {
   margin: 0;
   --padding-start: 8px;
@@ -1748,13 +1681,12 @@ ion-col {
   --color: #5a4fcf;
   
   ion-icon {
-    color: #5a4fcf;
+    font-size: 22px;
   }
-}
-
-/* Opcional: Para que el botón tenga el mismo alto que el searchbar */
-.filter-button::part(native) {
-  border-radius: 50%;
+  
+  &::part(native) {
+    border-radius: 50%;
+  }
 }
 
 // Estilos para Mini Promociones
