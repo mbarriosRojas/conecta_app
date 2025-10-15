@@ -35,6 +35,19 @@ const config: CapacitorConfig = {
       splashFullScreen: true,
       splashImmersive: true
     }
+  },
+  // 🔥 Configuración para deep linking (OAuth redirect)
+  android: {
+    allowMixedContent: true,
+    captureInput: true,
+    webContentsDebuggingEnabled: true
+  },
+  // 🔥 Deep Linking para Google OAuth
+  appUrlOpen: {
+    // URLs que la app debe capturar
+    schemes: ['com.aki.conectapersonal'],
+    // Dominios personalizados
+    hosts: ['aki-app-2d2d8.firebaseapp.com', 'localhost']
   }
 };
 

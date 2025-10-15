@@ -1,6 +1,8 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Platform } from '@ionic/angular';
 import { StatusBar, Style } from '@capacitor/status-bar';
+import { App as CapacitorApp, URLOpenListenerEvent } from '@capacitor/app';
+import { Router } from '@angular/router';
 import { LocationService } from './services/location.service';
 import { AuthService } from './services/auth.service';
 
@@ -14,8 +16,12 @@ export class AppComponent implements OnInit, OnDestroy {
   constructor(
     private platform: Platform,
     private locationService: LocationService,
-    private authService: AuthService
-  ) {}
+    private authService: AuthService,
+    private router: Router
+  ) {
+    // 🔥 Configurar listener para deep links (OAuth redirect)
+    this.initializeDeepLinking();
+  }
 
   async ngOnInit() {
     console.log('🚀 AppComponent: Iniciando aplicación AKI...');
@@ -67,6 +73,45 @@ export class AppComponent implements OnInit, OnDestroy {
     } catch (error) {
       console.error('❌ Error iniciando seguimiento de ubicación:', error);
       console.log('ℹ️ Continuando sin seguimiento de ubicación');
+    }
+  }
+
+  /**
+   * 🔥 Inicializa deep linking para capturar OAuth redirects
+   */
+  private initializeDeepLinking() {
+    try {
+      // Solo en dispositivos móviles (capacitor)
+      if (this.platform.is('capacitor')) {
+        console.log('🔗 Configurando deep linking para OAuth...');
+        
+        CapacitorApp.addListener('appUrlOpen', (event: URLOpenListenerEvent) => {
+          console.log('🔗 Deep Link capturado:', event.url);
+          
+          // Analizar la URL para extraer parámetros
+          const url = new URL(event.url);
+          const path = url.pathname;
+          const params = url.searchParams;
+          
+          console.log('🔗 Path:', path);
+          console.log('🔗 Params:', params.toString());
+          
+          // Si viene de Firebase OAuth redirect
+          if (path.includes('__/auth/handler') || params.has('code')) {
+            console.log('🔗 OAuth redirect detectado, navegando a login para procesarlo...');
+            // Navegar a la página de login para que procese el redirect
+            this.router.navigate(['/login'], { replaceUrl: true });
+          } else {
+            // Navegar a la ruta interna de la app
+            console.log('🔗 Navegando a:', path);
+            this.router.navigateByUrl(path);
+          }
+        });
+        
+        console.log('✅ Deep linking configurado');
+      }
+    } catch (error) {
+      console.error('❌ Error configurando deep linking:', error);
     }
   }
 

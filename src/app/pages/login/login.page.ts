@@ -197,9 +197,27 @@ export class LoginPage implements OnInit {
       
       console.log('✅ Login exitoso:', response);
       
+      // Esperar a que se complete la inicialización del AuthService
+      await this.authService.waitForInitialization();
+      console.log('✅ Usuario autenticado correctamente');
+      
     } catch (error: any) {
       console.error('❌ Error en login:', error);
-      throw error;
+      
+      // 🔥 Mejorar mensajes de error
+      if (error.status === 400) {
+        // Errores de validación del backend
+        throw new Error(error.error?.message || 'Credenciales inválidas');
+      } else if (error.status === 0) {
+        // Error de red
+        throw new Error('No se pudo conectar con el servidor. Verifica tu conexión a internet.');
+      } else if (error.status === 500) {
+        // Error del servidor
+        throw new Error('Error en el servidor. Por favor intenta más tarde.');
+      } else {
+        // Otros errores
+        throw new Error(error.error?.message || error.message || 'Error desconocido en el login');
+      }
     }
   }
 
@@ -241,7 +259,25 @@ export class LoginPage implements OnInit {
       
     } catch (error: any) {
       console.error('❌ Error en registro:', error);
-      throw error;
+      
+      // 🔥 Mejorar mensajes de error
+      if (error.status === 400) {
+        // Errores de validación del backend
+        const message = error.error?.message || 'Error en los datos proporcionados';
+        throw new Error(message);
+      } else if (error.status === 0) {
+        // Error de red
+        throw new Error('No se pudo conectar con el servidor. Verifica tu conexión a internet.');
+      } else if (error.status === 500) {
+        // Error del servidor
+        throw new Error('Error en el servidor. Por favor intenta más tarde.');
+      } else if (error.message) {
+        // Error de validación local
+        throw error;
+      } else {
+        // Otros errores
+        throw new Error(error.error?.message || 'Error desconocido en el registro');
+      }
     }
   }
 

@@ -111,39 +111,52 @@ export class GoogleAuthService {
 
   /**
    * Autenticación con redirect (para móvil)
+   * 🔥 MEJORADO: Mejor manejo de redirect en móvil
    */
   private async signInWithRedirect(): Promise<UserCredential> {
-    // Primero intentar obtener resultado de redirect previo
-    const redirectResult = await getRedirectResult(this.auth);
-    
-    if (redirectResult) {
-      console.log('✅ Resultado de redirect obtenido:', redirectResult.user.email);
-      return redirectResult;
-    } else {
+    try {
+      // Primero intentar obtener resultado de redirect previo
+      const redirectResult = await getRedirectResult(this.auth);
+      
+      if (redirectResult) {
+        console.log('✅ Resultado de redirect obtenido:', redirectResult.user.email);
+        return redirectResult;
+      }
+      
       // Si no hay resultado previo, iniciar nuevo redirect
       console.log('🔄 Iniciando redirect a Google...');
       
-      // Configurar URL de redirección específica para móvil
+      // En móvil, intentar primero con popup
       if (this.platform.is('capacitor')) {
-        console.log('📱 Configurando redirect para móvil...');
+        console.log('📱 Plataforma móvil detectada');
         
-        // En móvil, configurar el redirect URL dinámicamente
-        const redirectUrl = window.location.origin;
-        console.log('🔗 URL de redirección configurada:', redirectUrl);
-        
-        // Usar popup en lugar de redirect para evitar problemas de URL
         try {
-          console.log('🔄 Intentando con popup en móvil...');
+          // Intentar popup primero (funciona mejor en algunos dispositivos)
+          console.log('🔄 Intentando autenticación con popup...');
           return await signInWithPopup(this.auth, this.googleProvider);
-        } catch (popupError) {
-          console.log('⚠️ Popup falló en móvil, usando redirect...');
-          await signInWithRedirect(this.auth, this.googleProvider);
-          throw new Error('Redirect iniciado, esperando resultado...');
+        } catch (popupError: any) {
+          console.log('⚠️ Popup falló, intentando con redirect...', popupError.code);
+          
+          // Si el popup falla, usar redirect
+          if (popupError.code === 'auth/popup-blocked' || 
+              popupError.code === 'auth/cancelled-popup-request') {
+            console.log('🔄 Usando redirect como fallback...');
+            await signInWithRedirect(this.auth, this.googleProvider);
+            // El redirect se procesará cuando la app vuelva a abrirse
+            throw new Error('Redirect iniciado. La app se reabrirá después de autenticarse.');
+          }
+          
+          // Si es otro error, propagarlo
+          throw popupError;
         }
       } else {
-        await signInWithRedirect(this.auth, this.googleProvider);
-        throw new Error('Redirect iniciado, esperando resultado...');
+        // En web, usar popup siempre
+        console.log('🌐 Plataforma web, usando popup');
+        return await signInWithPopup(this.auth, this.googleProvider);
       }
+    } catch (error) {
+      console.error('❌ Error en signInWithRedirect:', error);
+      throw error;
     }
   }
 
