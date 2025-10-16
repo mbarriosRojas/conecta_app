@@ -1,8 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import { AuthService } from '../../services/auth.service';
 import { Router } from '@angular/router';
-import { LoadingController, ToastController, AlertController } from '@ionic/angular';
+import { LoadingController, ToastController, AlertController, ModalController } from '@ionic/angular';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
+import { ChangePasswordModalComponent } from '../../components/change-password-modal/change-password-modal.component';
 
 @Component({
   selector: 'app-profile',
@@ -31,7 +32,8 @@ export class ProfilePage implements OnInit {
     private router: Router,
     private loadingController: LoadingController,
     private toastController: ToastController,
-    private alertController: AlertController
+    private alertController: AlertController,
+    private modalController: ModalController
   ) {}
 
   ngOnInit() {
@@ -231,6 +233,144 @@ export class ProfilePage implements OnInit {
       loading.dismiss();
       console.error('Error procesando imagen:', error);
       this.showErrorToast('Error procesando imagen');
+    }
+  }
+
+  async openChangePasswordAlert() {
+    console.log('🔧 Abriendo alert de cambio de contraseña...');
+    
+    const alert = await this.alertController.create({
+      header: 'Cambiar Contraseña',
+      message: 'Ingresa tu contraseña actual y la nueva contraseña:',
+      inputs: [
+        {
+          name: 'currentPassword',
+          type: 'password',
+          placeholder: 'Contraseña actual',
+          attributes: {
+            maxlength: 50
+          }
+        },
+        {
+          name: 'newPassword',
+          type: 'password',
+          placeholder: 'Nueva contraseña (mín. 6 caracteres)',
+          attributes: {
+            maxlength: 50
+          }
+        },
+        {
+          name: 'confirmPassword',
+          type: 'password',
+          placeholder: 'Confirmar nueva contraseña',
+          attributes: {
+            maxlength: 50
+          }
+        }
+      ],
+      buttons: [
+        {
+          text: 'Cancelar',
+          role: 'cancel'
+        },
+        {
+          text: 'Cambiar',
+          handler: async (data) => {
+            // Validaciones básicas
+            if (!data.currentPassword || !data.newPassword || !data.confirmPassword) {
+              this.showErrorToast('Por favor completa todos los campos');
+              return false; // Mantener el alert abierto
+            }
+            
+            if (data.newPassword.length < 6) {
+              this.showErrorToast('La nueva contraseña debe tener al menos 6 caracteres');
+              return false; // Mantener el alert abierto
+            }
+            
+            if (data.newPassword !== data.confirmPassword) {
+              this.showErrorToast('Las contraseñas nuevas no coinciden');
+              return false; // Mantener el alert abierto
+            }
+            
+            if (data.currentPassword === data.newPassword) {
+              this.showErrorToast('La nueva contraseña debe ser diferente a la actual');
+              return false; // Mantener el alert abierto
+            }
+            
+            // Intentar cambiar la contraseña
+            const success = await this.changePassword(data.currentPassword, data.newPassword);
+            
+            // ✅ Si fue exitoso, cerrar el alert
+            // ❌ Si hubo error, mantener el alert abierto
+            return success;
+          }
+        }
+      ]
+    });
+
+    await alert.present();
+  }
+
+  async changePassword(currentPassword: string, newPassword: string) {
+    const loading = await this.loadingController.create({
+      message: 'Cambiando contraseña...',
+      spinner: 'crescent'
+    });
+    await loading.present();
+
+    try {
+      const response: any = await this.authService.updatePassword(currentPassword, newPassword);
+      console.log('✅ Contraseña cambiada:', response);
+
+      await loading.dismiss();
+      
+      // Mostrar toast de éxito
+      await this.showSuccessToast('Contraseña actualizada exitosamente');
+
+      // Preguntar si cerrar sesión
+      const alert = await this.alertController.create({
+        header: 'Contraseña Actualizada',
+        message: '¿Deseas cerrar sesión para volver a iniciar con la nueva contraseña?',
+        buttons: [
+          {
+            text: 'Continuar',
+            role: 'cancel',
+            handler: () => {
+              console.log('🔧 Usuario decidió continuar en la sesión');
+            }
+          },
+          {
+            text: 'Cerrar Sesión',
+            handler: async () => {
+              console.log('🔧 Usuario decidió cerrar sesión');
+              await this.authService.logout();
+              this.router.navigate(['/login'], { replaceUrl: true });
+            }
+          }
+        ]
+      });
+      
+      await alert.present();
+
+      // ✅ RETORNAR true para cerrar el modal de cambio de contraseña
+      return true;
+
+    } catch (error: any) {
+      await loading.dismiss();
+      console.error('❌ Error cambiando contraseña:', error);
+      
+      let errorMessage = 'Error al cambiar la contraseña';
+      
+      if (error.status === 401) {
+        errorMessage = 'La contraseña actual es incorrecta';
+      } else if (error.error?.message) {
+        errorMessage = error.error.message;
+      }
+      
+      await this.showErrorToast(errorMessage);
+      
+      // ❌ RETORNAR false para mantener el modal abierto
+      return false;
     }
   }
 

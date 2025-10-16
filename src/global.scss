@@ -67,6 +67,32 @@ ion-app {
   --ion-safe-area-right: env(safe-area-inset-right);
 }
 
+/* 🔐 Modal de Cambio de Contraseña */
+.change-password-modal {
+  --height: auto;
+  --border-radius: 20px 20px 0 0;
+  --box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.1);
+  
+  ion-content {
+    --background: #fff;
+  }
+  
+  ion-toolbar {
+    --background: var(--ion-color-primary);
+    --color: white;
+  }
+}
+
+@media (min-width: 768px) {
+  .change-password-modal {
+    --width: 500px;
+    --height: auto;
+    --border-radius: 20px;
+    
+    align-items: center;
+  }
+}
+
 /* 🌙 Dark Mode - Variables personalizadas */
 @media (prefers-color-scheme: dark) {
   :root {
@@ -146,6 +172,14 @@ ion-app {
     --background: #1a1a1a;
     
     ion-toolbar {
+      --background: #2d2d2d;
+      --color: #e5e5e5;
+    }
+  }
+  
+  /* Modal de cambio de contraseña */
+  .change-password-modal {
+    ion-item {
       --background: #2d2d2d;
       --color: #e5e5e5;
     }

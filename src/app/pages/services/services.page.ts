@@ -124,6 +124,15 @@ export class ServicesPage implements OnInit {
 
     try {
       await this.apiService.deleteUserProvider(providerId).toPromise();
+      
+      // 🚀 INVALIDAR CACHE para que la eliminación se refleje inmediatamente
+      await this.cacheService.invalidateCacheByPattern('providers_page');
+      await this.cacheService.invalidateCache('user_services');
+      await this.cacheService.invalidateCache(`provider_detail_${providerId}`);
+      await this.cacheService.invalidateCache('home_data'); // 🔥 CRÍTICO: Invalidar cache de home
+      await this.cacheService.invalidateCacheByPattern('providers'); // Invalidar todos los providers
+      
+      console.log('✅ Cache invalidado - el servicio eliminado se reflejará inmediatamente');
       this.showSuccessToast('Servicio eliminado correctamente');
       await this.loadUserProviders();
     } catch (error) {

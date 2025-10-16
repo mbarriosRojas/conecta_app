@@ -648,7 +648,10 @@ export class EditServicePage implements OnInit {
         await this.cacheService.invalidateCacheByPattern('providers_page');
         await this.cacheService.invalidateCache('user_services');
         await this.cacheService.invalidateCache(`provider_detail_${this.providerId}`);
+        await this.cacheService.invalidateCache('home_data'); // 🔥 CRÍTICO: Invalidar cache de home
+        await this.cacheService.invalidateCacheByPattern('providers'); // Invalidar todos los providers
         
+        console.log('✅ Cache invalidado - el servicio actualizado aparecerá inmediatamente');
         this.showSuccessToast('Servicio actualizado correctamente');
         this.router.navigate(['/tabs/services']);
       }
@@ -822,6 +825,13 @@ export class EditServicePage implements OnInit {
       }
 
       if (response) {
+        // 🚀 INVALIDAR CACHE para que los productos aparezcan inmediatamente
+        await this.cacheService.invalidateCacheByPattern('providers_page');
+        await this.cacheService.invalidateCache('user_services');
+        await this.cacheService.invalidateCache(`provider_detail_${this.providerId}`);
+        await this.cacheService.invalidateCache('home_data'); // 🔥 CRÍTICO: Invalidar cache de home
+        
+        console.log('✅ Cache invalidado - el producto aparecerá inmediatamente');
         this.showSuccessToast(this.editingProduct ? 'Producto actualizado correctamente' : 'Producto creado correctamente');
         this.closeProductModal();
         await this.loadProducts(); // Recargar lista de productos
@@ -876,6 +886,13 @@ export class EditServicePage implements OnInit {
             try {
               const response = await firstValueFrom(this.apiService.deleteProduct(productId));
               if (response) {
+                // 🚀 INVALIDAR CACHE para que la eliminación se refleje inmediatamente
+                await this.cacheService.invalidateCacheByPattern('providers_page');
+                await this.cacheService.invalidateCache('user_services');
+                await this.cacheService.invalidateCache(`provider_detail_${this.providerId}`);
+                await this.cacheService.invalidateCache('home_data'); // 🔥 CRÍTICO: Invalidar cache de home
+                
+                console.log('✅ Cache invalidado - el producto eliminado se reflejará inmediatamente');
                 this.products.splice(index, 1);
                 this.showSuccessToast('Producto eliminado correctamente');
               }

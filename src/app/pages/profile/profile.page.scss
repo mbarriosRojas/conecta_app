@@ -228,8 +228,29 @@
   }
 }
 
+.security-section {
+  margin-top: 20px;
+
+  .change-password-btn {
+    --border-color: var(--ion-color-warning);
+    --color: var(--ion-color-warning);
+    --border-radius: 12px;
+    height: 45px;
+    font-weight: 500;
+
+    ion-icon {
+      font-size: 20px;
+    }
+
+    &:hover {
+      --background: var(--ion-color-warning);
+      --color: white;
+    }
+  }
+}
+
 .logout-section {
-  margin-top: 30px;
+  margin-top: 15px;
   padding-top: 20px;
   border-top: 1px solid #e9ecef;
 

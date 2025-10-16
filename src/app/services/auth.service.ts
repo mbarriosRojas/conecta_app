@@ -279,11 +279,11 @@ export class AuthService {
 
   // Método para actualizar el perfil del usuario
   updateUserProfile(userData: any): Observable<any> {
-    return this.http.put<any>(`${this.baseUrl}/api/users/updateUser`, userData)
+    return this.http.put<any>(`${this.baseUrl}/api/users/`, userData)
       .pipe(
         tap((response) => {
           // Actualizar los datos del usuario en el estado local
-          if (response.data_user) {
+          if (response.success && response.data_user) {
             const updatedUser = { ...this.currentUserSubject.value, ...response.data_user };
             this.currentUserSubject.next(updatedUser);
             this.storageService.set('user_data', updatedUser);
@@ -294,11 +294,11 @@ export class AuthService {
 
   // Método para actualizar el perfil con imagen
   updateUserProfileWithImage(formData: FormData): Observable<any> {
-    return this.http.put<any>(`${this.baseUrl}/api/users/updateUser`, formData)
+    return this.http.put<any>(`${this.baseUrl}/api/users/profileImage`, formData)
       .pipe(
         tap((response) => {
           // Actualizar los datos del usuario en el estado local
-          if (response.data_user) {
+          if (response.success && response.data_user) {
             const updatedUser = { ...this.currentUserSubject.value, ...response.data_user };
             this.currentUserSubject.next(updatedUser);
             this.storageService.set('user_data', updatedUser);
@@ -328,5 +328,13 @@ export class AuthService {
     } catch (error) {
       console.error('Error in loadUserProfile:', error);
     }
+  }
+
+  // Método para cambiar contraseña
+  async updatePassword(currentPassword: string, newPassword: string): Promise<any> {
+    return await this.http.post<any>(`${this.baseUrl}/api/users/changePasswordUser/user/new`, {
+      lastpassword: currentPassword,
+      newpassword: newPassword
+    }).toPromise();
   }
 }

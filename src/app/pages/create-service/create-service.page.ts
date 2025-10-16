@@ -283,7 +283,10 @@ export class CreateServicePage implements OnInit {
         // 🚀 INVALIDAR CACHE para que se muestre inmediatamente
         await this.cacheService.invalidateCacheByPattern('providers_page');
         await this.cacheService.invalidateCache('user_services');
+        await this.cacheService.invalidateCache('home_data'); // 🔥 CRÍTICO: Invalidar cache de home
+        await this.cacheService.invalidateCacheByPattern('providers'); // Invalidar todos los providers
         
+        console.log('✅ Cache invalidado - el servicio aparecerá inmediatamente');
         this.showSuccessToast('Servicio creado correctamente');
         this.router.navigate(['/tabs/services']);
       }

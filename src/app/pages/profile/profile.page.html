@@ -108,6 +108,19 @@
             </ion-button>
           </div>
 
+          <!-- Botón de cambiar contraseña -->
+          <div class="security-section" *ngIf="!isEditing">
+            <ion-button 
+              expand="block" 
+              fill="outline" 
+              color="warning"
+              (click)="openChangePasswordAlert()"
+              class="change-password-btn">
+              <ion-icon name="key-outline" slot="start"></ion-icon>
+              Cambiar Contraseña
+            </ion-button>
+          </div>
+
           <!-- Botón de cerrar sesión -->
           <div class="logout-section" *ngIf="!isEditing">
             <ion-button 
