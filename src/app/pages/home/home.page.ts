@@ -37,6 +37,9 @@ interface FeedItem {
 export class HomePage implements OnInit, AfterViewInit {
   @ViewChild(IonContent) content!: IonContent;
   @ViewChild('bannersSlider', { static: false }) bannersSlider!: ElementRef;
+  
+  // Exponer environment para el template
+  environment = environment;
 
   providers: Provider[] = [];
   featuredProviders: Provider[] = [];
@@ -1258,6 +1261,13 @@ export class HomePage implements OnInit, AfterViewInit {
    */
   goToPromotionsPage() {
     this.router.navigate(['/promotions-nearby']);
+  }
+
+  /**
+   * Navegar a la página de debug de push notifications
+   */
+  goToDebugPage() {
+    this.router.navigate(['/debug-push']);
   }
 
   /**

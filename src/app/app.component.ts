@@ -43,6 +43,12 @@ export class AppComponent implements OnInit, OnDestroy {
       // 🔔 Inicializar notificaciones push
       await this.initializePushNotifications();
       
+      // 🔄 Reintentar inicialización de push notifications después de 3 segundos
+      setTimeout(async () => {
+        console.log('🔄 AppComponent: Reintentando inicialización de push notifications...');
+        await this.initializePushNotifications();
+      }, 3000);
+      
       console.log('🎉 AppComponent: Aplicación AKI iniciada correctamente');
       
     } catch (error) {
@@ -86,19 +92,27 @@ export class AppComponent implements OnInit, OnDestroy {
    */
   private async initializePushNotifications() {
     try {
-      console.log('🔔 Inicializando notificaciones push...');
+      console.log('🔔 AppComponent: Iniciando inicialización de push notifications...');
       
+      // Verificar que el servicio esté disponible
+      if (!this.pushNotificationService) {
+        console.error('❌ AppComponent: PushNotificationService no está disponible');
+        return;
+      }
+      
+      console.log('🔔 AppComponent: Llamando a pushNotificationService.initialize()...');
       const initialized = await this.pushNotificationService.initialize();
       
       if (initialized) {
-        console.log('✅ Notificaciones push inicializadas correctamente');
+        console.log('✅ AppComponent: Notificaciones push inicializadas correctamente');
       } else {
-        console.warn('⚠️ No se pudieron inicializar notificaciones push');
-        console.log('ℹ️ La app funcionará sin notificaciones push');
+        console.warn('⚠️ AppComponent: No se pudieron inicializar notificaciones push');
+        console.log('ℹ️ AppComponent: La app funcionará sin notificaciones push');
       }
     } catch (error) {
-      console.error('❌ Error inicializando notificaciones push:', error);
-      console.log('ℹ️ Continuando sin notificaciones push');
+      console.error('❌ AppComponent: Error inicializando notificaciones push:', error);
+      console.error('❌ AppComponent: Error details:', error);
+      console.log('ℹ️ AppComponent: Continuando sin notificaciones push');
     }
   }
 

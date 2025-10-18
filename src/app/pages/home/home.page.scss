@@ -1612,6 +1612,24 @@ ion-col {
     display: flex;
     align-items: center;
     gap: 4px;
+    
+    .debug-button {
+      --color: #ff6b35;
+      --background: rgba(255, 107, 53, 0.1);
+      --border-radius: 8px;
+      --padding-start: 8px;
+      --padding-end: 8px;
+      --padding-top: 8px;
+      --padding-bottom: 8px;
+      
+      ion-icon {
+        font-size: 20px;
+      }
+      
+      &:hover {
+        --background: rgba(255, 107, 53, 0.2);
+      }
+    }
   }
 }
 

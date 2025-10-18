@@ -47,8 +47,8 @@ export class PushNotificationService {
 
       // Inicializar según la plataforma
       if (this.platform.is('capacitor')) {
-        // Plataforma móvil (iOS/Android) - versión simplificada
-        await this.initializeNativePushSimple();
+        // Plataforma móvil (iOS/Android) - versión completa
+        await this.initializeNativePush();
       } else {
         // Plataforma web - desactivado en desarrollo
         console.log('ℹ️ Push notifications web desactivadas en desarrollo');

@@ -46,7 +46,7 @@
     <ion-card>
       <ion-card-header>
         <ion-card-title>📋 Instrucciones</ion-card-title>
-      </ion-card-card-header>
+      </ion-card-header>
       <ion-card-content>
         <ol>
           <li>Presiona "Forzar Inicialización"</li>
@@ -55,6 +55,26 @@
           <li>Revisa los logs en Android Studio Logcat</li>
           <li>Verifica en MongoDB Compass si aparecen registros en <code>devicetokens</code></li>
         </ol>
+      </ion-card-content>
+    </ion-card>
+
+    <ion-card>
+      <ion-card-header>
+        <ion-card-title>📝 Logs en Tiempo Real</ion-card-title>
+        <ion-button fill="clear" size="small" (click)="clearLogs()">
+          <ion-icon name="trash" slot="icon-only"></ion-icon>
+          Limpiar
+        </ion-button>
+      </ion-card-header>
+      <ion-card-content>
+        <div class="logs-container">
+          <div *ngIf="logs.length === 0" class="no-logs">
+            No hay logs aún. Presiona los botones de arriba para generar logs.
+          </div>
+          <div *ngFor="let log of logs" class="log-entry" [ngClass]="getLogClass(log)">
+            {{ log }}
+          </div>
+        </div>
       </ion-card-content>
     </ion-card>
   </div>

@@ -60,6 +60,14 @@ export class DebugPushPage {
     this.logs = [];
   }
 
+  getLogClass(log: string): string {
+    if (log.includes('ERROR')) return 'log-error';
+    if (log.includes('WARN')) return 'log-warn';
+    if (log.includes('Token FCM') || log.includes('✅')) return 'log-success';
+    if (log.includes('📍') || log.includes('🔔')) return 'log-info';
+    return 'log-default';
+  }
+
   async forceInitializePush() {
     console.log('🔧 Forzando inicialización de push notifications...');
     
@@ -74,7 +82,8 @@ export class DebugPushPage {
         console.log('❌ Error inicializando push notifications');
       }
     } catch (error) {
-      this.showToast(`❌ Error: ${error.message}`, 'danger');
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+      this.showToast(`❌ Error: ${errorMessage}`, 'danger');
       console.error('❌ Error:', error);
     }
   }
@@ -87,7 +96,8 @@ export class DebugPushPage {
       this.showToast(`📍 Ubicación: ${location.latitude.toFixed(4)}, ${location.longitude.toFixed(4)}`, 'success');
       console.log('📍 Ubicación obtenida:', location);
     } catch (error) {
-      this.showToast(`❌ Error obteniendo ubicación: ${error.message}`, 'danger');
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+      this.showToast(`❌ Error obteniendo ubicación: ${errorMessage}`, 'danger');
       console.error('❌ Error obteniendo ubicación:', error);
     }
   }
@@ -106,7 +116,8 @@ export class DebugPushPage {
         console.log('❌ Error enviando notificación de prueba');
       }
     } catch (error) {
-      this.showToast(`❌ Error: ${error.message}`, 'danger');
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+      this.showToast(`❌ Error: ${errorMessage}`, 'danger');
       console.error('❌ Error:', error);
     }
   }
