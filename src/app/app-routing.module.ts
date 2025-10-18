@@ -31,6 +31,10 @@ const routes: Routes = [
     loadComponent: () => import('./pages/promotions-nearby/promotions-nearby.page').then(m => m.PromotionsNearbyPage)
   },
   {
+    path: 'debug-push',
+    loadComponent: () => import('./pages/debug-push/debug-push.page').then(m => m.DebugPushPage)
+  },
+  {
     path: 'login',
     loadChildren: () => import('./pages/login/login.module').then(m => m.LoginPageModule)
   },

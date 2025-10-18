@@ -1,0 +1,61 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>Debug Push Notifications</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <div class="debug-container">
+    <h2>🔧 Debug Push Notifications</h2>
+    <p>Usa estos botones para diagnosticar problemas con las notificaciones push.</p>
+
+    <ion-card>
+      <ion-card-header>
+        <ion-card-title>🔔 Push Notifications</ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <ion-button expand="block" (click)="forceInitializePush()" color="primary">
+          <ion-icon name="notifications" slot="start"></ion-icon>
+          Forzar Inicialización
+        </ion-button>
+        
+        <ion-button expand="block" (click)="checkServiceStatus()" color="secondary" class="ion-margin-top">
+          <ion-icon name="information-circle" slot="start"></ion-icon>
+          Verificar Estado
+        </ion-button>
+        
+        <ion-button expand="block" (click)="sendTestNotification()" color="success" class="ion-margin-top">
+          <ion-icon name="send" slot="start"></ion-icon>
+          Enviar Notificación de Prueba
+        </ion-button>
+      </ion-card-content>
+    </ion-card>
+
+    <ion-card>
+      <ion-card-header>
+        <ion-card-title>📍 Ubicación</ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <ion-button expand="block" (click)="getCurrentLocation()" color="tertiary">
+          <ion-icon name="location" slot="start"></ion-icon>
+          Obtener Ubicación Actual
+        </ion-button>
+      </ion-card-content>
+    </ion-card>
+
+    <ion-card>
+      <ion-card-header>
+        <ion-card-title>📋 Instrucciones</ion-card-title>
+      </ion-card-card-header>
+      <ion-card-content>
+        <ol>
+          <li>Presiona "Forzar Inicialización"</li>
+          <li>Presiona "Verificar Estado"</li>
+          <li>Si hay token, presiona "Enviar Notificación de Prueba"</li>
+          <li>Revisa los logs en Android Studio Logcat</li>
+          <li>Verifica en MongoDB Compass si aparecen registros en <code>devicetokens</code></li>
+        </ol>
+      </ion-card-content>
+    </ion-card>
+  </div>
+</ion-content>
