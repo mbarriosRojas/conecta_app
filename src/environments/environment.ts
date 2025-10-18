@@ -1,6 +1,6 @@
 export const environment = {
   production: false,
-  apiUrl: 'https://conecta-backend-b5yg.onrender.com', // Backend en Render
+  apiUrl: 'https://conecta-backend-b5yg.onrender.com', // Backend en Render (temporalmente deshabilitado)
   //apiUrl: 'http://localhost:8080', // Backend local
   appName: 'Providers',
   version: '1.0.0',

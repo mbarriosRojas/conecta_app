@@ -5,6 +5,7 @@ import { App as CapacitorApp, URLOpenListenerEvent } from '@capacitor/app';
 import { Router } from '@angular/router';
 import { LocationService } from './services/location.service';
 import { AuthService } from './services/auth.service';
+import { PushNotificationService } from './services/push-notification.service';
 
 @Component({
   selector: 'app-root',
@@ -17,9 +18,10 @@ export class AppComponent implements OnInit, OnDestroy {
     private platform: Platform,
     private locationService: LocationService,
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private pushNotificationService: PushNotificationService
   ) {
-    // 🔥 Configurar listener para deep links (OAuth redirect)
+    // 🔥 Configurar listener for deep links (OAuth redirect)
     this.initializeDeepLinking();
   }
 
@@ -37,6 +39,9 @@ export class AppComponent implements OnInit, OnDestroy {
       
       // 🔥 Iniciar actualizaciones automáticas de ubicación
       await this.initializeLocationTracking();
+      
+      // 🔔 Inicializar notificaciones push
+      await this.initializePushNotifications();
       
       console.log('🎉 AppComponent: Aplicación AKI iniciada correctamente');
       
@@ -73,6 +78,27 @@ export class AppComponent implements OnInit, OnDestroy {
     } catch (error) {
       console.error('❌ Error iniciando seguimiento de ubicación:', error);
       console.log('ℹ️ Continuando sin seguimiento de ubicación');
+    }
+  }
+
+  /**
+   * Inicializa el servicio de notificaciones push
+   */
+  private async initializePushNotifications() {
+    try {
+      console.log('🔔 Inicializando notificaciones push...');
+      
+      const initialized = await this.pushNotificationService.initialize();
+      
+      if (initialized) {
+        console.log('✅ Notificaciones push inicializadas correctamente');
+      } else {
+        console.warn('⚠️ No se pudieron inicializar notificaciones push');
+        console.log('ℹ️ La app funcionará sin notificaciones push');
+      }
+    } catch (error) {
+      console.error('❌ Error inicializando notificaciones push:', error);
+      console.log('ℹ️ Continuando sin notificaciones push');
     }
   }
 

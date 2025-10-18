@@ -280,14 +280,35 @@ export class PushNotificationService {
                         this.platform.is('ios') ? 'Apple' : 'Browser'
         };
 
+        // Obtener ubicación actual para enviar con el token
+        let currentLocation = null;
+        try {
+          const location = await this.locationService.getCurrentPosition();
+          currentLocation = {
+            lat: location.latitude,
+            lng: location.longitude
+          };
+          console.log('📍 Ubicación obtenida para registro:', currentLocation);
+        } catch (error) {
+          console.log('⚠️ No se pudo obtener ubicación para registro:', error);
+        }
+
         console.log('📤 Enviando petición al backend...');
+        const registrationData: any = {
+          userID: this.userID,
+          token,
+          platform,
+          deviceInfo
+        };
+
+        // Agregar ubicación si está disponible
+        if (currentLocation) {
+          registrationData.lat = currentLocation.lat;
+          registrationData.lng = currentLocation.lng;
+        }
+
         const response = await firstValueFrom(
-          this.http.post(`${environment.apiUrl}/api/notifications/register-token`, {
-            userID: this.userID,
-            token,
-            platform,
-            deviceInfo
-          }, { headers })
+          this.http.post(`${environment.apiUrl}/api/notifications/register-token`, registrationData, { headers })
         );
 
         console.log('📤 Respuesta del backend:', response);
