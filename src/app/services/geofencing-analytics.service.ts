@@ -68,6 +68,8 @@ export interface PromotionConfig {
   };
   promo_radius_meters: number;
   isActive?: boolean;
+  startDate?: string;
+  endDate?: string;
 }
 
 @Injectable({

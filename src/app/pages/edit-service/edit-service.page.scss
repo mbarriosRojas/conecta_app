@@ -1,34 +1,158 @@
-// Header con diseño suave
-ion-header {
-  ion-toolbar {
-    --padding-top: env(safe-area-inset-top);
-    --padding-start: 0;
-    --padding-end: 0;
-    --padding-bottom: 0;
-    --background: linear-gradient(135deg, #e8e4ff 0%, #f3f1ff 100%) !important;
-    background: linear-gradient(135deg, #e8e4ff 0%, #f3f1ff 100%) !important;
-    --color: #5a4fcf;
-    --border-width: 0;
-    --min-height: calc(56px + env(safe-area-inset-top));
+// Header usa estilos globales
+
+// Estilos para el contenedor de productos
+.products-container {
+  margin: 16px;
+  
+  .product-search {
+    margin-bottom: 16px;
     
-    ion-title {
-      --color: #5a4fcf;
-      font-weight: 600;
+    ion-searchbar {
+      --background: #f8f9fa;
+      --border-radius: 12px;
+      --box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+  }
+  
+  .products-photos-scroll {
+    margin-bottom: 16px;
+    
+    .products-photos-container {
+      display: flex;
+      overflow-x: auto;
+      gap: 12px;
+      padding: 8px 0;
+      
+      &::-webkit-scrollbar {
+        height: 4px;
+      }
+      
+      &::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 2px;
+      }
+      
+      &::-webkit-scrollbar-thumb {
+        background: #c1c1c1;
+        border-radius: 2px;
+      }
+      
+      .product-photo-item {
+        flex-shrink: 0;
+        width: 80px;
+        text-align: center;
+        cursor: pointer;
+        transition: transform 0.2s ease;
+        
+        &:hover {
+          transform: scale(1.05);
+        }
+        
+        &.selected {
+          .product-photo {
+            border: 2px solid #2a8473;
+            box-shadow: 0 0 0 2px rgba(42, 132, 115, 0.2);
+          }
+        }
+        
+        .product-photo {
+          width: 60px;
+          height: 60px;
+          border-radius: 8px;
+          overflow: hidden;
+          margin: 0 auto 4px;
+          border: 2px solid transparent;
+          transition: all 0.2s ease;
+          
+          img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+          }
+          
+          .no-image {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f8f9fa;
+            color: #6c757d;
+            
+            ion-icon {
+              font-size: 24px;
+            }
+          }
+        }
+        
+        .product-photo-name {
+          font-size: 10px;
+          color: #6c757d;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+      }
+    }
+  }
+}
+
+// Estilos para el modal de promociones
+.promotion-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr); // 2 columnas como el principal
+  gap: 12px; // Espacio consistente con el principal
+  margin-bottom: 16px;
+}
+
+.promotion-stat-card {
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  border: 2px solid var(--ion-color-success, #2a8473); // Borde verde de la plataforma
+  box-shadow: 0 2px 8px rgba(42, 132, 115, 0.1); // Sombra sutil verde
+  
+  .stat-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(42, 132, 115, 0.1); // Fondo verde claro
+    margin-bottom: 12px;
+    
+    ion-icon {
+      font-size: 24px;
+      color: var(--ion-color-success, #2a8473); // Verde de la plataforma
+    }
+  }
+  
+  .stat-info {
+    text-align: center;
+    
+    .stat-value {
+      font-size: 28px;
+      font-weight: bold;
+      color: var(--ion-color-dark, #2a8473); // Color oscuro de la plataforma
+      margin-bottom: 4px;
     }
     
-    ion-back-button {
-      --color: #5a4fcf;
-      --color-focused: #4a3fb8;
-      --color-hover: #4a3fb8;
+    .stat-label {
+      font-size: 12px;
+      color: var(--ion-color-medium, #666); // Color medio
+      font-weight: 500;
     }
   }
 }
 
 // Estilos para secciones desplegables
 .expandable-card {
-  margin: 12px 16px;
+  margin: 12px 8px; // Más anchos - menos margen
   border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: none; // Sin sombra
+  background: transparent; // Sin fondo
+  border: 1px solid #e0e0e0; // Borde sutil
   
   .expandable-header {
     cursor: pointer;
@@ -36,31 +160,34 @@ ion-header {
     align-items: center;
     justify-content: space-between;
     padding: 16px;
-    background: linear-gradient(135deg, #f8f9ff 0%, #f0f2ff 100%);
+    background: transparent; // Sin fondo
     border-radius: 12px 12px 0 0;
     transition: all 0.3s ease;
+    border-bottom: 1px solid #e0e0e0; // Borde inferior sutil
     
     &:hover {
-      background: linear-gradient(135deg, #f0f2ff 0%, #e8ebff 100%);
+      background: rgba(42, 132, 115, 0.05); // Hover sutil con color de la plataforma
     }
     
     ion-card-title {
       display: flex;
       align-items: center;
       margin: 0;
-      color: #5a4fcf;
+      color: var(--ion-color-dark, #2a8473); // Color oscuro de la plataforma
       font-weight: 600;
       font-size: 16px;
       
       ion-icon {
         margin-right: 8px;
         font-size: 18px;
+        color: var(--ion-color-success, #2a8473); // Iconos en color de la plataforma
       }
     }
     
     .expand-icon {
-      color: #5a4fcf;
+      color: var(--ion-color-success, #2a8473); // Iconos de expansión en color de la plataforma
       transition: transform 0.3s ease;
+      font-size: 18px;
     }
   }
   
@@ -84,10 +211,11 @@ ion-header {
 
 // Secciones principales (cards)
 .settings-section {
-  background: white;
+  background: transparent; // Sin fondo
   border-radius: 12px;
-  margin-bottom: 16px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  margin: 12px 8px; // Mismo margen que las expandibles - más anchos
+  box-shadow: none; // Sin sombra
+  border: 1px solid #e0e0e0; // Borde sutil
   overflow: hidden;
 }
 
@@ -547,10 +675,10 @@ ion-checkbox {
 .geofencing-stats-card {
   padding: 16px;
   margin-bottom: 12px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: transparent; // Sin fondo morado
   border-radius: 12px;
-  color: white;
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  color: var(--ion-color-dark, #2a8473); // Color oscuro de la plataforma
+  box-shadow: none; // Sin sombra
 }
 
 .stats-header {
@@ -563,66 +691,35 @@ ion-checkbox {
     margin: 0;
     font-size: 18px;
     font-weight: 600;
-    color: white;
+    color: var(--ion-color-dark, #2a8473); // Color oscuro de la plataforma
   }
 
   ion-button {
-    --color: white;
-    --background: rgba(255, 255, 255, 0.2);
-    --background-hover: rgba(255, 255, 255, 0.3);
+    --color: var(--ion-color-success, #2a8473); // Verde de la plataforma
+    --background: rgba(42, 132, 115, 0.1); // Fondo verde claro
+    --background-hover: rgba(42, 132, 115, 0.2);
   }
 }
 
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
-  margin-bottom: 16px;
-}
-
-.stat-item {
-  background: rgba(255, 255, 255, 0.15);
-  backdrop-filter: blur(10px);
-  border-radius: 8px;
-  padding: 12px;
-  text-align: center;
-
-  ion-icon {
-    font-size: 28px;
-    margin-bottom: 8px;
-  }
-
-  .stat-value {
-    font-size: 24px;
-    font-weight: 700;
-    margin-bottom: 4px;
-    color: white;
-  }
-
-  .stat-label {
-    font-size: 12px;
-    opacity: 0.9;
-    color: rgba(255, 255, 255, 0.95);
-  }
-}
+// Los estilos antiguos se han reemplazado por promotion-stat-card
 
 .geofence-info {
   ion-item {
-    --background: rgba(255, 255, 255, 0.15);
+    --background: transparent; // Sin fondo
     --border-radius: 8px;
     --padding-start: 12px;
-    --color: white;
+    --color: var(--ion-color-dark, #2a8473); // Color oscuro de la plataforma
 
     ion-label {
-      color: white;
+      color: var(--ion-color-dark, #2a8473); // Color oscuro de la plataforma
 
       h3 {
-        color: white;
+        color: var(--ion-color-dark, #2a8473); // Color oscuro de la plataforma
         font-weight: 600;
       }
 
       p {
-        color: rgba(255, 255, 255, 0.9);
+        color: var(--ion-color-medium, #666); // Color medio
       }
     }
   }
@@ -730,6 +827,10 @@ ion-checkbox {
     gap: 12px;
     border-left: 3px solid;
     transition: all 0.3s ease;
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
+    box-sizing: border-box;
 
     &.primary {
       border-left-color: #3b82f6;
@@ -831,5 +932,21 @@ ion-checkbox {
 
   .stats-grid {
     grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+// Botón de prueba de notificaciones
+.test-notification-btn {
+  margin: 16px 0;
+  border: 2px solid var(--ion-color-success, #2a8473);
+  color: var(--ion-color-success, #2a8473);
+  font-weight: 600;
+  
+  &:hover {
+    --background: rgba(42, 132, 115, 0.1);
+  }
+  
+  ion-icon {
+    margin-right: 8px;
   }
 }

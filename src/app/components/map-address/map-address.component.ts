@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, OnInit, ViewChild, ElementRef } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, AfterViewInit, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { IonicModule, IonInput, ModalController } from '@ionic/angular';
@@ -25,7 +25,7 @@ export interface AddressData {
   standalone: true,
   imports: [CommonModule, FormsModule, IonicModule]
 })
-export class MapAddressComponent implements OnInit {
+export class MapAddressComponent implements OnInit, AfterViewInit {
   @ViewChild('addressInput', { static: false }) addressInput!: IonInput;
   
   @Input() initialAddress: Partial<AddressData> = {};
@@ -61,18 +61,44 @@ export class MapAddressComponent implements OnInit {
   constructor(private modalController: ModalController) {}
 
   ngOnInit() {
+    console.log('🗺️ MapAddressComponent: Inicializando...');
+    
     // Inicializar con datos proporcionados
     if (this.initialAddress) {
       this.addressData = { ...this.addressData, ...this.initialAddress };
+      console.log('🗺️ MapAddressComponent: Datos iniciales:', this.addressData);
     }
+  }
+
+  ngAfterViewInit() {
+    console.log('🗺️ MapAddressComponent: Vista inicializada, cargando mapa...');
     
-    // Cargar Google Maps
-    this.loadGoogleMaps();
+    // Esperar un poco para asegurar que el DOM esté completamente renderizado
+    setTimeout(() => {
+      this.loadGoogleMaps();
+    }, 100);
   }
 
   private loadGoogleMaps() {
+    console.log('🗺️ MapAddressComponent: Cargando Google Maps...');
+    
     if (typeof window.google !== 'undefined') {
+      console.log('🗺️ MapAddressComponent: Google Maps ya está disponible');
       this.initializeMap();
+      return;
+    }
+
+    // Verificar si ya hay un script cargándose
+    if (document.querySelector('script[src*="maps.googleapis.com"]')) {
+      console.log('🗺️ MapAddressComponent: Script de Google Maps ya está cargándose, esperando...');
+      // Esperar a que se cargue
+      const checkGoogle = setInterval(() => {
+        if (typeof window.google !== 'undefined') {
+          console.log('🗺️ MapAddressComponent: Google Maps cargado, inicializando mapa...');
+          clearInterval(checkGoogle);
+          this.initializeMap();
+        }
+      }, 100);
       return;
     }
 
@@ -86,6 +112,11 @@ export class MapAddressComponent implements OnInit {
       this.initializeMap();
     };
     
+    script.onerror = () => {
+      console.error('Error cargando Google Maps API');
+      this.isMapLoading = false;
+    };
+    
     document.head.appendChild(script);
   }
 
@@ -94,23 +125,34 @@ export class MapAddressComponent implements OnInit {
   }
 
   private initializeMap() {
+    console.log('🗺️ MapAddressComponent: Inicializando mapa...');
+    
     if (!window.google) {
-      console.error('Google Maps no está disponible');
+      console.error('🗺️ MapAddressComponent: Google Maps no está disponible');
+      this.isMapLoading = false;
       return;
     }
 
-    const mapOptions = {
-      center: this.addressData.coordinates,
-      zoom: mapConfig.defaultZoom,
-      mapTypeId: window.google.maps.MapTypeId.ROADMAP,
-      disableDefaultUI: false,
-      zoomControl: true,
-      streetViewControl: false,
-      fullscreenControl: false,
-    };
-
     const mapElement = document.getElementById('addressMap');
-    if (mapElement) {
+    if (!mapElement) {
+      console.error('🗺️ MapAddressComponent: Elemento del mapa no encontrado');
+      this.isMapLoading = false;
+      return;
+    }
+
+    console.log('🗺️ MapAddressComponent: Elemento del mapa encontrado:', mapElement);
+
+    try {
+      const mapOptions = {
+        center: this.addressData.coordinates,
+        zoom: mapConfig.defaultZoom,
+        mapTypeId: window.google.maps.MapTypeId.ROADMAP,
+        disableDefaultUI: false,
+        zoomControl: true,
+        streetViewControl: false,
+        fullscreenControl: false,
+      };
+
       this.map = new window.google.maps.Map(mapElement, mapOptions);
       
       // Inicializar servicios de Google
@@ -121,6 +163,10 @@ export class MapAddressComponent implements OnInit {
       // Crear marcador inicial
       this.createMarker(this.addressData.coordinates);
       
+      console.log('🗺️ MapAddressComponent: Mapa inicializado correctamente');
+      this.isMapLoading = false;
+    } catch (error) {
+      console.error('🗺️ MapAddressComponent: Error inicializando el mapa:', error);
       this.isMapLoading = false;
     }
   }

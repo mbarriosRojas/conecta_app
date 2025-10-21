@@ -100,7 +100,7 @@ async applyFilters() {
 ## 🎨 Características Visuales
 
 ### **Colores y Estilos**
-- **Spinner color:** Primary (morado suave #5a4fcf)
+- **Spinner color:** Primary (morado suave #ffffff)
 - **Overlay background:** rgba(255, 255, 255, 0.95) con blur
 - **Card de loading:** Blanca con sombra suave
 - **Texto:** Color primario, font-weight 600

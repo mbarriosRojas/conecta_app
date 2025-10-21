@@ -63,12 +63,11 @@
         id="addressMap" 
         class="address-map"
         [style.height]="height">
-      </div>
-      
-      <!-- Loading del mapa -->
-      <div class="map-loading" *ngIf="isMapLoading">
-        <ion-spinner name="crescent"></ion-spinner>
-        <p>Cargando mapa...</p>
+        <!-- Indicador de carga -->
+        <div *ngIf="isMapLoading" class="map-loading">
+          <ion-spinner name="crescent"></ion-spinner>
+          <p>Cargando mapa...</p>
+        </div>
       </div>
       
     </div>

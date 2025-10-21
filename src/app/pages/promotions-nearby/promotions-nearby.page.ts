@@ -159,6 +159,19 @@ export class PromotionsNearbyPage implements OnInit {
   async onRadiusChange(event: any) {
     this.currentRadius = event.detail.value;
     await this.loadPromotions();
+    
+    // 🔄 Sincronizar con el rango del mapa si está abierto
+    if (this.showMapModal && this.map) {
+      setTimeout(() => {
+        const mapRange = document.querySelector('ion-modal ion-range') as any;
+        if (mapRange && mapRange.value !== this.currentRadius) {
+          mapRange.value = this.currentRadius;
+        }
+        // Actualizar el círculo del mapa
+        this.updateMapRadius();
+        this.adjustMapZoom();
+      }, 100);
+    }
   }
 
   /**
@@ -174,6 +187,15 @@ export class PromotionsNearbyPage implements OnInit {
       // 🔥 Ajustar zoom del mapa según el radio para mostrar el área completa
       this.adjustMapZoom();
     }
+    
+    // 🔄 Sincronizar con el rango de la página principal
+    // Esto asegura que ambos rangos estén sincronizados
+    setTimeout(() => {
+      const mainRange = document.querySelector('ion-range:not([slot])') as any;
+      if (mainRange && mainRange.value !== this.currentRadius) {
+        mainRange.value = this.currentRadius;
+      }
+    }, 100);
   }
 
   /**

@@ -17,6 +17,8 @@ import { GeofencingAnalyticsService } from '../../services/geofencing-analytics.
 import { Provider, ProviderFilters, Category } from '../../models/provider.model';
 import { environment } from '../../../environments/environment';
 import { NoResultsExpandComponent } from '../../components/no-results-expand/no-results-expand.component';
+import { SplashService } from '../../services/splash.service';
+import { AuthService } from '../../services/auth.service';
 import Swiper from 'swiper';
 import { SwiperOptions } from 'swiper/types';
 import { Pagination, Autoplay } from 'swiper/modules';
@@ -48,6 +50,9 @@ export class HomePage implements OnInit, AfterViewInit {
   
   // Feed mixto con proveedores y promociones
   feedItems: FeedItem[] = [];
+  
+  // Estado de autenticación
+  isAuthenticated = false;
   nearbyPromotions: any[] = [];
   
   currentLocation: LocationData | null = null;
@@ -129,15 +134,26 @@ export class HomePage implements OnInit, AfterViewInit {
     private loadingController: LoadingController,
     private toastController: ToastController,
     private alertController: AlertController,
-    private router: Router
+    private router: Router,
+    private splashService: SplashService,
+    private authService: AuthService
   ) {}
 
   async ngOnInit() {
-    await this.initializeApp();
+    // Verificar estado de autenticación
+    this.checkAuthStatus();
     
-    // Hacer disponible el método de emergencia globalmente para debugging
-    (window as any).forceLoadMoreManual = () => this.forceLoadMoreManual();
-    console.log('🚨 Emergency method available: window.forceLoadMoreManual()');
+    // Esperar a que termine el splash screen antes de cargar datos
+    this.splashService.splashVisible$.subscribe(async (isVisible) => {
+      if (!isVisible) {
+        // El splash ha terminado, ahora cargar los datos
+        await this.initializeApp();
+        
+        // Hacer disponible el método de emergencia globalmente para debugging
+        (window as any).forceLoadMoreManual = () => this.forceLoadMoreManual();
+        console.log('🚨 Emergency method available: window.forceLoadMoreManual()');
+      }
+    });
   }
 
   ngAfterViewInit() {
@@ -150,6 +166,25 @@ export class HomePage implements OnInit, AfterViewInit {
     setTimeout(() => {
       this.setupScrollListener();
     }, 1000);
+  }
+
+  // Verificar estado de autenticación
+  async checkAuthStatus() {
+    try {
+      await this.authService.waitForInitialization();
+      this.isAuthenticated = this.authService.isAuthenticated();
+      console.log('Home - Usuario autenticado:', this.isAuthenticated);
+    } catch (error) {
+      console.error('Error verificando autenticación:', error);
+      this.isAuthenticated = false;
+    }
+  }
+
+  // Ir a la página de login
+  goToLogin() {
+    this.router.navigate(['/login'], { 
+      queryParams: { returnUrl: '/tabs/home' }
+    });
   }
 
   // Configurar listener de scroll para debug
@@ -609,30 +644,45 @@ export class HomePage implements OnInit, AfterViewInit {
     }
   }
 
+  private searchTimeout: any;
+
   async onSearch(event: any) {
     const query = event.target.value.trim();
     this.searchQuery = query;
     this.filters.search = query;
     await this.storageService.saveFilters(this.filters);
     
-    // Ocultar el teclado después de buscar
-    try {
-      await Keyboard.hide();
-    } catch (error) {
-      // En navegador web no hay teclado nativo
-      console.log('Keyboard.hide not available in web');
+    // Limpiar timeout anterior
+    if (this.searchTimeout) {
+      clearTimeout(this.searchTimeout);
+    }
+    
+    // Si está vacío, buscar inmediatamente
+    if (!query) {
+      this.isSearching = true;
+      await this.loadProviders(true);
+      this.isSearching = false;
+      return;
     }
     
     // 🔍 Mostrar estado de búsqueda
     this.isSearching = true;
     
-    // Debounce search
-    setTimeout(async () => {
+    // Debounce search - esperar 800ms después del último tipo
+    this.searchTimeout = setTimeout(async () => {
       if (this.searchQuery === query) {
         await this.loadProviders(true);
         this.isSearching = false;
+        
+        // Ocultar el teclado después de buscar
+        try {
+          await Keyboard.hide();
+        } catch (error) {
+          // En navegador web no hay teclado nativo
+          console.log('Keyboard.hide not available in web');
+        }
       }
-    }, 500);
+    }, 800);
   }
 
 

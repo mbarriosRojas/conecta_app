@@ -74,9 +74,9 @@ export class AuthInterceptor implements HttpInterceptor {
         })
       );
     } else {
-      console.log(`AuthInterceptor - No token found, redirecting to login`);
-      this.router.navigate(['/tabs/tab3']);
-      return throwError(() => new Error('No token available'));
+      console.log(`AuthInterceptor - No token found, allowing request to continue`);
+      // Permitir que la petición continúe sin token (para exploración)
+      return next.handle(req);
     }
   }
 }

@@ -1,6 +1,6 @@
-// 🎨 Tabs minimalistas y elegantes con tonos morados
+// 🎨 Tabs minimalistas y elegantes con tonos naranjas
 ion-tab-bar {
-  --background: linear-gradient(135deg, #6B46C1 0%, #8B5CF6 50%, #A855F7 100%);
+  --background: linear-gradient(135deg, #f6876c 0%, #f6876c 50%, #fcb567 100%);
   --color: rgba(255, 255, 255, 0.8);
   --color-selected: white;
   border: none;
@@ -9,7 +9,7 @@ ion-tab-bar {
   margin-bottom: 8px;
   padding: 6px 12px 12px 12px;
   box-shadow: 
-    0 -4px 20px rgba(139, 92, 246, 0.25),
+    0 -4px 20px rgba(246, 135, 108, 0.25),
     0 -2px 8px rgba(0, 0, 0, 0.1),
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
   position: relative;
@@ -273,9 +273,9 @@ ion-tab-button.tab-selected::after {
 // 🌙 Soporte para modo oscuro
 @media (prefers-color-scheme: dark) {
   ion-tab-bar {
-    --background: linear-gradient(135deg, #5B21B6 0%, #7C3AED 50%, #9333EA 100%);
+    --background: linear-gradient(135deg, #e65100 0%, #f6876c 50%, #ff5722 100%);
     box-shadow: 
-      0 -4px 20px rgba(139, 92, 246, 0.3),
+      0 -4px 20px rgba(246, 135, 108, 0.3),
       0 -2px 8px rgba(0, 0, 0, 0.2),
       inset 0 1px 0 rgba(255, 255, 255, 0.15);
   }

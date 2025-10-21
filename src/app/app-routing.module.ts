@@ -1,6 +1,7 @@
 import { NgModule } from '@angular/core';
 import { PreloadAllModules, RouterModule, Routes } from '@angular/router';
 import { AuthGuard } from './guards/auth.guard';
+import { OptionalAuthGuard } from './guards/optional-auth.guard';
 
 const routes: Routes = [
   {
@@ -14,7 +15,8 @@ const routes: Routes = [
   },
   {
     path: 'provider-detail/:id',
-    loadComponent: () => import('./pages/provider-detail/provider-detail.page').then(m => m.ProviderDetailPage)
+    loadComponent: () => import('./pages/provider-detail/provider-detail.page').then(m => m.ProviderDetailPage),
+    canActivate: [OptionalAuthGuard]
   },
   {
     path: 'create-service',

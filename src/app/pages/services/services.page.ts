@@ -33,7 +33,15 @@ export class ServicesPage implements OnInit {
     private alertController: AlertController
   ) {}
 
-  ngOnInit() {
+  async ngOnInit() {
+    // Verificar autenticación antes de cargar servicios
+    const isAuthenticated = this.authService.isAuthenticated();
+    if (!isAuthenticated) {
+      console.log('Services - Usuario no autenticado, redirigiendo al login');
+      this.router.navigate(['/login'], { queryParams: { returnUrl: '/tabs/tab2' } });
+      return;
+    }
+    
     this.loadUserProviders();
   }
 

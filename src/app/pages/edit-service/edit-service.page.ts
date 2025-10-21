@@ -30,10 +30,12 @@ export class EditServicePage implements OnInit {
     basic: true,      // Información básica siempre abierta
     contact: false,
     social: false,
+    location: false,
+    products: false,
     schedule: false,
     questions: false,
     images: false,
-    products: false,
+    geofencing: false,
     geomarketing: false
   };
   
@@ -45,6 +47,9 @@ export class EditServicePage implements OnInit {
 
   // Gestión de productos
   products: any[] = [];
+  filteredProducts: any[] = [];
+  productSearchQuery: string = '';
+  selectedProduct: any = null;
   productCategories: string[] = [
     // Comida y Bebidas
     'COMIDA', 'BEBIDAS', 'POSTRES', 'ACOMPAÑAMIENTOS', 'DESAYUNOS', 'ALMUERZOS', 'CENAS',
@@ -164,7 +169,9 @@ export class EditServicePage implements OnInit {
       longitude: 0
     },
     promo_radius_meters: 200,
-    isActive: true
+    isActive: true,
+    startDate: new Date().toISOString(),
+    endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // 7 días desde hoy
   };
 
   constructor(
@@ -214,11 +221,47 @@ export class EditServicePage implements OnInit {
       const response = await firstValueFrom(this.apiService.getProductsByProvider(this.providerId));
       // Los productos están en response.data.products
       this.products = (response?.data as any)?.products || [];
+      this.filteredProducts = [...this.products]; // Inicializar productos filtrados
       console.log('EditService - Products loaded:', this.products);
     } catch (error) {
       console.error('Error loading products:', error);
       this.showErrorToast('Error al cargar los productos');
     }
+  }
+
+  /**
+   * Filtra productos por nombre
+   */
+  filterProducts() {
+    if (!this.productSearchQuery.trim()) {
+      this.filteredProducts = [...this.products];
+    } else {
+      this.filteredProducts = this.products.filter(product =>
+        product.name.toLowerCase().includes(this.productSearchQuery.toLowerCase())
+      );
+    }
+  }
+
+  /**
+   * Selecciona un producto
+   */
+  selectProduct(product: any) {
+    this.selectedProduct = product;
+  }
+
+  /**
+   * Maneja errores de carga de imágenes
+   */
+  onImageError(event: any) {
+    event.target.style.display = 'none';
+    event.target.nextElementSibling.style.display = 'flex';
+  }
+
+  /**
+   * Obtiene la fecha actual en formato ISO
+   */
+  getCurrentDate(): string {
+    return new Date().toISOString();
   }
 
   async loadProvider() {
@@ -1076,7 +1119,9 @@ export class EditServicePage implements OnInit {
           longitude: this.currentPromotion.location?.coordinates?.[0] || this.provider.address?.location?.coordinates?.[0] || 0
         },
         promo_radius_meters: this.currentPromotion.radius || 200,
-        isActive: this.currentPromotion.isActive !== undefined ? this.currentPromotion.isActive : true
+        isActive: this.currentPromotion.isActive !== undefined ? this.currentPromotion.isActive : true,
+        startDate: this.currentPromotion.startDate || new Date().toISOString(),
+        endDate: this.currentPromotion.endDate || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
       };
     }
 
@@ -1165,6 +1210,30 @@ export class EditServicePage implements OnInit {
     });
 
     await alert.present();
+  }
+
+  /**
+   * Prueba el envío de notificaciones push para la promoción actual
+   */
+  async testPromotionNotification() {
+    if (!this.provider?._id || !this.promotionConfig.promotion_text) {
+      this.showErrorToast('Primero guarda la promoción para probar las notificaciones');
+      return;
+    }
+
+    try {
+      this.showSuccessToast('Enviando notificación de prueba...');
+      
+      // Simular el envío de notificación guardando la promoción
+      // (esto activará automáticamente el envío de notificaciones en el backend)
+      await this.savePromotion();
+      
+      this.showSuccessToast('Notificación de prueba enviada. Revisa los logs del backend.');
+      
+    } catch (error) {
+      console.error('Error testing notification:', error);
+      this.showErrorToast('Error al probar la notificación');
+    }
   }
 
   /**

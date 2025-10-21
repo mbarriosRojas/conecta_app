@@ -11,6 +11,7 @@ import { StatusBar } from '@capacitor/status-bar';
 
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
+import { AnimatedSplashComponent } from './components/animated-splash/animated-splash.component';
 
 // Services
 import { ApiService } from './services/api.service';
@@ -25,7 +26,7 @@ import { PushNotificationService } from './services/push-notification.service';
 import { AuthInterceptor } from './interceptors/auth.interceptor';
 
 @NgModule({
-  declarations: [AppComponent],
+  declarations: [AppComponent, AnimatedSplashComponent],
   imports: [
     BrowserModule, 
     IonicModule.forRoot(), 

@@ -20,62 +20,18 @@ ion-content {
   }
 }
 
-// Header con safe area y degradado suave
-ion-header {
-  ion-toolbar {
-    --padding-top: env(safe-area-inset-top);
-    --padding-start: 0;
-    --padding-end: 0;
-    --padding-bottom: 0;
-    --background: linear-gradient(135deg, #e8e4ff 0%, #f3f1ff 100%) !important;
-    background: linear-gradient(135deg, #e8e4ff 0%, #f3f1ff 100%) !important;
-    --color: #5a4fcf;
-    --border-width: 0;
-    --min-height: calc(56px + env(safe-area-inset-top));
-    
-    ion-title {
-      --color: #5a4fcf;
-      font-weight: 600;
-    }
-    
-    ion-back-button {
-      --color: #5a4fcf;
-      --color-focused: #4a3fb8;
-      --color-hover: #4a3fb8;
-    }
-    
-    ion-button {
-      --color: #5a4fcf;
-      --color-focused: #4a3fb8;
-      --color-hover: #4a3fb8;
-      
-      &.close-button {
-        --padding-start: 12px;
-        --padding-end: 12px;
-        --padding-top: 12px;
-        --padding-bottom: 12px;
-        width: 44px;
-        height: 44px;
-        
-        ion-icon {
-          font-size: 24px;
-          font-weight: bold;
-        }
-      }
-    }
-  }
-}
+// Header usa estilos globales
 
 // Radius Control - Card del slider con fondo suave
 .radius-control {
-  background: linear-gradient(135deg, #f0edff 0%, #f8f6ff 100%);
-  border: 1px solid #e8e4ff;
+  background: linear-gradient(135deg, #e8f5e8 0%, #f0f8f0 100%);
+  border: 1px solid #d4edda;
   border-radius: 16px;
   padding: 20px;
   margin: 16px;
   margin-top: 16px;
   margin-bottom: 8px;
-  box-shadow: 0 4px 16px rgba(90, 79, 207, 0.1);
+  box-shadow: 0 4px 16px rgba(42, 132, 115, 0.1);
   position: relative;
   overflow: hidden;
   
@@ -99,7 +55,7 @@ ion-header {
   > * {
     position: relative;
     z-index: 1;
-    color: #5a4fcf;
+    color: #ffffff;
   }
 
   .radius-header {
@@ -115,11 +71,11 @@ ion-header {
 
       ion-icon {
         font-size: 32px;
-        color: #5a4fcf;
+        color: #2a8473;
       }
       
       .radius-value {
-        color: #5a4fcf;
+        color: #ffffff;
         font-weight: bold;
         font-size: 18px;
       }
@@ -129,14 +85,14 @@ ion-header {
           margin: 0;
           font-size: 14px;
           font-weight: 600;
-          color: var(--ion-color-dark);
+          color: #2a8473;
         }
 
         p {
           margin: 4px 0 0 0;
           font-size: 20px;
           font-weight: bold;
-          color: var(--ion-color-primary);
+          color: #2a8473;
         }
       }
     }

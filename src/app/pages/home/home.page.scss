@@ -6,25 +6,14 @@
   padding: 0;
   --padding-top: 0;
 }
-
-// Header con safe area y diseño suave
-ion-header {
-  ion-toolbar {
-    --padding-top: env(safe-area-inset-top);
-    --padding-start: 0;
-    --padding-end: 0;
-    --padding-bottom: 0;
-    --background: linear-gradient(135deg, #e8e4ff 0%, #f3f1ff 100%) !important;
-    background: linear-gradient(135deg, #e8e4ff 0%, #f3f1ff 100%) !important;
-    --color: #5a4fcf;
-    --border-width: 0;
-    --min-height: calc(56px + env(safe-area-inset-top));
+.header-logo{
+  width: 20% !important;
+}
+// Header usa estilos globales
     
-    .whatsapp-header {
-      padding-top: 0; // Remover padding adicional
-      background: transparent;
-    }
-  }
+.whatsapp-header {
+  padding-top: 0; // Remover padding adicional
+  background: transparent;
 }
 
 // Header estilo WhatsApp
@@ -562,7 +551,10 @@ ion-header {
       .recent-price {
         font-size: 14px;
         font-weight: 600;
-        color: var(--primary-color);
+        color: #ffffff;
+        background: #54ad5d;
+        padding: 3px 6px;
+        border-radius: 4px;
       }
     }
   }
@@ -1061,7 +1053,7 @@ ion-col {
     }
     
     .filter-button {
-      --background: rgba(255, 255, 255, 0.15);
+      --background: #2a8473;
       
       ion-icon {
         font-size: 24px;
@@ -1604,7 +1596,7 @@ ion-col {
       margin: 0;
       font-size: 1.5rem;
       font-weight: 600;
-      color: #5a4fcf;
+      color: #2a8473;
     }
   }
   
@@ -1678,7 +1670,7 @@ ion-col {
   --padding-end: 8px;
   height: 40px;
   width: 40px;
-  --color: #5a4fcf;
+  --color: #05866e;
   
   ion-icon {
     font-size: 22px;
@@ -2022,4 +2014,20 @@ ion-col {
     font-size: 14px;
     font-weight: 500;
   }
+}
+
+/* Estilos para precio de productos */
+.product-price {
+  ion-badge {
+    --background: #54ad5d !important;
+    --color: #ffffff !important;
+  }
+}
+
+/* Estilos específicos para PRODUCTOS (no servicios normales) */
+.mini-promotion-card .service-name {
+  color: #ffffff !important;
+  background: #f6876c !important;
+  padding: 4px 8px !important;
+  border-radius: 6px !important;
 }

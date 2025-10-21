@@ -5,18 +5,18 @@
       <!-- Título con botones -->
       <div class="header-title-row">
         <div class="header-title">
-          <h1>Akí</h1>
+          <img  src="assets/logo.PNG" alt="AKI" class="header-logo">
         </div>
         
         <div class="header-buttons">
           <!-- Botón de Promociones -->
           <ion-button fill="clear" (click)="goToPromotionsPage()" class="promotions-button">
-            <ion-icon name="megaphone" color="tertiary"></ion-icon>
+            <ion-icon name="megaphone" color="success"></ion-icon>
           </ion-button>
           
           <!-- Botón de filtro -->
           <ion-button fill="clear" (click)="openFilterModal()" class="filter-button">
-            <ion-icon name="funnel-outline"></ion-icon>
+            <ion-icon name="funnel-outline" color="success"></ion-icon>
           </ion-button>
         </div>
       </div>
@@ -69,12 +69,6 @@
 
   <!-- Categorías estilo WhatsApp -->
   <div class="categories-section">
-    <!-- 🔍 Overlay de carga para categorías -->
-    <div class="category-loading-overlay" *ngIf="isFilteringCategory">
-      <ion-spinner name="crescent" color="primary"></ion-spinner>
-      <p>Filtrando...</p>
-    </div>
-    
     <div class="categories-container" [class.loading]="isFilteringCategory">
       <!-- Categoría "Todos" -->
       <div class="whatsapp-category-pill" 
@@ -134,10 +128,18 @@
   <div class="whatsapp-services-container" *ngIf="feedItems.length > 0 || providers.length > 0">
     
     <!-- 🔍 Overlay de carga para búsqueda/filtrado -->
-    <div class="services-loading-overlay" *ngIf="isSearching || isFilteringCategory || (isLoading && providers.length > 0)">
+    <div class="services-loading-overlay" *ngIf="isSearching || (isLoading && providers.length > 0)">
       <div class="loading-content">
         <ion-spinner name="crescent" color="primary"></ion-spinner>
-        <p>{{ isSearching ? 'Buscando...' : (isFilteringCategory ? 'Filtrando...' : 'Cargando...') }}</p>
+        <p>{{ isSearching ? 'Buscando...' : 'Cargando...' }}</p>
+      </div>
+    </div>
+    
+    <!-- 🔍 Loading de categorías en el área de resultados -->
+    <div class="category-filter-loading" *ngIf="isFilteringCategory">
+      <div class="loading-content">
+        <ion-spinner name="crescent" color="primary"></ion-spinner>
+        <p>Filtrando por categoría...</p>
       </div>
     </div>
     
@@ -146,7 +148,7 @@
       <ng-container *ngFor="let item of feedItems; trackBy: trackByFeedItemId">
         
         <!-- Mini Promoción -->
-        <div class="mini-promotion-card" *ngIf="isPromotion(item)" (click)="goToProvider(item.data.businessID)">
+        <div class="mini-promotion-card" *ngIf="isPromotion(item)" (click)="goToProvider(item.data.isProduct ? item.data.providerId : item.data.businessID)">
           <div class="promo-header">
             <div class="promo-icon">
               <ion-icon [name]="getPromotionIcon(item.data.type)" color="tertiary"></ion-icon>
@@ -399,7 +401,7 @@
               min="1000" 
               max="500000000" 
               step="1000"
-              color="primary">
+              color="success">
               <ion-label slot="start">1km</ion-label>
               <ion-label slot="end">{{ (tempSelectedRadius / 1000) }}km</ion-label>
             </ion-range>
@@ -429,7 +431,7 @@
           <ion-button 
             expand="block" 
             fill="solid" 
-            color="primary"
+            color="success"
             (click)="applyFilters()"
             class="apply-filters-btn">
             <ion-icon name="checkmark" slot="start"></ion-icon>
