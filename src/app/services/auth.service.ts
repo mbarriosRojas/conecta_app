@@ -4,6 +4,7 @@ import { BehaviorSubject, Observable, tap } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { StorageService } from './storage.service';
 import { PushNotificationService } from './push-notification.service';
+import { LocationService } from './location.service';
 
 export interface LoginRequest {
   email: string;
@@ -65,7 +66,8 @@ export class AuthService {
   constructor(
     private http: HttpClient,
     private storageService: StorageService,
-    private pushNotificationService: PushNotificationService
+    private pushNotificationService: PushNotificationService,
+    private locationService: LocationService
   ) {
     this.initializationPromise = this.initializeAuth();
   }
@@ -154,6 +156,14 @@ export class AuthService {
       console.log('AuthService - setAuthData: FCM token userID updated');
     } catch (error) {
       console.error('AuthService - setAuthData: error updating FCM token userID:', error);
+    }
+    
+    // 🔥 Actualizar el userID de las ubicaciones con el usuario autenticado
+    try {
+      await this.locationService.updateUserIdOnLogin(user.id, this);
+      console.log('AuthService - setAuthData: Location userID updated');
+    } catch (error) {
+      console.error('AuthService - setAuthData: error updating Location userID:', error);
     }
     
     this.currentUserSubject.next(user);

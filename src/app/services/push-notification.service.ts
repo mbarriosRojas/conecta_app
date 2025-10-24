@@ -330,20 +330,49 @@ export class PushNotificationService {
 
   /**
    * Obtiene o genera un userID único
+   * 🔥 SINCRONIZADO con LocationService para usar el mismo anonymousUserId
    */
   private async getUserID(): Promise<string> {
-    let userId = await this.storageService.get('userID');
+    // 1. Intentar obtener de localStorage (usado por LocationService)
+    let userId: string | null = null;
     
+    if (typeof localStorage !== 'undefined') {
+      userId = localStorage.getItem('anonymousUserId');
+    }
+    
+    // 2. Si no existe en localStorage, intentar de Ionic Storage
     if (!userId) {
-      // Generar ID único
-      userId = 'user_' + Math.random().toString(36).substr(2, 9) + Date.now();
-      await this.storageService.set('userID', userId);
+      userId = await this.storageService.get('userID');
+    }
+    
+    // 3. Si no existe en ningún lado, generar uno nuevo
+    if (!userId) {
+      // Usar el mismo formato que LocationService para compatibilidad
+      userId = this.generateUniqueId();
       console.log('🆔 Nuevo userID generado:', userId);
     } else {
       console.log('🆔 UserID existente:', userId);
     }
     
+    // 4. Guardar en ambos lugares para sincronización
+    await this.storageService.set('userID', userId);
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('anonymousUserId', userId);
+    }
+    
     return userId;
+  }
+
+  /**
+   * Genera un ID único usando el mismo formato que LocationService
+   */
+  private generateUniqueId(): string {
+    // Usar UUID v4 simple compatible con LocationService
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+      const r = Math.random() * 16 | 0;
+      const v = c === 'x' ? r : (r & 0x3 | 0x8);
+      return v.toString(16);
+    });
   }
 
   /**

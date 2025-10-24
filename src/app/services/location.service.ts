@@ -425,4 +425,31 @@ export class LocationService {
   public isBackgroundUpdateActive(): boolean {
     return this.isBackgroundUpdateEnabled;
   }
+
+  /**
+   * Actualiza el userID cuando el usuario inicia sesión
+   * 🔥 CRÍTICO: Sincronizar userID de ubicaciones con token FCM
+   */
+  public async updateUserIdOnLogin(authenticatedUserId: string, authService?: any): Promise<void> {
+    try {
+      console.log(`📍 [LOCATION] Actualizando userID: ${this.anonymousUserId} → ${authenticatedUserId}`);
+      
+      // Actualizar el anonymousUserId local
+      const oldUserId = this.anonymousUserId;
+      this.anonymousUserId = authenticatedUserId;
+      
+      // Guardar en localStorage
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('anonymousUserId', authenticatedUserId);
+      }
+      
+      // Actualizar ubicación inmediatamente con el nuevo userID
+      await this.updateLocationToBackend(authService);
+      
+      console.log(`✅ [LOCATION] UserID actualizado y ubicación sincronizada`);
+      
+    } catch (error) {
+      console.error('❌ [LOCATION] Error actualizando userID:', error);
+    }
+  }
 }

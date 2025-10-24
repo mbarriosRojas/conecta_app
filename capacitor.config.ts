@@ -34,6 +34,10 @@ const config: CapacitorConfig = {
       spinnerColor: '#ffffff',
       splashFullScreen: true,
       splashImmersive: true
+    },
+    // 🔥 Push Notifications Configuration
+    PushNotifications: {
+      presentationOptions: ['badge', 'sound', 'alert']
     }
   },
   // 🔥 Configuración para deep linking (OAuth redirect)
