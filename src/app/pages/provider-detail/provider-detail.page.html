@@ -303,46 +303,75 @@
     <!-- Contenido de promociones (público, sin requerir autenticación) -->
     <ion-card class="promotions-card" *ngIf="promotions.length > 0">
       <ion-card-header>
-        <ion-card-title>
-          <ion-icon name="pricetag-outline" color="primary"></ion-icon>
-          Promociones disponibles
-        </ion-card-title>
+        
       </ion-card-header>
       <ion-card-content>
         <div class="promotions-list">
           <div class="promotion-item" *ngFor="let promotion of promotions">
             <div class="promotion-header">
-              <h3 class="promotion-title">{{ promotion.title }}</h3>
-              <span class="promotion-discount" *ngIf="promotion.discount">
-                {{ promotion.discount }}% OFF
+              <!-- 🔥 Usar promotion_text en lugar de title -->
+              <h3 class="promotion-title">{{ promotion.promotion_text || promotion.title }}</h3>
+              <span class="promotion-badge" [class.active]="promotion.isActive">
+                {{ promotion.isActive ? '✅ Activa' : '❌ Inactiva' }}
               </span>
             </div>
             
-            <p class="promotion-description" *ngIf="promotion.description">
-              {{ promotion.description }}
-            </p>
+            <!-- 🔥 Mostrar tipo de promoción -->
+            <div class="promotion-type" *ngIf="promotion.promotion_type">
+              <ion-chip color="primary">
+                <ion-icon name="pricetag"></ion-icon>
+                <ion-label>{{ promotion.promotion_type }}</ion-label>
+              </ion-chip>
+            </div>
             
             <div class="promotion-details">
-              <div class="promotion-code" *ngIf="promotion.code">
-                <ion-icon name="ticket-outline"></ion-icon>
-                <span>Código: {{ promotion.code }}</span>
+              <!-- 🔥 Mostrar radio de alcance -->
+              <div class="promotion-radius" *ngIf="promotion.promo_radius_meters">
+                <ion-icon name="location-outline"></ion-icon>
+                <span>Radio: {{ (promotion.promo_radius_meters / 1000).toFixed(1) }}km</span>
               </div>
               
-              <div class="promotion-validity" *ngIf="promotion.validUntil">
+              <!-- 🔥 Mostrar fecha de validez -->
+              <div class="promotion-validity" *ngIf="promotion.endDate">
                 <ion-icon name="calendar-outline"></ion-icon>
-                <span>Válido hasta: {{ promotion.validUntil | date:'short' }}</span>
+                <span>Válido hasta: {{ promotion.endDate | date:'dd/MM/yyyy' }}</span>
               </div>
             </div>
             
-            <div class="promotion-actions">
-              <ion-button 
-                fill="outline" 
-                size="small" 
-                color="primary"
-                (click)="copyPromotionCode(promotion.code)">
-                <ion-icon name="copy-outline" slot="start"></ion-icon>
-                Copiar código
-              </ion-button>
+            <!-- 🔥 Estadísticas de delivery -->
+            <div class="promotion-stats" *ngIf="promotion.deliveryStats">
+              <ion-chip outline color="success">
+                <ion-icon name="paper-plane"></ion-icon>
+                <ion-label>{{ promotion.deliveryStats.totalSent || 0 }} enviadas</ion-label>
+              </ion-chip>
+              <ion-chip outline color="warning">
+                <ion-icon name="notifications"></ion-icon>
+                <ion-label>{{ promotion.deliveryStats.totalOpened || 0 }} abiertas</ion-label>
+              </ion-chip>
+              <ion-chip outline color="primary">
+                <ion-icon name="eye"></ion-icon>
+                <ion-label>{{ promotion.deliveryStats.totalViews || 0 }} vistas</ion-label>
+              </ion-chip>
+            </div>
+            
+            <!-- 🔥 Desglose de fuentes de vistas (opcional, solo para admins o vista detallada) -->
+            <div class="promotion-sources" *ngIf="promotion.deliveryStats?.viewSources && showDetailedStats">
+              <div class="source-item">
+                <ion-icon name="notifications-outline"></ion-icon>
+                <span>Notificación: {{ promotion.deliveryStats.viewSources.fromNotification || 0 }}</span>
+              </div>
+              <div class="source-item">
+                <ion-icon name="home-outline"></ion-icon>
+                <span>Home: {{ promotion.deliveryStats.viewSources.fromHomeCard || 0 }}</span>
+              </div>
+              <div class="source-item">
+                <ion-icon name="list-outline"></ion-icon>
+                <span>Cercanas: {{ promotion.deliveryStats.viewSources.fromNearbyList || 0 }}</span>
+              </div>
+              <div class="source-item">
+                <ion-icon name="storefront-outline"></ion-icon>
+                <span>Detalle: {{ promotion.deliveryStats.viewSources.fromProviderDetail || 0 }}</span>
+              </div>
             </div>
           </div>
         </div>

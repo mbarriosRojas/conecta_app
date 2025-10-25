@@ -5,6 +5,7 @@ import { IonicModule, IonModal, ToastController } from '@ionic/angular';
 import { Router } from '@angular/router';
 import { GeofencingAnalyticsService } from '../../services/geofencing-analytics.service';
 import { LocationService } from '../../services/location.service';
+import { PromotionTrackingService } from '../../services/promotion-tracking.service';
 import { firstValueFrom } from 'rxjs';
 import { mapConfig } from '../../../environments/environment.maps';
 
@@ -81,6 +82,7 @@ export class PromotionsNearbyPage implements OnInit {
   constructor(
     private geofencingService: GeofencingAnalyticsService,
     private locationService: LocationService,
+    private promotionTrackingService: PromotionTrackingService,
     private router: Router,
     private toastController: ToastController
   ) {}
@@ -305,12 +307,20 @@ export class PromotionsNearbyPage implements OnInit {
   }
 
   /**
-   * Navega al detalle del proveedor
+   * Navega al detalle del proveedor y trackea la vista
    */
-  goToProvider(businessID: string) {
+  async goToProvider(businessID: string) {
+    // 🔥 Trackear vista desde lista de promociones cercanas
+    try {
+      await this.promotionTrackingService.trackPromotionView(businessID, 'nearby');
+    } catch (error) {
+      console.error('Error tracking promotion view from nearby list:', error);
+    }
     
-    // Navegar al detalle del proveedor
-    this.router.navigate(['/provider-detail', businessID]);
+    // Navegar al detalle del proveedor con tab de promociones activo
+    this.router.navigate(['/provider-detail', businessID], {
+      queryParams: { tab: 'promo' }
+    });
   }
 
   /**

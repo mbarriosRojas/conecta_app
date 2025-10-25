@@ -148,7 +148,7 @@
       <ng-container *ngFor="let item of feedItems; trackBy: trackByFeedItemId">
         
         <!-- Mini Promoción -->
-        <div class="mini-promotion-card" *ngIf="isPromotion(item)" (click)="goToProvider(item.data.isProduct ? item.data.providerId : item.data.businessID)">
+        <div class="mini-promotion-card" *ngIf="isPromotion(item)" (click)="goToProvider(item.data.isProduct ? item.data.providerId : item.data.businessID, 'promo')">
           <div class="promo-header">
             <div class="promo-icon">
               <ion-icon [name]="getPromotionIcon(item.data.type)" color="tertiary"></ion-icon>

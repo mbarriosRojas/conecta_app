@@ -14,6 +14,7 @@ import { GeocodingService, LocationSuggestion } from '../../services/geocoding.s
 import { PermissionService } from '../../services/permission.service';
 import { GeofencingService } from '../../services/geofencing.service';
 import { GeofencingAnalyticsService } from '../../services/geofencing-analytics.service';
+import { PromotionTrackingService } from '../../services/promotion-tracking.service';
 import { Provider, ProviderFilters, Category } from '../../models/provider.model';
 import { environment } from '../../../environments/environment';
 import { NoResultsExpandComponent } from '../../components/no-results-expand/no-results-expand.component';
@@ -131,6 +132,7 @@ export class HomePage implements OnInit, AfterViewInit {
     private permissionService: PermissionService,
     private geofencingService: GeofencingService,
     private geofencingAnalyticsService: GeofencingAnalyticsService,
+    private promotionTrackingService: PromotionTrackingService,
     private loadingController: LoadingController,
     private toastController: ToastController,
     private alertController: AlertController,
@@ -538,48 +540,53 @@ export class HomePage implements OnInit, AfterViewInit {
       let foundProducts: any[] = [];
       if (response && (response as any).productsFound && (response as any).productsFound.products) {
         foundProducts = (response as any).productsFound.products;
-        console.log('🔍 [PRODUCTS FOUND] Productos encontrados:', foundProducts.length);
+        console.log('✅ [PRODUCTS FOUND] Productos encontrados:', foundProducts.length);
         foundProducts.forEach((product, index) => {
-          console.log(`   ${index + 1}. "${product.name}" - ${product.category} - $${product.price}`);
+          console.log(`   ${index + 1}. "${product.name}" - ${product.category} - Provider: ${product.providerName}`);
         });
       }
       
-      if (response && response.data && response.data.length > 0) {
+      // 🔥 CORREGIDO: Procesar productos ANTES de verificar providers
+      let productProviders: any[] = [];
+      if (foundProducts.length > 0) {
+        console.log('🔍 [PRODUCTS] Convirtiendo productos a formato de provider...');
+        productProviders = foundProducts.map(product => ({
+          _id: `product_${product._id}`,
+          name: product.name,
+          description: product.description || `Producto: ${product.name}`,
+          logo: product.images && product.images.length > 0 ? product.images[0] : 'assets/images/default-product.png',
+          images: product.images || [],
+          categoryId: product.category,
+          address: product.address,
+          rating: 0,
+          views: 0,
+          verified: false,
+          stand_out: product.featured || false,
+          distance: product.address?.location?.coordinates ? this.calculateDistance(
+            this.currentLocation?.latitude || 0,
+            this.currentLocation?.longitude || 0,
+            product.address.location.coordinates[1],
+            product.address.location.coordinates[0]
+          ) : 0,
+          isProduct: true,
+          originalProduct: product,
+          providerName: product.providerName,
+          providerId: product.providerId
+        }));
+        console.log('✅ [PRODUCTS] Productos convertidos:', productProviders.length);
+      }
+      
+      // 🔥 CORREGIDO: Manejar tanto providers como productos
+      const hasProviders = response && response.data && response.data.length > 0;
+      const hasProducts = productProviders.length > 0;
+      
+      if (hasProviders || hasProducts) {
         if (reset) {
-          this.providers = response.data;
+          // 🔥 Combinar productos + providers (productos primero)
+          this.providers = [...productProviders, ...(response.data || [])] as any[];
           this.currentRadius = searchRadius;
           
-          // 🚀 NUEVO: Agregar productos encontrados a la lista de providers para mostrarlos
-          if (foundProducts.length > 0) {
-            // Convertir productos a formato de provider para mostrarlos en la lista
-            const productProviders = foundProducts.map(product => ({
-              _id: `product_${product._id}`,
-              name: product.name,
-              description: product.description || `Producto: ${product.name}`,
-              logo: product.images && product.images.length > 0 ? product.images[0] : 'assets/images/default-product.png',
-              images: product.images || [],
-              categoryId: product.category,
-              address: product.address,
-              rating: 0,
-              views: 0,
-              verified: false,
-              stand_out: product.featured || false,
-              distance: product.address?.location?.coordinates ? this.calculateDistance(
-                this.currentLocation?.latitude || 0,
-                this.currentLocation?.longitude || 0,
-                product.address.location.coordinates[1],
-                product.address.location.coordinates[0]
-              ) : 0,
-              isProduct: true, // 🚀 Marcar como producto para diferenciarlo
-              originalProduct: product, // 🚀 Guardar datos originales del producto
-              providerName: product.providerName, // 🚀 NUEVO: Nombre del proveedor
-              providerId: product.providerId // 🚀 NUEVO: ID del proveedor para navegación
-            }));
-            
-            // Agregar productos al inicio de la lista
-            this.providers = [...productProviders, ...this.providers] as any[];
-            console.log('🔍 [PRODUCTS ADDED] Productos agregados a la lista:', productProviders.length);
-          }
+          console.log('✅ [RESULTS] Total items:', this.providers.length, '(Productos:', productProviders.length, 'Providers:', response.data?.length || 0, ')');
           
           // Mostrar componente de no resultados si no hay datos
           this.showNoResults = false;
@@ -618,13 +625,22 @@ export class HomePage implements OnInit, AfterViewInit {
         console.log('Home - State after load - currentPage:', this.currentPage, 'hasMoreData:', this.hasMoreData, 'isLoadingMore:', this.isLoadingMore, 'isLoading:', this.isLoading);
         console.log('Home - Pagination info:', response.pagination);
       } else {
+        // 🔥 CORREGIDO: No mostrar "sin resultados" si NO hay providers pero SÍ hay productos
         if (reset) {
-          this.providers = [];
-          this.feedItems = [];
+          this.providers = productProviders.length > 0 ? productProviders as any[] : [];
+          this.feedItems = productProviders.length > 0 ? productProviders.map(p => ({ type: 'provider', data: p })) : [];
+          console.log('✅ [NO PROVIDERS] Pero sí hay productos:', productProviders.length);
         }
-        this.hasMoreData = false;
-        this.showNoResults = true;
-        console.log('Home - No providers found');
+        
+        if (this.providers.length === 0) {
+          this.hasMoreData = false;
+          this.showNoResults = true;
+          console.log('❌ [NO RESULTS] No hay providers ni productos');
+        } else {
+          this.hasMoreData = false; // No hay más providers, solo productos
+          this.showNoResults = false;
+          console.log('✅ [PRODUCTS ONLY] Mostrando solo productos');
+        }
       }
       
     } catch (error) {
@@ -945,10 +961,36 @@ export class HomePage implements OnInit, AfterViewInit {
     return provider._id;
   }
 
-  async onProviderClick(provider: Provider) {
-    console.log('Provider clicked:', provider._id);
+  async onProviderClick(provider: any) {
+    console.log('Provider/Product clicked:', provider);
     
-    // Navegar primero al detalle del proveedor (no esperar la vista)
+    // 🔥 Si es un producto, usar el providerId y abrir tab de catálogo
+    if (provider.isProduct && provider.providerId) {
+      console.log('📦 Es un producto, navegando al provider con tab catálogo');
+      console.log('   ProductID:', provider._id);
+      console.log('   ProviderID:', provider.providerId);
+      
+      // Navegar al proveedor con la tab de catálogo activa
+      this.router.navigate(['/provider-detail', provider.providerId], {
+        queryParams: { tab: 'catalog' }
+      });
+      
+      // Registrar vista del proveedor en background
+      try {
+        await firstValueFrom(this.apiService.addView(provider.providerId));
+        console.log('View registered successfully');
+      } catch (error) {
+        console.error('Error adding view:', error);
+      }
+      
+      return;
+    }
+    
+    // 🔥 Si es un proveedor normal
+    console.log('🏪 Es un proveedor, navegando al detalle');
+    console.log('   ProviderID:', provider._id);
+    
+    // Navegar al detalle del proveedor
     this.router.navigate(['/provider-detail', provider._id]);
     
     // Registrar vista del proveedor en background (no bloqueante)
@@ -957,7 +999,6 @@ export class HomePage implements OnInit, AfterViewInit {
       console.log('View registered successfully');
     } catch (error) {
       console.error('Error adding view:', error);
-      // No hacer nada más, la vista ya se registró o falló silenciosamente
     }
   }
 
@@ -1324,7 +1365,23 @@ export class HomePage implements OnInit, AfterViewInit {
   /**
    * Navega al detalle del proveedor
    */
-  goToProvider(businessID: string) {
-    this.router.navigate(['/provider-detail', businessID]);
+  async goToProvider(businessID: string, tab?: string) {
+    // 🔥 Si navega al tab 'promo', trackear vista desde home
+    if (tab === 'promo') {
+      try {
+        await this.promotionTrackingService.trackPromotionView(businessID, 'home');
+      } catch (error) {
+        console.error('Error tracking promotion view from home:', error);
+      }
+    }
+
+    // Navegar con tab específica
+    if (tab) {
+      this.router.navigate(['/provider-detail', businessID], {
+        queryParams: { tab }
+      });
+    } else {
+      this.router.navigate(['/provider-detail', businessID]);
+    }
   }
 }

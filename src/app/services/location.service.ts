@@ -5,6 +5,10 @@ import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, of, interval } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
+import { BackgroundGeolocationPlugin } from '@capacitor-community/background-geolocation';
+import { registerPlugin } from '@capacitor/core';
+
+const BackgroundGeolocation = registerPlugin<BackgroundGeolocationPlugin>('BackgroundGeolocation');
 
 export interface LocationData {
   latitude: number;
@@ -28,10 +32,11 @@ export class LocationService {
   private defaultRadius = 10000; // 10km en metros
   
   // 🔥 Configuración para actualización en segundo plano
-  private backgroundUpdateInterval = 5 * 60 * 1000; // 5 minutos
+  private backgroundUpdateInterval = 5 * 60 * 1000; // 5 minutos (app abierta/minimizada)
   private backgroundUpdateSubscription: any = null;
   private anonymousUserId: string | null = null;
   private isBackgroundUpdateEnabled = false;
+  private backgroundGeolocationWatcherId: string | null = null;
 
   constructor(private http: HttpClient) {
     this.initializeLocation();
@@ -327,42 +332,134 @@ export class LocationService {
   }
 
   /**
-   * Inicia la actualización automática de ubicación en segundo plano
+   * 🔥 SISTEMA HÍBRIDO: Inicia tracking que funciona incluso con app cerrada
+   * - App abierta/minimizada: Cada 5 minutos
+   * - App cerrada: Tracking nativo basado en movimiento (cada 100m)
    */
-  public startBackgroundLocationUpdates(authService?: any) {
+  public async startBackgroundLocationUpdates(authService?: any) {
     if (this.isBackgroundUpdateEnabled) {
       console.log('🔄 Actualización en segundo plano ya está activa');
       return;
     }
 
-    console.log('🚀 Iniciando actualización de ubicación en segundo plano...');
+    console.log('🚀 [LOCATION] Iniciando sistema híbrido de ubicación...');
     this.isBackgroundUpdateEnabled = true;
 
-    // Actualizar inmediatamente
-    this.updateLocationToBackend(authService);
+    // 1️⃣ Actualizar inmediatamente
+    await this.updateLocationToBackend(authService);
 
-    // Configurar intervalo para actualizaciones periódicas
+    // 2️⃣ Timer para app abierta/minimizada (cada 5 min)
     this.backgroundUpdateSubscription = interval(this.backgroundUpdateInterval).subscribe(async () => {
       try {
         await this.updateLocationToBackend(authService);
       } catch (error) {
-        console.error('❌ Error en actualización periódica de ubicación:', error);
+        console.error('❌ [LOCATION] Error en actualización periódica:', error);
       }
     });
 
-    console.log('✅ Actualización en segundo plano iniciada (cada 5 minutos)');
+    // 3️⃣ Background Geolocation para app cerrada (tracking nativo)
+    try {
+      await this.startNativeBackgroundTracking(authService);
+      console.log('✅ [LOCATION] Sistema híbrido completo iniciado');
+      console.log('   📍 Foreground: Cada 5 minutos');
+      console.log('   📍 Background: Cada 100 metros de movimiento');
+    } catch (error) {
+      console.error('⚠️ [LOCATION] Background tracking nativo no disponible, usando solo timer:', error);
+      console.log('✅ [LOCATION] Actualización en segundo plano iniciada (solo foreground, cada 5 minutos)');
+    }
   }
 
   /**
-   * Detiene la actualización automática de ubicación
+   * 🔥 Inicia tracking nativo que funciona con app cerrada
    */
-  public stopBackgroundLocationUpdates() {
+  private async startNativeBackgroundTracking(authService?: any) {
+    try {
+      const deviceInfo = await Device.getInfo();
+      
+      // Solo en dispositivos móviles reales
+      if (deviceInfo.platform === 'web') {
+        console.log('⚠️ [LOCATION] Background tracking no disponible en web');
+        return;
+      }
+
+      // Configurar y empezar watcher nativo
+      const watcherId = await BackgroundGeolocation.addWatcher(
+        {
+          // 🔥 Configuración optimizada para marketplace
+          backgroundMessage: "AKI está buscando promociones cercanas para ti",
+          backgroundTitle: "Buscando ofertas cerca de ti",
+          requestPermissions: true,
+          stale: false,
+          
+          // 🎯 Actualizar cada 100 metros de movimiento (no muy frecuente = ahorra batería)
+          distanceFilter: 100,
+        },
+        async (location: any, error: any) => {
+          if (error) {
+            if (error.code === 'NOT_AUTHORIZED') {
+              console.warn('⚠️ [LOCATION] Permisos de ubicación denegados');
+            }
+            return;
+          }
+
+          if (location) {
+            console.log('📍 [BACKGROUND] Nueva ubicación (app cerrada):', {
+              lat: location.latitude,
+              lng: location.longitude,
+              accuracy: location.accuracy
+            });
+
+            // Actualizar ubicación en backend
+            try {
+              const userId = this.anonymousUserId || this.generateUniqueId();
+              const response = await this.http.post(`${environment.apiUrl}/api/location/update`, {
+                userID: userId,
+                lat: location.latitude,
+                lng: location.longitude,
+                isAnonymous: !authService?.isAuthenticated(),
+              }).toPromise();
+
+              console.log('✅ [BACKGROUND] Ubicación sincronizada con backend');
+            } catch (error) {
+              console.error('❌ [BACKGROUND] Error sincronizando ubicación:', error);
+            }
+          }
+        }
+      );
+
+      this.backgroundGeolocationWatcherId = watcherId;
+      console.log('✅ [LOCATION] Background tracking nativo iniciado (watcher ID:', watcherId, ')');
+
+    } catch (error: any) {
+      console.error('❌ [LOCATION] Error iniciando background tracking nativo:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Detiene la actualización automática de ubicación (ambos sistemas)
+   */
+  public async stopBackgroundLocationUpdates() {
+    // Detener timer foreground
     if (this.backgroundUpdateSubscription) {
       this.backgroundUpdateSubscription.unsubscribe();
       this.backgroundUpdateSubscription = null;
-      this.isBackgroundUpdateEnabled = false;
-      console.log('🛑 Actualización en segundo plano detenida');
+      console.log('⏹️ [LOCATION] Timer foreground detenido');
     }
+
+    // Detener tracking nativo background
+    if (this.backgroundGeolocationWatcherId) {
+      try {
+        await BackgroundGeolocation.removeWatcher({ id: this.backgroundGeolocationWatcherId });
+        this.backgroundGeolocationWatcherId = null;
+        console.log('⏹️ [LOCATION] Background tracking nativo detenido');
+      } catch (error) {
+        console.error('❌ [LOCATION] Error deteniendo background tracking:', error);
+      }
+    }
+
+    this.isBackgroundUpdateEnabled = false;
+    console.log('⏹️ [LOCATION] Sistema híbrido de ubicación detenido completamente');
   }
 
   /**

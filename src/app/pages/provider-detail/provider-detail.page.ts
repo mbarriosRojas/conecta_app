@@ -8,6 +8,7 @@ import { CacheService } from '../../services/cache.service';
 import { LocationService, LocationData } from '../../services/location.service';
 import { GeocodingService, LocationSuggestion } from '../../services/geocoding.service';
 import { AuthService } from '../../services/auth.service';
+import { PromotionTrackingService } from '../../services/promotion-tracking.service';
 import { Provider, Product, Schedule } from '../../models/provider.model';
 import { environment } from '../../../environments/environment';
 import Swiper from 'swiper';
@@ -57,6 +58,7 @@ export class ProviderDetailPage implements OnInit, AfterViewInit, OnDestroy {
   // 🚀 NUEVO: Variables para promociones
   promotions: any[] = [];
   isLoadingPromotions = false;
+  showDetailedStats = false; // Para mostrar/ocultar desglose de fuentes
   
   // Swiper configurations
   imagesSwiperConfig: SwiperOptions = {
@@ -151,6 +153,7 @@ export class ProviderDetailPage implements OnInit, AfterViewInit, OnDestroy {
     private cacheService: CacheService,
     private locationService: LocationService,
     public authService: AuthService,
+    private promotionTrackingService: PromotionTrackingService,
     private loadingController: LoadingController,
     private toastController: ToastController,
     private alertController: AlertController,
@@ -159,6 +162,31 @@ export class ProviderDetailPage implements OnInit, AfterViewInit, OnDestroy {
   ) {}
 
   async ngOnInit() {
+    // 🔥 Verificar si viene desde una notificación con tab específica
+    this.route.queryParams.subscribe(params => {
+      if (params['tab']) {
+        this.activeSection = params['tab'];
+        console.log('📱 Tab desde notificación:', params['tab']);
+        
+        // 🔥 Si viene con tab=promo, cargar promociones después de cargar el provider
+        if (params['tab'] === 'promo') {
+          // Usar setTimeout para asegurar que el provider ya esté cargado
+          setTimeout(() => {
+            console.log('📱 Cargando promociones desde notificación...');
+            this.loadPromotions();
+          }, 500);
+        }
+        
+        // 🔥 Si viene con tab=catalog, cargar productos
+        if (params['tab'] === 'catalog') {
+          setTimeout(() => {
+            console.log('📱 Cargando catálogo desde búsqueda...');
+            this.loadProducts(true);
+          }, 500);
+        }
+      }
+    });
+    
     await this.loadCurrentLocation();
     await this.loadProvider();
   }
@@ -900,25 +928,56 @@ export class ProviderDetailPage implements OnInit, AfterViewInit, OnDestroy {
     try {
       const response = await this.apiService.getPromotionsByProvider(this.provider._id).toPromise();
       
-      if (response && response.success) {
-        this.promotions = response.data || [];
-        console.log('Promociones cargadas:', this.promotions.length);
+      console.log('📋 Respuesta de promociones:', response);
+      
+      if (response && response.status === 'success') {
+        // La API devuelve un objeto, no un array
+        if (response.data) {
+          this.promotions = [response.data]; // Convertir a array
+          
+          // 🔥 Ordenar: activas primero, inactivas después
+          this.promotions.sort((a, b) => {
+            if (a.isActive === b.isActive) return 0;
+            return a.isActive ? -1 : 1;
+          });
+          
+          console.log('✅ Promoción cargada:', this.promotions.length);
+          
+          // 🔥 Trackear vista desde detalle del proveedor
+          if (this.promotions.length > 0 && this.activeSection === 'promo') {
+            try {
+              await this.promotionTrackingService.trackPromotionView(this.provider._id, 'detail');
+            } catch (error) {
+              console.error('Error tracking promotion view from detail:', error);
+            }
+          }
+        } else {
+          this.promotions = [];
+          console.log('⚠️ No se encontraron promociones');
+        }
       } else {
         this.promotions = [];
-        console.log('No se encontraron promociones');
+        console.log('⚠️ No se encontraron promociones');
       }
-    } catch (error) {
-      console.error('Error cargando promociones:', error);
-      this.promotions = [];
+    } catch (error: any) {
+      console.error('❌ Error cargando promociones:', error);
       
-      // Mostrar toast de error
-      const toast = await this.toastController.create({
-        message: 'Error al cargar promociones',
-        duration: 3000,
-        position: 'bottom',
-        color: 'danger'
-      });
-      await toast.present();
+      // Si es 404, significa que no hay promoción
+      if (error.status === 404) {
+        this.promotions = [];
+        console.log('ℹ️ Este negocio no tiene promociones activas');
+      } else {
+        this.promotions = [];
+        
+        // Mostrar toast de error solo si no es 404
+        const toast = await this.toastController.create({
+          message: 'Error al cargar promociones',
+          duration: 3000,
+          position: 'bottom',
+          color: 'danger'
+        });
+        await toast.present();
+      }
     } finally {
       this.isLoadingPromotions = false;
     }

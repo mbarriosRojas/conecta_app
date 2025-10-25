@@ -13,6 +13,7 @@ import { environment } from '../../environments/environment';
 import { StorageService } from './storage.service';
 import { LocationService } from './location.service';
 import { firstValueFrom } from 'rxjs';
+import { Router } from '@angular/router';
 
 @Injectable({
   providedIn: 'root'
@@ -27,7 +28,8 @@ export class PushNotificationService {
     private platform: Platform,
     private http: HttpClient,
     private storageService: StorageService,
-    private locationService: LocationService
+    private locationService: LocationService,
+    private router: Router
   ) {}
 
   /**
@@ -401,7 +403,7 @@ export class PushNotificationService {
   /**
    * Maneja cuando el usuario toca una notificación (nativa)
    */
-  private handleNotificationTapped(notification: ActionPerformed): void {
+  private async handleNotificationTapped(notification: ActionPerformed): Promise<void> {
     console.log('👆 Usuario tocó notificación:', notification);
 
     const data = notification.notification.data;
@@ -409,8 +411,41 @@ export class PushNotificationService {
     // Navegar según el tipo de notificación
     if (data?.type === 'promotion' && data?.businessID) {
       console.log(`🧭 Navegando a negocio: ${data.businessID}`);
-      // TODO: Implementar navegación a detalle del negocio
-      // this.router.navigate(['/provider-detail', data.businessID]);
+      
+      // 🔥 Registrar que el usuario abrió la notificación (tracking)
+      try {
+        const userID = await this.getUserID();
+        await this.trackPromotionOpened(data.businessID, userID);
+      } catch (error) {
+        console.error('❌ Error tracking promotion opened:', error);
+        // No bloquear navegación por error de tracking
+      }
+      
+      // Navegar a la página de detalle del proveedor con la tab de promociones activa
+      this.router.navigate(['/provider-detail', data.businessID], {
+        queryParams: { tab: 'promo' }
+      }).then(() => {
+        console.log('✅ Navegación completada');
+      }).catch(err => {
+        console.error('❌ Error navegando:', err);
+      });
+    }
+  }
+
+  /**
+   * 🔥 Registra que el usuario abrió una notificación de promoción
+   */
+  private async trackPromotionOpened(businessID: string, userID: string): Promise<void> {
+    try {
+      const response = await this.http.post(
+        `${environment.apiUrl}/api/geofencing/business/${businessID}/promotion/opened`,
+        { userID }
+      ).toPromise();
+
+      console.log('📊 [TRACKING] Promoción abierta registrada:', response);
+    } catch (error) {
+      console.error('❌ [TRACKING] Error registrando apertura de promoción:', error);
+      throw error;
     }
   }
 

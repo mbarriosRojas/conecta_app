@@ -449,7 +449,8 @@ export class ApiService {
 
   // 🚀 NUEVO: Método para obtener promociones/cupones por proveedor
   getPromotionsByProvider(providerId: string): Observable<any> {
-    return this.http.get(`${this.baseUrl}/api/coupons/provider/${providerId}`)
+    // 🔥 Usar el endpoint correcto de geofencing/businesspromotions
+    return this.http.get(`${this.baseUrl}/api/geofencing/business/${providerId}/promotion`)
       .pipe(
         catchError(this.handleError.bind(this))
       );

@@ -439,7 +439,6 @@
         font-weight: 600;
         color: var(--ion-color-dark);
       }
-
       p {
         margin: 0 0 4px 0;
         font-size: 0.9rem;
@@ -1353,12 +1352,31 @@
         margin-bottom: 12px;
         
         .promotion-title {
-          font-size: 1.1rem;
+          font-size: 0.95rem; // 🔥 Reducido de 1.1rem a 0.95rem
           font-weight: 600;
           color: var(--ion-color-dark);
           margin: 0;
           flex: 1;
           margin-right: 12px;
+          line-height: 1.4;
+        }
+        
+        .promotion-badge {
+          padding: 4px 10px;
+          border-radius: 12px;
+          font-size: 0.75rem; // 🔥 Tamaño más pequeño
+          font-weight: 600;
+          white-space: nowrap;
+          
+          &.active {
+            background: #d4edda;
+            color: #155724;
+          }
+          
+          &:not(.active) {
+            background: #f8d7da;
+            color: #721c24;
+          }
         }
         
         .promotion-discount {
@@ -1382,32 +1400,81 @@
       .promotion-details {
         display: flex;
         flex-direction: column;
-        gap: 8px;
-        margin-bottom: 16px;
+        gap: 6px;
+        margin-bottom: 12px;
         
-        .promotion-code,
-        .promotion-validity {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          font-size: 0.9rem;
+        .promotion-type {
+          margin-bottom: 4px;
           
-          ion-icon {
-            color: var(--ion-color-primary);
-            font-size: 1rem;
-          }
-          
-          span {
-            color: var(--ion-color-dark);
-            font-weight: 500;
+          ion-chip {
+            height: 24px;
+            font-size: 0.75rem; // 🔥 Reducido
           }
         }
         
-        .promotion-code span {
-          font-family: 'Courier New', monospace;
-          background: #e9ecef;
-          padding: 2px 6px;
-          border-radius: 4px;
+        .promotion-radius,
+        .promotion-validity {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          font-size: 0.8rem; // 🔥 Reducido de 0.9rem a 0.8rem
+          
+          ion-icon {
+            color: var(--ion-color-primary);
+            font-size: 0.9rem; // 🔥 Reducido
+          }
+          
+          span {
+            color: var(--ion-color-medium);
+            font-weight: 400; // 🔥 Cambiado de 500 a 400
+          }
+        }
+      }
+      
+      .promotion-stats {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-top: 8px;
+        
+        ion-chip {
+          height: 26px; // 🔥 Más compacto
+          font-size: 0.75rem; // 🔥 Texto más pequeño
+          
+          ion-icon {
+            font-size: 0.9rem;
+          }
+          
+          ion-label {
+            font-weight: 500;
+          }
+        }
+      }
+      
+      // 🔥 Estilos para desglose de fuentes de vistas
+      .promotion-sources {
+        margin-top: 12px;
+        padding-top: 12px;
+        border-top: 1px solid #e9ecef;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        
+        .source-item {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          font-size: 0.75rem;
+          color: var(--ion-color-medium);
+          
+          ion-icon {
+            font-size: 0.9rem;
+            color: var(--ion-color-primary);
+          }
+          
+          span {
+            font-weight: 400;
+          }
         }
       }
       
