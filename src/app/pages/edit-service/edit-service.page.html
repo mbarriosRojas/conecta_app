@@ -559,17 +559,17 @@
           <ion-icon name="chevron-forward-outline" color="medium"></ion-icon>
         </div>
 
-        <!-- Botón para crear/editar promoción -->
-        <div class="settings-item clickable" (click)="openPromotionModal()">
+        <!-- 🔥 NUEVO: Botón para administrar promociones (navega a Mis Promociones) -->
+        <div class="settings-item clickable" (click)="goToMyPromotions()">
           <div class="item-icon">
-            <ion-icon name="gift-outline" color="tertiary"></ion-icon>
+            <ion-icon name="megaphone-outline" color="tertiary"></ion-icon>
           </div>
           <div class="item-content">
             <div class="item-label">
-              {{ hasPromotion ? 'Editar Promoción' : 'Crear Promoción' }}
+              Mis Promociones
             </div>
             <p class="item-description">
-              {{ hasPromotion ? currentPromotion?.text : 'Atrae clientes con ofertas geográficas' }}
+              Administra todas tus campañas y ofertas
             </p>
           </div>
           <ion-icon name="chevron-forward-outline" color="medium"></ion-icon>

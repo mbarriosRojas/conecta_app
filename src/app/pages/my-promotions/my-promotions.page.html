@@ -1,0 +1,202 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-button (click)="goBack()">
+        <ion-icon name="arrow-back"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title>Mis Promociones</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="createNewPromotion()">
+        <ion-icon name="add-circle-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <div class="promotions-container">
+    
+    <!-- Mensaje si no hay promociones -->
+    <div *ngIf="promotions.length === 0 && !isLoading" class="empty-state">
+      <ion-icon name="megaphone-outline"></ion-icon>
+      <h2>No tienes promociones</h2>
+      <p>Crea tu primera promoción para atraer más clientes</p>
+      <ion-button (click)="createNewPromotion()" color="primary">
+        <ion-icon slot="start" name="add-circle-outline"></ion-icon>
+        Crear Promoción
+      </ion-button>
+    </div>
+
+    <!-- Promociones Activas -->
+    <div *ngIf="activePromotions.length > 0" class="promotions-section">
+      <div class="section-header">
+        <ion-icon name="radio-button-on" color="success"></ion-icon>
+        <h3>ACTIVA</h3>
+      </div>
+
+      <div *ngFor="let promotion of activePromotions" class="promotion-card active">
+        <div class="promotion-header">
+          <div class="promotion-icon">
+            <ion-icon name="gift" color="success"></ion-icon>
+          </div>
+          <div class="promotion-title-section">
+            <h4>{{ promotion.promotion_text }}</h4>
+            <div class="promotion-meta">
+              <ion-chip [color]="getPromotionTypeColor(promotion.promotion_type)" class="promotion-type">
+                <ion-label>{{ getPromotionTypeLabel(promotion.promotion_type) }}</ion-label>
+              </ion-chip>
+              <span class="promotion-radius">
+                <ion-icon name="location"></ion-icon>
+                {{ promotion.promo_radius_meters }}m
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="promotion-validity">
+          <ion-icon name="calendar-outline"></ion-icon>
+          <span>Válida hasta: {{ promotion.endDate | date:'dd/MM/yyyy' }}</span>
+        </div>
+
+        <!-- Estadísticas -->
+        <div class="promotion-stats">
+          <div class="stat-item">
+            <ion-icon name="paper-plane" color="primary"></ion-icon>
+            <div class="stat-content">
+              <span class="stat-value">{{ promotion.deliveryStats?.totalSent || 0 }}</span>
+              <span class="stat-label">Enviadas</span>
+            </div>
+          </div>
+          
+          <div class="stat-item">
+            <ion-icon name="notifications" color="warning"></ion-icon>
+            <div class="stat-content">
+              <span class="stat-value">{{ promotion.deliveryStats?.totalOpened || 0 }}</span>
+              <span class="stat-label">Abiertas</span>
+            </div>
+          </div>
+          
+          <div class="stat-item">
+            <ion-icon name="eye" color="primary"></ion-icon>
+            <div class="stat-content">
+              <span class="stat-value">{{ promotion.deliveryStats?.totalViews || 0 }}</span>
+              <span class="stat-label">Vistas</span>
+            </div>
+          </div>
+
+          <div class="stat-item conversion">
+            <ion-icon name="trending-up" color="success"></ion-icon>
+            <div class="stat-content">
+              <span class="stat-value">{{ getOpenRate(promotion) }}%</span>
+              <span class="stat-label">Tasa</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Desglose de vistas (si hay) -->
+        <div *ngIf="showDetailedStats && promotion.deliveryStats?.viewSources" class="promotion-sources">
+          <h5>Origen de Vistas:</h5>
+          <div class="source-item">
+            <ion-icon name="notifications-circle"></ion-icon>
+            <span>Notificación: {{ promotion.deliveryStats?.viewSources?.fromNotification || 0 }}</span>
+          </div>
+          <div class="source-item">
+            <ion-icon name="home"></ion-icon>
+            <span>Home: {{ promotion.deliveryStats?.viewSources?.fromHomeCard || 0 }}</span>
+          </div>
+          <div class="source-item">
+            <ion-icon name="map"></ion-icon>
+            <span>Mapa: {{ promotion.deliveryStats?.viewSources?.fromNearbyList || 0 }}</span>
+          </div>
+          <div class="source-item">
+            <ion-icon name="storefront"></ion-icon>
+            <span>Detalle: {{ promotion.deliveryStats?.viewSources?.fromProviderDetail || 0 }}</span>
+          </div>
+        </div>
+
+        <!-- Acciones -->
+        <div class="promotion-actions">
+          <ion-button fill="outline" size="small" (click)="editPromotion(promotion)">
+            <ion-icon slot="start" name="create-outline"></ion-icon>
+            Editar
+          </ion-button>
+          <ion-button fill="outline" size="small" color="medium" (click)="togglePromotionStatus(promotion)">
+            <ion-icon slot="start" name="pause-circle-outline"></ion-icon>
+            Desactivar
+          </ion-button>
+          <ion-button fill="outline" size="small" color="secondary" (click)="duplicatePromotion(promotion)">
+            <ion-icon slot="start" name="copy-outline"></ion-icon>
+            Duplicar
+          </ion-button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Promociones Inactivas -->
+    <div *ngIf="inactivePromotions.length > 0" class="promotions-section">
+      <div class="section-header">
+        <ion-icon name="radio-button-off" color="medium"></ion-icon>
+        <h3>INACTIVAS</h3>
+      </div>
+
+      <div *ngFor="let promotion of inactivePromotions" class="promotion-card inactive">
+        <div class="promotion-header">
+          <div class="promotion-icon inactive-icon">
+            <ion-icon name="gift-outline" color="medium"></ion-icon>
+          </div>
+          <div class="promotion-title-section">
+            <h4>{{ promotion.promotion_text }}</h4>
+            <div class="promotion-meta">
+              <ion-chip [color]="getPromotionTypeColor(promotion.promotion_type)" class="promotion-type">
+                <ion-label>{{ getPromotionTypeLabel(promotion.promotion_type) }}</ion-label>
+              </ion-chip>
+              <span class="promotion-status" [class.expired]="isExpired(promotion)">
+                <ion-icon [name]="isExpired(promotion) ? 'close-circle' : 'pause-circle'"></ion-icon>
+                {{ isExpired(promotion) ? 'Expirada' : 'Pausada' }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="promotion-validity" *ngIf="isExpired(promotion)">
+          <ion-icon name="calendar-outline" color="danger"></ion-icon>
+          <span class="expired-text">Expiró: {{ promotion.endDate | date:'dd/MM/yyyy' }}</span>
+        </div>
+
+        <!-- Estadísticas resumidas -->
+        <div class="promotion-stats-summary">
+          <span>📊 {{ promotion.deliveryStats?.totalSent || 0 }} enviadas</span>
+          <span>• {{ promotion.deliveryStats?.totalOpened || 0 }} abiertas</span>
+          <span>• {{ promotion.deliveryStats?.totalViews || 0 }} vistas</span>
+        </div>
+
+        <!-- Acciones -->
+        <div class="promotion-actions">
+          <ion-button 
+            fill="outline" 
+            size="small" 
+            color="success" 
+            (click)="togglePromotionStatus(promotion)"
+            [disabled]="isExpired(promotion)">
+            <ion-icon slot="start" name="play-circle-outline"></ion-icon>
+            Activar
+          </ion-button>
+          <ion-button fill="outline" size="small" (click)="editPromotion(promotion)">
+            <ion-icon slot="start" name="create-outline"></ion-icon>
+            Editar
+          </ion-button>
+          <ion-button fill="outline" size="small" color="secondary" (click)="duplicatePromotion(promotion)">
+            <ion-icon slot="start" name="copy-outline"></ion-icon>
+            Duplicar
+          </ion-button>
+          <ion-button fill="outline" size="small" color="danger" (click)="deletePromotion(promotion)">
+            <ion-icon slot="start" name="trash-outline"></ion-icon>
+          </ion-button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</ion-content>
+

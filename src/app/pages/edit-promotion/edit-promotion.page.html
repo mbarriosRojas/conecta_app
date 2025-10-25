@@ -1,0 +1,177 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-button (click)="goBack()">
+        <ion-icon name="arrow-back"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title>{{ isEditMode ? 'Editar' : 'Crear' }} Promoción</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="savePromotion()" [disabled]="!promotionData.promotion_text">
+        <ion-icon name="checkmark"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <div class="promotion-form-container">
+    
+    <!-- Texto de la Promoción -->
+    <div class="form-section">
+      <h3 class="section-title">
+        <ion-icon name="text-outline"></ion-icon>
+        Texto de la Promoción
+      </h3>
+      <ion-textarea
+        [(ngModel)]="promotionData.promotion_text"
+        rows="4"
+        maxlength="200"
+        placeholder="Ej: 20% de descuento en todos los zapatos colegiales"
+        class="promotion-input">
+      </ion-textarea>
+      <div class="char-counter">
+        {{ promotionData.promotion_text.length }}/200 caracteres
+      </div>
+    </div>
+
+    <!-- Tipo de Promoción -->
+    <div class="form-section">
+      <h3 class="section-title">
+        <ion-icon name="pricetag-outline"></ion-icon>
+        Tipo de Promoción
+      </h3>
+      <ion-segment [(ngModel)]="promotionData.promotion_type" mode="md">
+        <ion-segment-button *ngFor="let type of promotionTypes" [value]="type.value">
+          <ion-label>{{ type.label }}</ion-label>
+        </ion-segment-button>
+      </ion-segment>
+    </div>
+
+    <!-- Radio de Alcance -->
+    <div class="form-section">
+      <h3 class="section-title">
+        <ion-icon name="radio-outline"></ion-icon>
+        Radio de Alcance
+      </h3>
+      <ion-range
+        [(ngModel)]="promotionData.promo_radius_meters"
+        [min]="50"
+        [max]="10000"
+        [step]="50"
+        [pin]="true"
+        [pinFormatter]="formatRadiusPin"
+        (ionChange)="onRadiusChange()"
+        color="primary">
+        <ion-icon slot="start" name="locate" size="small"></ion-icon>
+        <ion-icon slot="end" name="navigate" size="small"></ion-icon>
+      </ion-range>
+      
+      <!-- Preview de alcance -->
+      <div class="reach-preview" *ngIf="audiencePreview">
+        <div class="reach-stat">
+          <ion-icon name="people" color="primary"></ion-icon>
+          <div>
+            <strong>{{ audiencePreview.activeUsers4h || 0 }}</strong>
+            <span>Usuarios Activos (4h)</span>
+          </div>
+        </div>
+        <div class="reach-stat">
+          <ion-icon name="megaphone" color="success"></ion-icon>
+          <div>
+            <strong>{{ audiencePreview.estimatedReach || 0 }}</strong>
+            <span>Alcance Estimado</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Fechas -->
+    <div class="form-section">
+      <h3 class="section-title">
+        <ion-icon name="calendar-outline"></ion-icon>
+        Vigencia
+      </h3>
+      <div class="date-inputs">
+        <div class="date-input-group">
+          <label>Fecha de Inicio</label>
+          <ion-datetime-button datetime="startDate"></ion-datetime-button>
+          <ion-modal [keepContentsMounted]="true">
+            <ng-template>
+              <ion-datetime
+                id="startDate"
+                [(ngModel)]="promotionData.startDate"
+                presentation="date-time"
+                [preferWheel]="true">
+              </ion-datetime>
+            </ng-template>
+          </ion-modal>
+        </div>
+        
+        <div class="date-input-group">
+          <label>Fecha de Fin</label>
+          <ion-datetime-button datetime="endDate"></ion-datetime-button>
+          <ion-modal [keepContentsMounted]="true">
+            <ng-template>
+              <ion-datetime
+                id="endDate"
+                [(ngModel)]="promotionData.endDate"
+                presentation="date-time"
+                [preferWheel]="true">
+              </ion-datetime>
+            </ng-template>
+          </ion-modal>
+        </div>
+      </div>
+    </div>
+
+    <!-- Estado de la Promoción -->
+    <div class="form-section">
+      <h3 class="section-title">
+        <ion-icon name="power-outline"></ion-icon>
+        Estado
+      </h3>
+      <div class="status-toggle">
+        <ion-toggle
+          [(ngModel)]="promotionData.isActive"
+          [enableOnOffLabels]="true"
+          color="success">
+        </ion-toggle>
+        <div class="status-info">
+          <strong>{{ promotionData.isActive ? 'Activa' : 'Inactiva' }}</strong>
+          <p>
+            {{ promotionData.isActive 
+              ? '✅ Se enviarán notificaciones al activar' 
+              : 'ℹ️ Quedará guardada como borrador' }}
+          </p>
+        </div>
+      </div>
+      
+      <!-- Advertencia si se activa -->
+      <ion-card *ngIf="promotionData.isActive" class="warning-card">
+        <ion-card-content>
+          <ion-icon name="warning-outline" color="warning"></ion-icon>
+          <p>
+            <strong>Importante:</strong> Solo puedes tener 1 promoción activa a la vez. 
+            Si activas esta, se desactivará automáticamente cualquier otra promoción activa.
+          </p>
+        </ion-card-content>
+      </ion-card>
+    </div>
+
+    <!-- Botón de Guardar (móvil) -->
+    <div class="save-button-container">
+      <ion-button
+        expand="block"
+        size="large"
+        (click)="savePromotion()"
+        [disabled]="!promotionData.promotion_text"
+        color="primary">
+        <ion-icon slot="start" name="save-outline"></ion-icon>
+        {{ isEditMode ? 'Actualizar Promoción' : 'Crear Promoción' }}
+      </ion-button>
+    </div>
+
+  </div>
+</ion-content>
+

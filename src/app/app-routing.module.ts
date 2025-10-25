@@ -29,6 +29,16 @@ const routes: Routes = [
     canActivate: [AuthGuard]
   },
   {
+    path: 'my-promotions',
+    loadComponent: () => import('./pages/my-promotions/my-promotions.page').then(m => m.MyPromotionsPage),
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'edit-promotion',
+    loadComponent: () => import('./pages/edit-promotion/edit-promotion.page').then(m => m.EditPromotionPage),
+    canActivate: [AuthGuard]
+  },
+  {
     path: 'promotions-nearby',
     loadComponent: () => import('./pages/promotions-nearby/promotions-nearby.page').then(m => m.PromotionsNearbyPage)
   },

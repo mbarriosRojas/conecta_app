@@ -1,0 +1,279 @@
+.promotion-form-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+// ========== Form Section ==========
+.form-section {
+  background: white;
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+
+  .section-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--ion-color-dark);
+    margin: 0 0 16px;
+
+    ion-icon {
+      font-size: 20px;
+      color: var(--ion-color-primary);
+    }
+  }
+}
+
+// ========== Promotion Input ==========
+.promotion-input {
+  --background: var(--ion-color-light);
+  --border-radius: 12px;
+  --padding-start: 16px;
+  --padding-end: 16px;
+  --padding-top: 12px;
+  --padding-bottom: 12px;
+  font-size: 15px;
+  line-height: 1.5;
+  margin-bottom: 8px;
+}
+
+.char-counter {
+  text-align: right;
+  font-size: 12px;
+  color: var(--ion-color-medium);
+  font-weight: 500;
+}
+
+// ========== Segment ==========
+ion-segment {
+  --background: var(--ion-color-light);
+  border-radius: 12px;
+  padding: 4px;
+
+  ion-segment-button {
+    --indicator-color: var(--ion-color-primary);
+    --color-checked: white;
+    font-size: 13px;
+    font-weight: 600;
+    min-height: 36px;
+  }
+}
+
+// ========== Range ==========
+ion-range {
+  padding: 16px 0;
+
+  &::part(bar) {
+    height: 6px;
+  }
+
+  &::part(bar-active) {
+    background: var(--ion-color-primary);
+  }
+
+  &::part(knob) {
+    width: 24px;
+    height: 24px;
+    background: var(--ion-color-primary);
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16);
+  }
+
+  &::part(pin) {
+    background: var(--ion-color-primary);
+    color: white;
+    font-weight: 600;
+    padding: 4px 12px;
+    border-radius: 8px;
+  }
+}
+
+// ========== Reach Preview ==========
+.reach-preview {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-top: 16px;
+
+  .reach-stat {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    background: linear-gradient(135deg, #f5f7fa 0%, #f0f2f5 100%);
+    border-radius: 12px;
+
+    ion-icon {
+      font-size: 32px;
+    }
+
+    div {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+
+      strong {
+        font-size: 20px;
+        font-weight: 700;
+        color: var(--ion-color-dark);
+      }
+
+      span {
+        font-size: 11px;
+        color: var(--ion-color-medium);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+    }
+  }
+}
+
+// ========== Date Inputs ==========
+.date-inputs {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+
+  .date-input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+
+    label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--ion-color-medium);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    ion-datetime-button {
+      --background: var(--ion-color-light);
+      --border-radius: 12px;
+      width: 100%;
+    }
+  }
+}
+
+// ========== Status Toggle ==========
+.status-toggle {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  background: var(--ion-color-light);
+  border-radius: 12px;
+
+  ion-toggle {
+    --handle-width: 24px;
+    --handle-height: 24px;
+  }
+
+  .status-info {
+    flex: 1;
+
+    strong {
+      font-size: 15px;
+      color: var(--ion-color-dark);
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    p {
+      font-size: 12px;
+      color: var(--ion-color-medium);
+      margin: 0;
+    }
+  }
+}
+
+// ========== Warning Card ==========
+.warning-card {
+  margin-top: 12px;
+  border-left: 4px solid var(--ion-color-warning);
+
+  ion-card-content {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px;
+
+    ion-icon {
+      font-size: 24px;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    p {
+      margin: 0;
+      font-size: 13px;
+      line-height: 1.5;
+      color: var(--ion-color-dark);
+
+      strong {
+        display: block;
+        margin-bottom: 4px;
+      }
+    }
+  }
+}
+
+// ========== Save Button ==========
+.save-button-container {
+  margin-top: 24px;
+  margin-bottom: 24px;
+
+  ion-button {
+    --border-radius: 12px;
+    font-weight: 600;
+    font-size: 15px;
+    height: 52px;
+  }
+}
+
+// ========== Responsive Design ==========
+@media (max-width: 768px) {
+  .promotion-form-container {
+    padding: 12px;
+  }
+
+  .form-section {
+    padding: 16px;
+  }
+
+  .date-inputs {
+    grid-template-columns: 1fr;
+  }
+
+  .reach-preview {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .promotion-form-container {
+    padding: 8px;
+  }
+
+  .form-section {
+    padding: 12px;
+    margin-bottom: 12px;
+  }
+
+  .section-title {
+    font-size: 14px;
+
+    ion-icon {
+      font-size: 18px;
+    }
+  }
+
+  .status-toggle {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+

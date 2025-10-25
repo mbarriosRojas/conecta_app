@@ -455,4 +455,66 @@ export class ApiService {
         catchError(this.handleError.bind(this))
       );
   }
+
+  // ========== 🔥 NUEVOS ENDPOINTS DE MÚLTIPLES PROMOCIONES ==========
+
+  /**
+   * Obtiene TODAS las promociones de un negocio (histórico completo)
+   */
+  getAllPromotions(businessID: string): Observable<any> {
+    return this.http.get(`${this.baseUrl}/api/geofencing/business/${businessID}/promotions`)
+      .pipe(
+        catchError(this.handleError.bind(this))
+      );
+  }
+
+  /**
+   * Crea una nueva promoción
+   */
+  createPromotion(businessID: string, promotionData: any): Observable<any> {
+    return this.http.post(`${this.baseUrl}/api/geofencing/business/${businessID}/promotions`, promotionData)
+      .pipe(
+        catchError(this.handleError.bind(this))
+      );
+  }
+
+  /**
+   * Actualiza una promoción específica
+   */
+  updatePromotion(businessID: string, promotionID: string, promotionData: any): Observable<any> {
+    return this.http.put(`${this.baseUrl}/api/geofencing/business/${businessID}/promotions/${promotionID}`, promotionData)
+      .pipe(
+        catchError(this.handleError.bind(this))
+      );
+  }
+
+  /**
+   * Activa/desactiva una promoción
+   */
+  togglePromotionStatus(businessID: string, promotionID: string): Observable<any> {
+    return this.http.patch(`${this.baseUrl}/api/geofencing/business/${businessID}/promotions/${promotionID}/toggle`, {})
+      .pipe(
+        catchError(this.handleError.bind(this))
+      );
+  }
+
+  /**
+   * Duplica una promoción existente
+   */
+  duplicatePromotion(businessID: string, promotionID: string): Observable<any> {
+    return this.http.post(`${this.baseUrl}/api/geofencing/business/${businessID}/promotions/${promotionID}/duplicate`, {})
+      .pipe(
+        catchError(this.handleError.bind(this))
+      );
+  }
+
+  /**
+   * Elimina una promoción específica
+   */
+  deletePromotionById(businessID: string, promotionID: string): Observable<any> {
+    return this.http.delete(`${this.baseUrl}/api/geofencing/business/${businessID}/promotions/${promotionID}`)
+      .pipe(
+        catchError(this.handleError.bind(this))
+      );
+  }
 }

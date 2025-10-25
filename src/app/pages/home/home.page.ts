@@ -580,6 +580,16 @@ export class HomePage implements OnInit, AfterViewInit {
       const hasProviders = response && response.data && response.data.length > 0;
       const hasProducts = productProviders.length > 0;
       
+      console.log('📊 [DEBUG SEARCH] Resultados de búsqueda:');
+      console.log('   - Proveedores encontrados:', response.data?.length || 0);
+      console.log('   - Productos encontrados:', productProviders.length);
+      if (response.data && response.data.length > 0) {
+        console.log('   📋 Proveedores:');
+        response.data.forEach((p: any, i: number) => {
+          console.log(`      ${i + 1}. ${p.name} (ID: ${p._id})`);
+        });
+      }
+      
       if (hasProviders || hasProducts) {
         if (reset) {
           // 🔥 Combinar productos + providers (productos primero)

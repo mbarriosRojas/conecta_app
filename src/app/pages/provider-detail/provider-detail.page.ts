@@ -166,29 +166,23 @@ export class ProviderDetailPage implements OnInit, AfterViewInit, OnDestroy {
     this.route.queryParams.subscribe(params => {
       if (params['tab']) {
         this.activeSection = params['tab'];
-        console.log('📱 Tab desde notificación:', params['tab']);
-        
-        // 🔥 Si viene con tab=promo, cargar promociones después de cargar el provider
-        if (params['tab'] === 'promo') {
-          // Usar setTimeout para asegurar que el provider ya esté cargado
-          setTimeout(() => {
-            console.log('📱 Cargando promociones desde notificación...');
-            this.loadPromotions();
-          }, 500);
-        }
-        
-        // 🔥 Si viene con tab=catalog, cargar productos
-        if (params['tab'] === 'catalog') {
-          setTimeout(() => {
-            console.log('📱 Cargando catálogo desde búsqueda...');
-            this.loadProducts(true);
-          }, 500);
-        }
+        console.log('📱 Tab desde URL:', params['tab']);
       }
     });
     
     await this.loadCurrentLocation();
     await this.loadProvider();
+    
+    // 🔥 Después de cargar el provider, cargar el contenido del tab activo
+    if (this.activeSection === 'promo') {
+      console.log('📱 Cargando promociones desde URL...');
+      await this.loadPromotions();
+    }
+    
+    if (this.activeSection === 'catalog') {
+      console.log('📱 Cargando catálogo desde URL...');
+      await this.loadProducts(true);
+    }
   }
 
   ngAfterViewInit() {
@@ -926,14 +920,15 @@ export class ProviderDetailPage implements OnInit, AfterViewInit, OnDestroy {
     this.isLoadingPromotions = true;
     
     try {
-      const response = await this.apiService.getPromotionsByProvider(this.provider._id).toPromise();
+      // 🔥 NUEVO: Usar endpoint que trae TODAS las promociones (no solo la activa)
+      const response = await this.apiService.getAllPromotions(this.provider._id).toPromise();
       
       console.log('📋 Respuesta de promociones:', response);
       
       if (response && response.status === 'success') {
-        // La API devuelve un objeto, no un array
-        if (response.data) {
-          this.promotions = [response.data]; // Convertir a array
+        // La API devuelve un array de todas las promociones
+        if (response.data && Array.isArray(response.data)) {
+          this.promotions = response.data;
           
           // 🔥 Ordenar: activas primero, inactivas después
           this.promotions.sort((a, b) => {
@@ -941,10 +936,13 @@ export class ProviderDetailPage implements OnInit, AfterViewInit, OnDestroy {
             return a.isActive ? -1 : 1;
           });
           
-          console.log('✅ Promoción cargada:', this.promotions.length);
+          console.log('✅ Promociones cargadas:', this.promotions.length);
+          console.log('   - Activas:', this.promotions.filter(p => p.isActive).length);
+          console.log('   - Inactivas:', this.promotions.filter(p => !p.isActive).length);
           
-          // 🔥 Trackear vista desde detalle del proveedor
-          if (this.promotions.length > 0 && this.activeSection === 'promo') {
+          // 🔥 Trackear vista desde detalle del proveedor (solo si hay activas)
+          const hasActivePromotion = this.promotions.some(p => p.isActive);
+          if (hasActivePromotion && this.activeSection === 'promo') {
             try {
               await this.promotionTrackingService.trackPromotionView(this.provider._id, 'detail');
             } catch (error) {
@@ -962,10 +960,10 @@ export class ProviderDetailPage implements OnInit, AfterViewInit, OnDestroy {
     } catch (error: any) {
       console.error('❌ Error cargando promociones:', error);
       
-      // Si es 404, significa que no hay promoción
+      // Si es 404, significa que no hay promociones
       if (error.status === 404) {
         this.promotions = [];
-        console.log('ℹ️ Este negocio no tiene promociones activas');
+        console.log('ℹ️ Este negocio no tiene promociones');
       } else {
         this.promotions = [];
         

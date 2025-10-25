@@ -307,12 +307,13 @@
       </ion-card-header>
       <ion-card-content>
         <div class="promotions-list">
-          <div class="promotion-item" *ngFor="let promotion of promotions">
+          <!-- 🔥 Agregar clase .inactive para diferenciar visualmente -->
+          <div class="promotion-item" [class.inactive]="!promotion.isActive" *ngFor="let promotion of promotions">
             <div class="promotion-header">
               <!-- 🔥 Usar promotion_text en lugar de title -->
               <h3 class="promotion-title">{{ promotion.promotion_text || promotion.title }}</h3>
               <span class="promotion-badge" [class.active]="promotion.isActive">
-                {{ promotion.isActive ? '✅ Activa' : '❌ Inactiva' }}
+                {{ promotion.isActive ? '✅ Activa' : '⚪ Inactiva' }}
               </span>
             </div>
             
@@ -339,8 +340,8 @@
             </div>
             
             <!-- 🔥 Estadísticas de delivery -->
-            <div class="promotion-stats" *ngIf="promotion.deliveryStats">
-              <ion-chip outline color="success">
+            <!--<div class="promotion-stats" *ngIf="promotion.deliveryStats">
+              <ion-chip outline color="success">  
                 <ion-icon name="paper-plane"></ion-icon>
                 <ion-label>{{ promotion.deliveryStats.totalSent || 0 }} enviadas</ion-label>
               </ion-chip>
@@ -352,7 +353,7 @@
                 <ion-icon name="eye"></ion-icon>
                 <ion-label>{{ promotion.deliveryStats.totalViews || 0 }} vistas</ion-label>
               </ion-chip>
-            </div>
+            </div>-->
             
             <!-- 🔥 Desglose de fuentes de vistas (opcional, solo para admins o vista detallada) -->
             <div class="promotion-sources" *ngIf="promotion.deliveryStats?.viewSources && showDetailedStats">

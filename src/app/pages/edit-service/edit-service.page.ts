@@ -1277,4 +1277,21 @@ export class EditServicePage implements OnInit {
     }
     return `${value}m`;
   };
+
+  /**
+   * 🔥 NUEVO: Navega a la página de Mis Promociones
+   */
+  goToMyPromotions() {
+    if (!this.provider?._id) {
+      this.showErrorToast('Provider no cargado');
+      return;
+    }
+
+    this.router.navigate(['/my-promotions'], {
+      queryParams: {
+        businessID: this.provider._id,
+        businessName: this.provider.name
+      }
+    });
+  }
 }
