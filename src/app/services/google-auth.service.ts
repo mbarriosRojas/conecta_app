@@ -74,9 +74,11 @@ export class GoogleAuthService {
       
       if (this.platform.is('capacitor')) {
         // En dispositivos móviles usar redirect
+        console.log('📱 Plataforma móvil: usando redirect');
         result = await this.signInWithRedirect();
       } else {
         // En web usar popup
+        console.log('🌐 Plataforma web: usando popup');
         result = await this.signInWithPopup();
       }
 
@@ -96,7 +98,14 @@ export class GoogleAuthService {
         user: result.user,
         backendResponse
       };
-    } catch (error) {
+    } catch (error: any) {
+      // Si el error es REDIRECT_INITIATED, no es un error real
+      if (error.message === 'REDIRECT_INITIATED') {
+        console.log('🔄 Redirect iniciado, esperando que el usuario regrese...');
+        // No lanzar error, solo retornar null para que el UI no muestre error
+        return { redirectInitiated: true };
+      }
+      
       console.error('❌ Error en autenticación con Google:', error);
       throw this.handleAuthError(error as AuthError);
     }
@@ -111,50 +120,38 @@ export class GoogleAuthService {
 
   /**
    * Autenticación con redirect (para móvil)
-   * 🔥 MEJORADO: Mejor manejo de redirect en móvil
+   * 🔥 MEJORADO: Usar signInWithRedirect directamente en móvil
    */
   private async signInWithRedirect(): Promise<UserCredential> {
     try {
-      // Primero intentar obtener resultado de redirect previo
+      console.log('📱 Iniciando autenticación con redirect en móvil...');
+      
+      // Primero verificar si hay un resultado pendiente
       const redirectResult = await getRedirectResult(this.auth);
       
       if (redirectResult) {
-        console.log('✅ Resultado de redirect obtenido:', redirectResult.user.email);
+        console.log('✅ Resultado de redirect encontrado:', redirectResult.user.email);
         return redirectResult;
       }
       
-      // Si no hay resultado previo, iniciar nuevo redirect
-      console.log('🔄 Iniciando redirect a Google...');
+      // Si no hay resultado, iniciar el redirect
+      console.log('🔄 Iniciando redirect a Google Sign-In...');
+      console.log('ℹ️ La app abrirá el navegador y regresará automáticamente después del login');
       
-      // En móvil, intentar primero con popup
-      if (this.platform.is('capacitor')) {
-        console.log('📱 Plataforma móvil detectada');
-        
-        try {
-          // Intentar popup primero (funciona mejor en algunos dispositivos)
-          console.log('🔄 Intentando autenticación con popup...');
-          return await signInWithPopup(this.auth, this.googleProvider);
-        } catch (popupError: any) {
-          console.log('⚠️ Popup falló, intentando con redirect...', popupError.code);
-          
-          // Si el popup falla, usar redirect
-          if (popupError.code === 'auth/popup-blocked' || 
-              popupError.code === 'auth/cancelled-popup-request') {
-            console.log('🔄 Usando redirect como fallback...');
-            await signInWithRedirect(this.auth, this.googleProvider);
-            // El redirect se procesará cuando la app vuelva a abrirse
-            throw new Error('Redirect iniciado. La app se reabrirá después de autenticarse.');
-          }
-          
-          // Si es otro error, propagarlo
-          throw popupError;
-        }
-      } else {
-        // En web, usar popup siempre
-        console.log('🌐 Plataforma web, usando popup');
-        return await signInWithPopup(this.auth, this.googleProvider);
+      // Usar signInWithRedirect - abre Custom Chrome Tab y regresa a la app
+      await signInWithRedirect(this.auth, this.googleProvider);
+      
+      // Este código no se ejecutará hasta que la app se reabra
+      // El resultado se procesará en checkRedirectResult() cuando la app se reabra
+      throw new Error('REDIRECT_INITIATED');
+      
+    } catch (error: any) {
+      // Si el error es REDIRECT_INITIATED, es esperado
+      if (error.message === 'REDIRECT_INITIATED') {
+        console.log('✅ Redirect iniciado exitosamente');
+        throw error;
       }
-    } catch (error) {
+      
       console.error('❌ Error en signInWithRedirect:', error);
       throw error;
     }

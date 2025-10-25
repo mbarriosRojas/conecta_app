@@ -297,6 +297,16 @@ export class LoginPage implements OnInit {
       
       console.log('🔥 Resultado de Google Auth:', result);
       
+      // 🔥 NUEVO: Manejar caso de redirect iniciado (móvil)
+      if (result && result.redirectInitiated) {
+        console.log('🔄 Redirect iniciado en móvil, la app se reabrirá después del login');
+        await loading.dismiss();
+        // Mostrar mensaje informativo
+        this.showSuccessToast('Abriendo Google Sign-In...');
+        this.isLoading = false;
+        return;
+      }
+      
       // Verificar que tengamos el token del backend
       if (result.backendResponse && result.backendResponse.token) {
         // 🔥 GUARDAR el token usando AuthService
