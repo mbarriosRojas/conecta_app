@@ -44,16 +44,23 @@ export class GoogleAuthService {
       this.googleProvider.addScope('email');
       this.googleProvider.addScope('profile');
       
-      // Configurar para obtener el refresh token
-      this.googleProvider.setCustomParameters({
-        prompt: 'select_account'
-      });
-
-      // Configurar URLs de redirección para móvil
+      // 🔥 IMPORTANTE: Configurar redirect URI correcto para móvil
       if (this.platform.is('capacitor')) {
-        console.log('📱 Configurando URLs de redirección para móvil...');
-        // En móvil, usar el esquema personalizado de la app
-        this.auth.settings.appVerificationDisabledForTesting = false;
+        console.log('📱 Configurando redirect para app nativa...');
+        
+        // Forzar el uso del authDomain de Firebase (no localhost)
+        this.googleProvider.setCustomParameters({
+          prompt: 'select_account',
+          redirect_uri: `https://${environment.firebase.authDomain}/__/auth/handler`
+        });
+        
+        console.log(`✅ Redirect URI configurado: https://${environment.firebase.authDomain}/__/auth/handler`);
+      } else {
+        console.log('🌐 Configurando para web...');
+        // En web, usar select_account para permitir cambiar de cuenta
+        this.googleProvider.setCustomParameters({
+          prompt: 'select_account'
+        });
       }
 
       console.log('✅ Firebase Auth inicializado correctamente');
