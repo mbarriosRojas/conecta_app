@@ -1,4 +1,4 @@
-# Infinity Providers App
+# AKI App
 
 Una aplicación móvil desarrollada con Ionic y Angular para mostrar proveedores cercanos con las mejores prácticas de desarrollo y arquitectura escalable.
 

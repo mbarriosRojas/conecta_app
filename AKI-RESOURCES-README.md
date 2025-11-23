@@ -82,7 +82,7 @@ android/app/src/main/res/
 ### 🎯 Configuración Actualizada
 
 #### Capacitor Config
-- **App ID**: `com.aki.conectapersonal`
+- **App ID**: `aki_app.app`
 - **App Name**: `AKI`
 - **Status Bar**: Color #667eea
 - **Splash Screen**: 3 segundos, fondo #667eea

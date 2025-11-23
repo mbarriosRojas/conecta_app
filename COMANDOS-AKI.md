@@ -3,7 +3,7 @@
 ## ✅ Problemas Solucionados
 
 ### 1. **Error de MainActivity**
-- ✅ Corregido el paquete de `aki_app.app` a `com.aki.conectapersonal`
+- ✅ Package name configurado: `aki_app.app`
 - ✅ MainActivity movido a la estructura correcta de directorios
 
 ### 2. **Error de Java**
@@ -68,7 +68,7 @@ Cuando ejecutes cualquiera de los comandos anteriores, deberías ver:
 1. ✅ **Splash Screen**: Gradiente azul-púrpura con logo AKI
 2. ✅ **Icono**: Círculo azul-púrpura con "AKI"
 3. ✅ **Nombre**: "AKI" en lugar de "Infinity Providers"
-4. ✅ **ID**: com.aki.conectapersonal
+4. ✅ **ID**: aki_app.app
 5. ✅ **App Funcional**: Sin crashes después del splash
 
 ## 🛠️ Troubleshooting

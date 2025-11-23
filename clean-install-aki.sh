@@ -16,7 +16,7 @@ echo "🗑️ Desinstalando app anterior (si existe)..."
 
 # Intentar desinstalar la app anterior
 adb uninstall aki_app.app 2>/dev/null || echo "ℹ️ App anterior no encontrada"
-adb uninstall com.aki.conectapersonal 2>/dev/null || echo "ℹ️ App nueva no encontrada"
+adb uninstall aki_app.app 2>/dev/null || echo "ℹ️ App nueva no encontrada"
 
 echo ""
 echo "🧹 Limpiando proyecto..."

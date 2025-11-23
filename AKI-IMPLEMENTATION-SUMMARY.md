@@ -69,7 +69,7 @@ cd /Users/mauriciobarrios/Desarrollo/personales/conecta-personal/infinity-provid
 
 ### **✅ Branding AKI**
 - **Nombre**: "AKI" en lugar de "Infinity Providers"
-- **ID**: `com.aki.conectapersonal`
+- **ID**: `aki_app.app`
 - **Icono**: Círculo azul-púrpura con "AKI"
 - **Splash**: Gradiente con logo AKI
 

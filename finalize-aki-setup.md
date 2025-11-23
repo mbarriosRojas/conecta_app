@@ -4,7 +4,7 @@
 
 ### 1. **Configuración Actualizada**
 - ✅ `capacitor.config.ts` - Nombre cambiado a "AKI"
-- ✅ `android/app/build.gradle` - ID de aplicación: `com.aki.conectapersonal`
+- ✅ `android/app/build.gradle` - ID de aplicación: `aki_app.app`
 - ✅ `android/app/src/main/res/values/strings.xml` - Nombre de app: "AKI"
 
 ### 2. **Recursos Generados**
@@ -52,7 +52,7 @@ Después de completar los pasos, deberías ver:
 - ✅ Nombre de la app: **"AKI"**
 - ✅ Icono: **Círculo azul-púrpura con "AKI"**
 - ✅ Splash screen: **Gradiente con logo AKI**
-- ✅ ID de aplicación: **com.aki.conectapersonal**
+- ✅ ID de aplicación: **aki_app.app**
 
 ## 🔧 Si Aún No Funciona
 
@@ -68,7 +68,7 @@ npx cap run android
 ### **Opción 2: Cambiar ID de Aplicación Temporalmente**
 Si hay conflictos, cambia el ID en `android/app/build.gradle`:
 ```gradle
-applicationId "com.aki.conectapersonal.v2"
+applicationId "aki_app.app"
 ```
 
 ### **Opción 3: Limpiar Todo**

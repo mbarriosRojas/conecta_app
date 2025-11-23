@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.aki.conectapersonal',
+  appId: 'aki_app.app',
   appName: 'AKI',
   webDir: 'www',
   server: {
@@ -53,13 +53,6 @@ const config: CapacitorConfig = {
     allowMixedContent: true,
     captureInput: true,
     webContentsDebuggingEnabled: true
-  },
-  // 🔥 Deep Linking para Google OAuth
-  appUrlOpen: {
-    // URLs que la app debe capturar
-    schemes: ['com.aki.conectapersonal'],
-    // Dominios personalizados
-    hosts: ['aki-app-2d2d8.firebaseapp.com', 'localhost']
   }
 };
 

@@ -1,5 +1,5 @@
 .login-content {
-  --background: linear-gradient(135deg, #54ad5d 0%, #2a8473 100%);
+  --background: linear-gradient(135deg, #54ad5d8f 0%, #2a847493 100%);
   position: relative;
   overflow: hidden;
 }
@@ -72,19 +72,16 @@
     .logo-circle {
       width: 80px;
       height: 80px;
-      background: rgba(255, 255, 255, 0.2);
-      border-radius: 50%;
       margin: 0 auto;
       display: flex;
       align-items: center;
       justify-content: center;
       backdrop-filter: blur(10px);
-      border: 2px solid rgba(255, 255, 255, 0.3);
-      
       .logo-text {
         font-size: 32px;
         font-weight: bold;
-        color: white;
+        color: var(--ion-color-primary);
+        font-weight: 600;      
       }
     }
   }
@@ -97,9 +94,10 @@
   }
 
   .app-subtitle {
-    color: rgba(255, 255, 255, 0.8);
     font-size: 16px;
     margin: 0;
+    color: var(--ion-color-primary);
+    font-weight: 600;
   }
 }
 
@@ -176,8 +174,9 @@
   }
 
   .submit-button {
-    --background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    --background-hover: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+    
+    --background: linear-gradient(135deg, var(--ion-color-primary) 0%, #4ba262 100%);
+    --background-hover: linear-gradient(135deg, var(--ion-color-primary) 0%, #4ba262 100%);
     --border-radius: 15px;
     --padding-top: 16px;
     --padding-bottom: 16px;
@@ -239,7 +238,8 @@
   .forgot-link {
     background: none;
     border: none;
-    color: #667eea;
+    color: var(--ion-color-primary);
+    font-weight: 600;
     font-size: 14px;
     text-decoration: underline;
     cursor: pointer;
@@ -256,8 +256,8 @@
   .link-button {
     background: none;
     border: none;
-    color: #667eea;
-    font-weight: 500;
+    color: var(--ion-color-primary);
+    font-weight: 600;
     cursor: pointer;
   }
 }

@@ -15,7 +15,7 @@ Google login redirige a `localhost:8100` en lugar de la app móvil, causando err
 ```
 https://localhost:8100
 https://localhost:8101
-com.aki.conectapersonal://
+aki_app.app://
 http://localhost:8100
 http://localhost:8101
 ```
@@ -42,7 +42,7 @@ conecta-backend-b5yg.onrender.com
 ```
 https://localhost:8100/__/auth/handler
 http://localhost:8100/__/auth/handler
-com.aki.conectapersonal://__/auth/handler
+aki_app.app://__/auth/handler
 ```
 
 ### **4. Configurar Capacitor (Ya hecho)**
@@ -50,7 +50,7 @@ com.aki.conectapersonal://__/auth/handler
 El `capacitor.config.ts` ya está configurado con:
 ```typescript
 server: {
-  androidScheme: 'com.aki.conectapersonal'
+  androidScheme: 'aki_app.app'
 }
 ```
 
@@ -88,7 +88,7 @@ npx cap run android
 |------------|---------|-----|
 | **Web Dev** | `https://localhost:8100` | Desarrollo web |
 | **Web Prod** | `https://aki-app-2d2d8.web.app` | Producción web |
-| **Android** | `com.aki.conectapersonal://` | App móvil |
+| **Android** | `aki_app.app://` | App móvil |
 
 ---
 

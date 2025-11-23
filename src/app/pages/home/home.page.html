@@ -11,12 +11,12 @@
         <div class="header-buttons">
           <!-- Botón de Promociones -->
           <ion-button fill="clear" (click)="goToPromotionsPage()" class="promotions-button">
-            <ion-icon name="megaphone" color="success"></ion-icon>
+            <ion-icon name="megaphone"></ion-icon>
           </ion-button>
           
           <!-- Botón de filtro -->
           <ion-button fill="clear" (click)="openFilterModal()" class="filter-button">
-            <ion-icon name="funnel-outline" color="success"></ion-icon>
+            <ion-icon name="funnel-outline"></ion-icon>
           </ion-button>
         </div>
       </div>
@@ -399,7 +399,7 @@
             <ion-range 
               [(ngModel)]="tempSelectedRadius" 
               min="1000" 
-              max="500000000" 
+              max="50000" 
               step="1000"
               color="success">
               <ion-label slot="start">1km</ion-label>

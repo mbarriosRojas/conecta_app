@@ -28,7 +28,7 @@ grep -A 3 -B 3 "applicationId" android/app/build.gradle
 
 echo ""
 echo "📋 MainActivity:"
-cat android/app/src/main/java/com/aki/conectapersonal/MainActivity.java
+cat android/app/src/main/java/aki_app/app/MainActivity.java
 
 echo ""
 echo "📋 Iconos disponibles:"
