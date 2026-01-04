@@ -19,4 +19,7 @@ export const environment = {
     messagingSenderId: "464389151945",
     appId: "1:464389151945:android:cdd8808e0b841cfc698118"
   }
+  ,
+  // Google Maps API Key (set in production environment)
+  googleMapsApiKey: ''
 };

@@ -56,12 +56,33 @@
   </div>
 
   <!-- Filtros -->
-  <div class="filters-section">
-    <ion-segment [(ngModel)]="selectedType" (ionChange)="onTypeFilterChange()" scrollable>
-      <ion-segment-button *ngFor="let type of promotionTypes" [value]="type.value">
-        <ion-label>{{ type.label }}</ion-label>
-      </ion-segment-button>
-    </ion-segment>
+  <!-- Categorías (usar mismo estilo que Home) -->
+  <div class="categories-section">
+    <div class="categories-container" [class.loading]="isLoading">
+      <!-- Categoría "Todos" -->
+      <div class="whatsapp-category-pill"
+           [class.selected]="!selectedCategory"
+           [class.disabled]="isLoading"
+           (click)="!isLoading && selectCategory(null)">
+        <ion-icon name="grid-outline" class="category-icon"></ion-icon>
+        <span class="category-name">Todos</span>
+      </div>
+
+      <!-- Categorías del storage/API -->
+      <div class="whatsapp-category-pill"
+           *ngFor="let category of categories"
+           [class.selected]="selectedCategory === category._id"
+           [class.disabled]="isLoading"
+           (click)="!isLoading && selectCategory(category)">
+        <img
+          [src]="category.image || 'assets/images/default-category.png'"
+          [alt]="category.name"
+          class="category-icon category-image"
+          loading="lazy"
+          (error)="onImageError($event)">
+        <span class="category-name">{{ category.name }}</span>
+      </div>
+    </div>
   </div>
 
   <!-- Loading State -->
@@ -134,7 +155,7 @@
   </div>
 
   <!-- Modal del Mapa -->
-  <ion-modal #mapModal [isOpen]="showMapModal" (didDismiss)="closeMapModal()">
+  <ion-modal #mapModal [isOpen]="showMapModal" (didDismiss)="closeMapModal()" (willPresent)="onMapModalWillPresent()">
     <ng-template>
       <ion-header>
         <ion-toolbar>
@@ -148,8 +169,8 @@
         
       </ion-header>
 
-      <ion-content>
-        <div id="promotionsMap" style="height: 100%; width: 100%;"></div>
+      <ion-content [fullscreen]="true" style="--overflow: hidden;">
+        <div id="promotionsMap"></div>
         
         <!-- Info de promoción seleccionada -->
         <div *ngIf="selectedPromotion" class="selected-promotion-info">

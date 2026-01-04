@@ -135,6 +135,117 @@
           </div>
         </ion-card-content>
       </ion-card>
+
+      <!-- 💳 Sección de Plan y Suscripción -->
+      <ion-card *ngIf="!isEditing && currentSubscription">
+        <ion-card-header>
+          <ion-card-title>
+            <ion-icon name="card-outline"></ion-icon>
+            Plan Actual
+          </ion-card-title>
+        </ion-card-header>
+        <ion-card-content>
+          <div class="plan-info">
+            <h2 class="plan-name">{{ currentSubscription.planID.name }}</h2>
+            <p class="plan-description">{{ currentSubscription.planID.description }}</p>
+            <p class="plan-price" *ngIf="currentSubscription.planID.price > 0">
+              ${{ currentSubscription.planID.price }} {{ currentSubscription.planID.currency }}/mes
+            </p>
+            <p class="plan-price" *ngIf="currentSubscription.planID.price === 0">
+              Gratis
+            </p>
+          </div>
+
+          <!-- Límites del plan -->
+          <div class="limits-section">
+            <h3>Límites de tu plan:</h3>
+            <ion-list>
+              <ion-item>
+                <ion-label>
+                  <h3>Servicios</h3>
+                  <p>
+                    {{ currentSubscription.currentLimits.services.used }} / 
+                    {{ getLimitDisplay(currentSubscription.currentLimits.services.limit) }}
+                    <span *ngIf="currentSubscription.currentLimits.services.remaining >= 0 && currentSubscription.currentLimits.services.limit !== -1" 
+                          class="remaining-badge">
+                      ({{ currentSubscription.currentLimits.services.remaining }} restantes)
+                    </span>
+                  </p>
+                </ion-label>
+              </ion-item>
+              
+              <ion-item>
+                <ion-label>
+                  <h3>Promociones por Servicio</h3>
+                  <p>{{ getLimitDisplay(currentSubscription.currentLimits.promotionsPerService.limit) }}</p>
+                </ion-label>
+              </ion-item>
+              
+              <ion-item>
+                <ion-label>
+                  <h3>Productos por Servicio</h3>
+                  <p>{{ getLimitDisplay(currentSubscription.currentLimits.productsPerService.limit) }}</p>
+                </ion-label>
+              </ion-item>
+            </ion-list>
+          </div>
+
+          <!-- Fecha de vencimiento -->
+          <div class="subscription-date" *ngIf="currentSubscription.endDate">
+            <ion-note>
+              Vence el {{ currentSubscription.endDate | date:'dd/MM/yyyy' }}
+            </ion-note>
+          </div>
+
+          <!-- Acciones del plan -->
+          <div class="plan-actions">
+            <ion-button 
+              expand="block" 
+              fill="solid"
+              color="primary"
+              (click)="openChangePlanModal()"
+              class="change-plan-btn">
+              <ion-icon name="swap-horizontal-outline" slot="start"></ion-icon>
+              Cambiar Plan
+            </ion-button>
+            
+            <ion-button 
+              expand="block" 
+              fill="outline"
+              color="medium"
+              (click)="reportPayment()"
+              class="report-payment-btn">
+              <ion-icon name="cash-outline" slot="start"></ion-icon>
+              Reportar Pago
+            </ion-button>
+          </div>
+        </ion-card-content>
+      </ion-card>
+
+      <!-- 🔔 Sección de Notificaciones -->
+      <ion-card *ngIf="!isEditing && notificationSettings">
+        <ion-card-header>
+          <ion-card-title>
+            <ion-icon name="notifications-outline"></ion-icon>
+            Notificaciones
+          </ion-card-title>
+        </ion-card-header>
+        <ion-card-content>
+          <ion-list>
+            <ion-item lines="none" [button]="false">
+              <ion-label slot="start">
+                <h2>Activar Notificaciones</h2>
+                <p>Recibir notificaciones push en tu dispositivo</p>
+              </ion-label>
+              <ion-toggle 
+                slot="end"
+                [checked]="notificationSettings.notificationsEnabled"
+                (ionChange)="toggleNotifications($event)">
+              </ion-toggle>
+            </ion-item>
+          </ion-list>
+        </ion-card-content>
+      </ion-card>
     </div>
 
   </div>

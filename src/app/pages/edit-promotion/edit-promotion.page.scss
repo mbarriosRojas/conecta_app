@@ -84,7 +84,7 @@ ion-range {
 
   &::part(pin) {
     background: var(--ion-color-primary);
-    color: white;
+    color: var(--ion-color-medium);
     font-weight: 600;
     padding: 4px 12px;
     border-radius: 8px;
@@ -274,6 +274,13 @@ ion-range {
   .status-toggle {
     flex-direction: column;
     align-items: flex-start;
+  }
+}
+
+// 🌙 Dark Mode Support
+@media (prefers-color-scheme: dark) {
+  .expandable-card .expandable-content {
+    background: var(--ion-color-step-50, #1e1e1e);
   }
 }
 

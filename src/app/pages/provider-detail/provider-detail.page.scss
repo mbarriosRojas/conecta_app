@@ -147,11 +147,11 @@
     
  
     .business-name {
-      font-size: 1.5rem;
-      font-weight: 600;
-      color: var(--ion-color-dark);
-      margin: 0;
-      flex: 1;
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: var(--ion-color-dark);
+        margin: 0;
+        flex: 1;
     }
 
     .business-rating {
@@ -303,17 +303,139 @@
     margin-bottom: 0;
   }
 }
-
 // Horarios
+.schedule-card {
+  ion-card-header {
+    ion-card-title {
+      .status-badge {
+        margin-left: auto;
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        white-space: nowrap;
+        
+        &.open {
+          background: #d4edda;
+          color: #155724;
+        }
+        
+        &.closed {
+          background: #f8d7da;
+          color: #721c24;
+        }
+      }
+    }
+  }
+}
+
+/* Dark mode: mejorar legibilidad de horarios */
+@media (prefers-color-scheme: dark) {
+  .provider-detail-content {
+    --background: var(--dark-bg-primary) !important;
+  }
+
+  .schedule-card {
+    background: var(--dark-surface) !important;
+    color: var(--dark-text-primary) !important;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.6) !important;
+  }
+
+  .schedule-card ion-card-header ion-card-title,
+  .schedule-card ion-card-title,
+  .schedule-card .status-badge {
+    color: var(--dark-text-primary) !important;
+  }
+
+  .schedule-item {
+    border-bottom: 1px solid rgba(255,255,255,0.06) !important;
+  }
+
+  .schedule-item .day,
+  .schedule-item .hours {
+    color: #ffffff !important;
+  }
+
+  .schedule-item.today {
+    background: var(--dark-surface-elevated) !important;
+  }
+
+  .schedule-item.open-now {
+    background: rgba(40,167,69,0.12) !important;
+    border-left: 3px solid #28a745 !important;
+
+    .day,
+    .hours {
+      color: #e6ffe6 !important;
+    }
+  }
+
+  .status-badge.open {
+    background: rgba(52,199,89,0.12) !important;
+    color: #dfffe0 !important;
+  }
+
+  .status-badge.closed {
+    background: rgba(255,99,132,0.08) !important;
+    color: #ffdce0 !important;
+  }
+
+  /* Make business title readable in dark mode */
+  .business-info {
+    .item-title,
+    .business-name,
+    .business-header .item-title {
+      color: #ffffff !important;
+    }
+
+    .business-rating {
+      background: rgba(255,255,255,0.04) !important;
+      padding: 6px 12px !important;
+
+      ion-icon {
+        color: var(--ion-color-warning) !important;
+      }
+
+      .rating-value,
+      .rating-count {
+        color: #e6e6e6 !important;
+      }
+    }
+  }
+}
+
 .schedule-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 8px 0;
   border-bottom: 1px solid var(--ion-color-light);
+  position: relative;
 
   &:last-child {
     border-bottom: none;
+  }
+
+  &.today {
+    background: rgba(var(--ion-color-primary-rgb), 0.05);
+    border-radius: 8px;
+    padding: 8px 12px;
+    margin: 4px 0;
+  }
+
+  &.open-now {
+    background: rgba(40, 167, 69, 0.1);
+    border-left: 3px solid #28a745;
+    
+    .day {
+      font-weight: 700;
+      color: #28a745;
+    }
+    
+    .hours {
+      font-weight: 600;
+      color: #28a745;
+    }
   }
 
   .day {
@@ -323,6 +445,19 @@
 
   .hours {
     color: var(--ion-color-medium);
+  }
+
+  .status-indicator {
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 10px;
+    white-space: nowrap;
+    
+    &.open {
+      background: #d4edda;
+      color: #155724;
+    }
   }
 }
 

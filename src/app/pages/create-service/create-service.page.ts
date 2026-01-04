@@ -5,6 +5,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { IonicModule } from '@ionic/angular';
 import { ApiService } from '../../services/api.service';
+import { firstValueFrom } from 'rxjs';
 import { CacheService } from '../../services/cache.service';
 import { AuthService } from '../../services/auth.service';
 import { Category, Question } from '../../models/provider.model';
@@ -106,7 +107,7 @@ export class CreateServicePage implements OnInit {
 
   async loadCategories() {
     try {
-      this.categories = await this.apiService.getCategories().toPromise() || [];
+      this.categories = await firstValueFrom(this.apiService.getCategories()) || [];
     } catch (error) {
       console.error('Error loading categories:', error);
       this.showErrorToast('Error al cargar las categorías');
@@ -277,14 +278,11 @@ export class CreateServicePage implements OnInit {
         });
       }
 
-      const response = await this.apiService.createProvider(formData).toPromise();
+      const response = await firstValueFrom(this.apiService.createProvider(formData));
       
       if (response) {
-        // 🚀 INVALIDAR CACHE para que se muestre inmediatamente
-        await this.cacheService.invalidateCacheByPattern('providers_page');
-        await this.cacheService.invalidateCache('user_services');
-        await this.cacheService.invalidateCache('home_data'); // 🔥 CRÍTICO: Invalidar cache de home
-        await this.cacheService.invalidateCacheByPattern('providers'); // Invalidar todos los providers
+        // 🔥 OPTIMIZADO: Invalidar todos los caches relacionados con providers
+        await this.cacheService.invalidateProviderCaches();
         
         console.log('✅ Cache invalidado - el servicio aparecerá inmediatamente');
         this.showSuccessToast('Servicio creado correctamente');

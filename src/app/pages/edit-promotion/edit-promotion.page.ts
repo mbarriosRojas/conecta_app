@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { IonicModule, LoadingController, ToastController } from '@ionic/angular';
 import { ApiService } from '../../services/api.service';
 import { GeofencingAnalyticsService } from '../../services/geofencing-analytics.service';
+import { CacheService } from '../../services/cache.service';
 import { firstValueFrom } from 'rxjs';
 
 @Component({
@@ -48,6 +49,7 @@ export class EditPromotionPage implements OnInit {
     private router: Router,
     private apiService: ApiService,
     private geofencingService: GeofencingAnalyticsService,
+    private cacheService: CacheService,
     private loadingController: LoadingController,
     private toastController: ToastController
   ) {}
@@ -208,6 +210,9 @@ export class EditPromotionPage implements OnInit {
       }
 
       if (response?.status === 'success') {
+        // 🔥 OPTIMIZADO: Invalidar caches relacionados con promociones
+        await this.cacheService.invalidatePromotionCaches();
+        
         this.showSuccessToast(this.isEditMode ? 'Promoción actualizada exitosamente' : 'Promoción creada exitosamente');
         this.goBack();
       }

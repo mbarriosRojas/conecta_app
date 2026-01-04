@@ -132,12 +132,27 @@ export class GeofencingService {
       // Cargar geocercas del servidor
       await this.loadGeofences();
 
-      // Iniciar monitoreo con el plugin
+      // ⚠️ NOTA: Background tracking desactivado para evitar errores en iOS
+      // El geofencing funcionará solo cuando la app está abierta/minimizada
+      console.log('⚠️ [GEOFENCING] Background tracking desactivado - geofencing funcionará solo en foreground');
+      console.log('ℹ️ [GEOFENCING] Para activar background tracking necesitas permisos "Always" y modificar este código');
+      return false;
+
+      /* Código original comentado - desactivado para evitar errores en iOS
+      const permissions = await Geolocation.checkPermissions();
+      if (permissions.location !== 'granted') {
+        const newPermissions = await Geolocation.requestPermissions();
+        if (newPermissions.location !== 'granted') {
+          console.log('❌ Permisos de ubicación no concedidos para geofencing');
+          return false;
+        }
+      }
+
       const watcherId = await BackgroundGeolocation.addWatcher(
         {
           backgroundMessage: 'Recibiendo ofertas de negocios cercanos',
           backgroundTitle: 'Geomarketing Activo',
-          requestPermissions: true
+          requestPermissions: false
         },
         (location: any, error?: any) => {
           if (error) {
@@ -157,6 +172,7 @@ export class GeofencingService {
       
       console.log('✅ Geofencing iniciado correctamente');
       return true;
+      */
 
     } catch (error) {
       console.error('Error iniciando geofencing:', error);

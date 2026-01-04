@@ -121,6 +121,22 @@ ion-header {
         ion-icon {
           font-size: 24px;
           color: var(--medium-gray);
+          background: transparent !important;
+          border: none !important;
+        }
+      }
+      
+      // 🌙 Modo oscuro - iconos sin fondos en avatares
+      @media (prefers-color-scheme: dark) {
+        .avatar-placeholder {
+          background: var(--dark-surface, #2d2d2d);
+          border-color: var(--dark-border-primary, #404040);
+          
+          ion-icon {
+            background: transparent !important;
+            border: none !important;
+            color: var(--dark-text-tertiary, #808080);
+          }
         }
       }
     }
@@ -290,6 +306,34 @@ ion-header {
           }
         }
       }
+    }
+  }
+}
+
+// 🌙 Dark Mode Support
+@media (prefers-color-scheme: dark) {
+  .whatsapp-header {
+    background: var(--ion-color-step-50, #1e1e1e);
+    border-bottom-color: var(--ion-color-step-200, #414141);
+
+    .header-title h1 {
+      color: var(--ion-text-color, #ffffff);
+    }
+  }
+
+  .whatsapp-services-container {
+    background: var(--ion-background-color, #1a1a1a);
+  }
+
+  .whatsapp-service-item {
+    border-bottom-color: var(--ion-color-step-200, #414141);
+
+    &:hover {
+      background-color: var(--ion-color-step-100, #2a2a2a) !important;
+    }
+
+    &:active {
+      background-color: var(--ion-color-step-150, #363636) !important;
     }
   }
 }

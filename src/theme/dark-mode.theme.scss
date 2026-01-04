@@ -1,0 +1,647 @@
+/**
+ * 🌙 Dark Mode Theme - Hoja de Estilos Separada
+ * ===============================================
+ * Estilos específicos para modo oscuro/nocturno
+ * Asegura consistencia visual y buena UX en modo oscuro
+ */
+
+@media (prefers-color-scheme: dark) {
+  
+  // ============================================
+  // VARIABLES DE COLOR PARA MODO OSCURO
+  // ============================================
+  :root {
+    // Colores de fondo
+    --dark-bg-primary: #1a1a1a;
+    --dark-bg-secondary: #2d2d2d;
+    --dark-bg-tertiary: #3d3d3d;
+    
+    // Colores de texto
+    --dark-text-primary: #e5e5e5;
+    --dark-text-secondary: #b0b0b0;
+    --dark-text-tertiary: #808080;
+    
+    // Colores de borde
+    --dark-border-primary: #404040;
+    --dark-border-secondary: #505050;
+    
+    // Colores de superficie
+    --dark-surface: #2d2d2d;
+    --dark-surface-elevated: #353535;
+    
+    // Colores de acento (mantener identidad de marca)
+    --dark-accent-primary: #f6876c;
+    --dark-accent-secondary: #fcb567;
+    
+    // Colores WhatsApp (ajustados para modo oscuro)
+    --whatsapp-background: #1a1a1a;
+    --whatsapp-border: #2d2d2d;
+    
+    // Colores de estado
+    --dark-success: #2dd36f;
+    --dark-warning: #ffd534;
+    --dark-danger: #ff4961;
+    --dark-info: #3880ff;
+    /* Map common global variables used across components to dark variants */
+    --text-primary: var(--dark-text-primary);
+    --text-secondary: var(--dark-text-secondary);
+    --text-tertiary: var(--dark-text-tertiary);
+    --bg-primary: var(--dark-bg-primary);
+    --bg-secondary: var(--dark-bg-secondary);
+    --surface: var(--dark-surface);
+    --surface-elevated: var(--dark-surface-elevated);
+    --light-gray: var(--dark-bg-secondary);
+    --dark-gray: var(--dark-text-primary);
+    --border-primary: var(--dark-border-primary);
+    --border-secondary: var(--dark-border-secondary);
+    --ion-background-color: var(--dark-bg-primary);
+    --ion-text-color: var(--dark-text-primary);
+  }
+
+  // ============================================
+  // ICONOS - SIN BORDES NI FONDOS
+  // ============================================
+  ion-icon {
+    // Eliminar cualquier fondo o borde en modo oscuro
+    background: transparent !important;
+    border: none !important;
+    border-radius: 0 !important;
+    
+    // Asegurar que los iconos sean visibles
+    color: var(--dark-text-primary);
+  }
+
+  // Iconos dentro de botones
+  ion-button ion-icon {
+    background: transparent !important;
+    border: none !important;
+  }
+
+  // Iconos dentro de items
+  .item-icon {
+    background: transparent !important;
+    border: none !important;
+    border-radius: 0 !important;
+    
+    ion-icon {
+      color: var(--dark-text-primary);
+    }
+  }
+
+  // Iconos de categorías
+  .category-icon,
+  .service-icon,
+  .promotion-icon {
+    background: transparent !important;
+    border: none !important;
+    
+    ion-icon {
+      color: var(--dark-text-primary);
+    }
+  }
+
+  // Iconos en avatares
+  .avatar-placeholder ion-icon,
+  .service-avatar ion-icon {
+    background: transparent !important;
+    border: none !important;
+    color: var(--dark-text-secondary);
+  }
+
+  // Iconos en tabs (mantener estilo pero sin fondo sólido)
+  ion-tab-button ion-icon {
+    background: transparent !important;
+    border: none !important;
+  }
+
+  // ============================================
+  // FONDOS Y CONTENEDORES
+  // ============================================
+  ion-content {
+    --background: var(--dark-bg-primary);
+  }
+
+  ion-card,
+  .whatsapp-service-item,
+  .promotion-card,
+  .service-card,
+  .mini-promotion-card {
+    --background: var(--dark-surface);
+    background: var(--dark-surface);
+    border-color: var(--dark-border-primary) !important;
+    color: var(--dark-text-primary);
+  }
+
+  // ============================================
+  // HEADERS Y TOOLBARS
+  // ============================================
+  ion-header ion-toolbar {
+    --background: linear-gradient(135deg, var(--dark-accent-primary) 0%, var(--dark-accent-secondary) 100%) !important;
+    background: linear-gradient(135deg, var(--dark-accent-primary) 0%, var(--dark-accent-secondary) 100%) !important;
+    --color: #ffffff !important;
+    
+    ion-title {
+      --color: #ffffff !important;
+    }
+    
+    ion-back-button,
+    ion-button {
+      --color: #ffffff !important;
+    }
+  }
+
+  // ============================================
+  // INPUTS Y FORMULARIOS
+  // ============================================
+  ion-input,
+  ion-textarea,
+  ion-select {
+    /* Unificado: fondo oscuro, texto claro y placeholder tenue */
+    --background: var(--dark-surface-elevated);
+    background: var(--dark-surface-elevated);
+    --color: var(--dark-text-primary);
+    color: var(--dark-text-primary);
+    --placeholder-color: var(--dark-text-tertiary);
+    --border-color: var(--dark-border-primary);
+    border-color: var(--dark-border-primary);
+    --border-radius: 12px;
+    padding: 8px 12px;
+  }
+
+  ion-searchbar {
+    /* Searchbar más oscuro y legible en modo nocturno */
+    --background: var(--dark-surface-elevated);
+    background: var(--dark-surface-elevated);
+    --color: var(--dark-text-primary);
+    color: var(--dark-text-primary);
+    --placeholder-color: var(--dark-text-tertiary);
+    --icon-color: var(--dark-text-secondary);
+    --border-radius: 999px;
+    --box-shadow: none;
+  }
+
+  /* Aplicar también a inputs nativos y elementos con clases custom (fallback) */
+  input, textarea, .whatsapp-searchbar, .searchbar-wrapper {
+    background: var(--dark-surface-elevated) !important;
+    color: var(--dark-text-primary) !important;
+    border-color: var(--dark-border-primary) !important;
+  }
+
+  // ============================================
+  // ITEMS Y LISTAS
+  // ============================================
+  ion-item {
+    --background: var(--dark-surface);
+    --color: var(--dark-text-primary);
+    --border-color: var(--dark-border-primary);
+    
+    ion-icon {
+      color: var(--dark-text-secondary);
+      background: transparent !important;
+      border: none !important;
+    }
+  }
+
+  .whatsapp-service-item {
+    background: var(--dark-surface);
+    border-bottom-color: var(--dark-border-primary) !important;
+    
+    &:hover {
+      background: var(--dark-surface-elevated) !important;
+    }
+    
+    &:active {
+      background: var(--dark-bg-tertiary) !important;
+    }
+  }
+
+  // ============================================
+  // BOTONES
+  // ============================================
+  ion-button {
+    --background: var(--dark-surface-elevated);
+    --color: var(--dark-text-primary);
+    
+    &.button-outline {
+      --border-color: var(--dark-border-primary);
+      --color: var(--dark-text-primary);
+    }
+    
+    &[color="primary"] {
+      --background: linear-gradient(135deg, var(--dark-accent-primary) 0%, var(--dark-accent-secondary) 100%);
+      --color: #ffffff;
+    }
+  }
+
+  // ============================================
+  // MODALES
+  // ============================================
+  ion-modal {
+    --background: var(--dark-bg-primary);
+    
+    ion-toolbar {
+      --background: var(--dark-surface);
+      --color: var(--dark-text-primary);
+    }
+    
+    ion-content {
+      --background: var(--dark-bg-primary);
+    }
+  }
+
+  // ============================================
+  // TABS
+  // ============================================
+  ion-tab-bar {
+    --background: linear-gradient(135deg, var(--dark-accent-primary) 0%, var(--dark-accent-secondary) 100%);
+    --color: rgba(255, 255, 255, 0.7);
+    --color-selected: #ffffff;
+  }
+
+  ion-tab-button {
+    --color: rgba(255, 255, 255, 0.7);
+    --color-selected: #ffffff;
+    --background: transparent;
+    --background-selected: rgba(255, 255, 255, 0.15);
+    
+    ion-icon {
+      background: transparent !important;
+      border: none !important;
+    }
+  }
+
+  // ============================================
+  // CATEGORÍAS Y PILLS
+  // ============================================
+  .whatsapp-category-pill,
+  .category-pill {
+    background: var(--dark-surface) !important;
+    border-color: var(--dark-border-primary);
+    color: var(--dark-text-primary);
+    
+    &.selected {
+      background: var(--dark-accent-primary) !important;
+      color: #ffffff;
+    }
+    
+    .category-name {
+      color: var(--dark-text-primary);
+    }
+    
+    .category-icon,
+    ion-icon {
+      background: transparent !important;
+      border: none !important;
+      color: inherit;
+    }
+  }
+
+  // ============================================
+  // PROMOCIONES
+  // ============================================
+  .mini-promotion-card,
+  .promotions-banner {
+    background: linear-gradient(135deg, #2a8473 0%, #54ad5d 100%) !important;
+  }
+
+  .radius-control {
+    background: linear-gradient(135deg, var(--dark-accent-primary) 0%, var(--dark-accent-secondary) 100%) !important;
+    
+    h3, p, ion-icon {
+      color: #ffffff !important;
+    }
+    
+    ion-icon {
+      background: transparent !important;
+      border: none !important;
+    }
+  }
+
+  // ============================================
+  // TEXTO Y TIPOGRAFÍA
+  // ============================================
+  h1, h2, h3, h4, h5, h6 {
+    color: var(--dark-text-primary);
+  }
+
+  p, span, div, label {
+    &:not([color]) {
+      color: var(--dark-text-primary);
+    }
+  }
+
+  // ============================================
+  // ESTADOS DE CARGA Y VACÍO
+  // ============================================
+  .loading-container,
+  .empty-state,
+  .no-results {
+    background: var(--dark-bg-primary);
+    
+    h2, p {
+      color: var(--dark-text-primary);
+    }
+    
+    ion-icon {
+      background: transparent !important;
+      border: none !important;
+      color: var(--dark-text-tertiary);
+    }
+  }
+
+  // ============================================
+  // PERFIL Y DATOS
+  // ============================================
+  .profile-container {
+    background: var(--dark-bg-primary);
+  }
+
+  .data-item {
+    background: var(--dark-surface);
+    border-color: var(--dark-border-primary);
+    
+    .label {
+      color: var(--dark-text-secondary);
+    }
+    
+    .value {
+      color: var(--dark-text-primary);
+    }
+    
+    ion-icon {
+      background: transparent !important;
+      border: none !important;
+      color: var(--dark-text-secondary);
+    }
+  }
+
+  // ============================================
+  // BANNERS Y SLIDERS
+  // ============================================
+  .promotional-banner {
+    background: linear-gradient(135deg, var(--dark-surface-elevated) 0%, var(--dark-bg-tertiary) 100%) !important;
+  }
+
+  // ============================================
+  // EXPANDABLE CARDS
+  // ============================================
+  .expandable-card {
+    --background: var(--dark-surface);
+    background: var(--dark-surface);
+    border-color: var(--dark-border-primary);
+    
+    .expandable-header {
+      background: var(--dark-surface-elevated);
+      
+      ion-icon {
+        background: transparent !important;
+        border: none !important;
+        color: var(--dark-text-primary);
+      }
+    }
+    
+    .expandable-content {
+      background: var(--dark-surface);
+    }
+  }
+
+  // ============================================
+  // STATS Y MÉTRICAS
+  // ============================================
+  .stat-card,
+  .stat-item {
+    background: var(--dark-surface);
+    border-color: var(--dark-border-primary);
+    
+    .stat-value {
+      color: var(--dark-text-primary);
+    }
+    
+    .stat-label {
+      color: var(--dark-text-secondary);
+    }
+    
+    ion-icon {
+      background: transparent !important;
+      border: none !important;
+      color: var(--dark-text-secondary);
+    }
+  }
+
+  // ============================================
+  // AVATARES Y IMÁGENES
+  // ============================================
+  .avatar-image,
+  .service-avatar .avatar-image {
+    border-color: var(--dark-border-primary) !important;
+  }
+
+  .avatar-placeholder {
+    background: var(--dark-surface);
+    border-color: var(--dark-border-primary);
+    
+    ion-icon {
+      background: transparent !important;
+      border: none !important;
+      color: var(--dark-text-tertiary);
+    }
+  }
+
+  // ============================================
+  // CONTAINERS Y SECCIONES
+  // ============================================
+  .section-title {
+    color: var(--dark-text-primary);
+  }
+
+  .load-more-container {
+    background: var(--dark-bg-primary);
+    border-top-color: var(--dark-border-primary);
+  }
+
+  // ============================================
+  // SCROLLBAR (opcional, para mejor UX)
+  // ============================================
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: var(--dark-bg-primary);
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--dark-border-secondary);
+    border-radius: 4px;
+    
+    &:hover {
+      background: var(--dark-text-tertiary);
+    }
+  }
+}
+
+/* --------------------------------------------------
+   Global overrides for elements using hard-coded
+   `background: white` to ensure consistent dark mode
+   -------------------------------------------------- */
+@media (prefers-color-scheme: dark) {
+  /* Generic containers and cards */
+  ion-card,
+  .card,
+  .recent-card,
+  .provider-card,
+  .service-card,
+  .mini-promotion-card,
+  .promotion-card,
+  .promotional-banner-container,
+  .promotions-banner,
+  .promotional-banner,
+  .section,
+  .section-title,
+  .section-header,
+  .providers-section,
+  .recent-section,
+  .inspired-section,
+  .services-section,
+  .official-stores-section,
+  .account-section,
+  .map-wrapper,
+  .map-container,
+  .location-info-card,
+  .banner-slide,
+  .banner-overlay,
+  .country-selector,
+  .searchbar-wrapper {
+    background: var(--dark-surface) !important;
+    --background: var(--dark-surface) !important;
+    color: var(--dark-text-primary) !important;
+    border-color: var(--dark-border-primary) !important;
+    box-shadow: none !important;
+  }
+
+  /* Pills, badges and category items */
+  .whatsapp-category-pill,
+  .category-pill,
+  .category-image,
+  .category-name,
+  .banner-icon,
+  .promo-header,
+  .banner-content,
+  .promo-content {
+    background: transparent !important;
+    color: var(--dark-text-primary) !important;
+  }
+
+  /* Inputs and form-like cards already adjusted; ensure buttons inside cards contrast */
+  ion-button,
+  .ion-button,
+  .button-outline {
+    --background: transparent !important;
+    background: transparent !important;
+    --color: var(--dark-text-primary) !important;
+    color: var(--dark-text-primary) !important;
+  }
+
+  /* Tables / lists / items */
+  ion-item,
+  .ion-item,
+  .list-item,
+  .meta-item,
+  .service-info,
+  .service-header,
+  .service-message {
+    --background: var(--dark-surface) !important;
+    background: var(--dark-surface) !important;
+    color: var(--dark-text-primary) !important;
+    border-color: var(--dark-border-primary) !important;
+  }
+
+  /* Mantener las imágenes del banner visibles en modo oscuro: no aplicar fondo sólido
+     a .banner-slide ni a .banner-overlay para no sobreescribir el `background-image` en línea. */
+  .banner-slide {
+    /* No usar shorthand `background` ni resetear background-image; en su lugar
+       asegurarse que el contenido de la variable --banner-image se use como imagen */
+    background-color: transparent !important;
+    --background: transparent !important;
+    background-image: var(--banner-image) !important;
+    background-size: cover !important;
+    background-position: center !important;
+    box-shadow: none !important;
+  }
+
+  /* La overlay debe ser un degradado semitransparente para mejorar contraste sin ocultar la imagen */
+  .banner-overlay {
+    background: linear-gradient(rgba(0,0,0,0.08), rgba(0,0,0,0.36)) !important;
+    --background: linear-gradient(rgba(0,0,0,0.08), rgba(0,0,0,0.36)) !important;
+  }
+
+  /* Asegurar que el texto del banner sea legible sobre la imagen */
+  .banner-content {
+    color: #ffffff !important;
+  }
+
+  /* Profile / forms */
+  .profile-container,
+  .change-password-modal,
+  .filter-modal-content,
+  ion-modal .ion-content {
+    background: var(--dark-bg-primary) !important;
+    color: var(--dark-text-primary) !important;
+  }
+
+  /* Ensure any explicit white backgrounds used in pages are darkened */
+  [style*="background: white"],
+  [style*="background:white"] {
+    background: var(--dark-surface) !important;
+  }
+
+  /* Force page and app backgrounds to dark so no white gaps appear */
+  html,
+  body,
+  app-root,
+  ion-app,
+  ion-router-outlet,
+  ion-page,
+  .ion-page,
+  ion-content,
+  ion-content::part(scroll),
+  .page,
+  .page-wrapper,
+  .ion-page > .ion-content,
+  .ion-content .scroll-content,
+  .ion-content .inner-scroll,
+  ion-tabs,
+  .tabs,
+  .tab-bar,
+  ion-footer,
+  ion-header,
+  ion-toolbar,
+  .toolbar-background,
+  .app-shell,
+  .app-root,
+  ion-split-pane {
+    background: var(--dark-bg-primary) !important;
+    color: var(--dark-text-primary) !important;
+  }
+
+  /* Ensure top header/toolbars and tab bars don't stay white */
+  ion-header, ion-footer, ion-toolbar, .app-header, .app-footer {
+    --background: var(--dark-bg-primary) !important;
+    background: var(--dark-bg-primary) !important;
+    --color: var(--dark-text-primary) !important;
+    color: var(--dark-text-primary) !important;
+    border-bottom: 1px solid var(--dark-border-primary) !important;
+  }
+
+  /* If any element is still explicitly white, force it to dark surface as a last-resort */
+  *[style*="background: white"],
+  *[style*="background:white"],
+  *[style*='background: #ffffff'],
+  *[style*='background:#ffffff'] {
+    background: var(--dark-surface) !important;
+    color: var(--dark-text-primary) !important;
+  }
+
+}
+

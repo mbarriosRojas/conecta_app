@@ -30,97 +30,81 @@
       
       <!-- Nombre (solo en registro) -->
       <div class="form-group" *ngIf="!isLogin" [@slideIn]>
-        <ion-item class="custom-item">
-          <ion-icon name="person-outline" slot="start" class="form-icon"></ion-icon>
-          <ion-input 
-            type="text"
-            placeholder="Nombre"
-            [(ngModel)]="formData.name"
-            name="name"
-            required>
-          </ion-input>
-        </ion-item>
+        <app-shared-input
+          label="Nombre"
+          icon="person-outline"
+          placeholder="Nombre"
+          name="name"
+          [required]="true"
+          [(ngModel)]="formData.name">
+        </app-shared-input>
       </div>
 
       <!-- Apellido (solo en registro) -->
       <div class="form-group" *ngIf="!isLogin" [@slideIn]>
-        <ion-item class="custom-item">
-          <ion-icon name="person-outline" slot="start" class="form-icon"></ion-icon>
-          <ion-input 
-            type="text"
-            placeholder="Apellido"
-            [(ngModel)]="formData.lastname"
-            name="lastname"
-            required>
-          </ion-input>
-        </ion-item>
+        <app-shared-input
+          label="Apellido"
+          icon="person-outline"
+          placeholder="Apellido"
+          name="lastname"
+          [required]="true"
+          [(ngModel)]="formData.lastname">
+        </app-shared-input>
       </div>
 
       <!-- Teléfono (solo en registro) -->
       <div class="form-group" *ngIf="!isLogin" [@slideIn]>
-        <ion-item class="custom-item">
-          <ion-icon name="call-outline" slot="start" class="form-icon"></ion-icon>
-          <ion-input 
-            type="tel"
-            placeholder="Teléfono (opcional)"
-            [(ngModel)]="formData.phone"
-            name="phone">
-          </ion-input>
-        </ion-item>
+        <app-shared-input
+          label="Teléfono (opcional)"
+          icon="call-outline"
+          placeholder="Teléfono (opcional)"
+          name="phone"
+          type="tel"
+          [(ngModel)]="formData.phone">
+        </app-shared-input>
       </div>
 
       <!-- Email -->
       <div class="form-group">
-        <ion-item class="custom-item">
-          <ion-icon name="mail-outline" slot="start" class="form-icon"></ion-icon>
-          <ion-input 
-            type="email" 
-            placeholder="Correo electrónico"
-            [(ngModel)]="formData.email"
-            name="email"
-            required>
-          </ion-input>
-        </ion-item>
+        <app-shared-input
+          label="Correo electrónico"
+          icon="mail-outline"
+          placeholder="Correo electrónico"
+          type="email"
+          name="email"
+          [required]="true"
+          [(ngModel)]="formData.email">
+        </app-shared-input>
       </div>
 
       <!-- Contraseña -->
       <div class="form-group">
-        <ion-item class="custom-item">
-          <ion-icon name="lock-closed-outline" slot="start" class="form-icon"></ion-icon>
-          <ion-input 
-            [type]="showPassword ? 'text' : 'password'"
-            placeholder="Contraseña"
-            [(ngModel)]="formData.password"
-            name="password"
-            required>
-          </ion-input>
-          <ion-icon 
-            [name]="showPassword ? 'eye-off-outline' : 'eye-outline'"
-            slot="end"
-            (click)="togglePassword()"
-            class="password-toggle">
-          </ion-icon>
-        </ion-item>
+        <app-shared-input
+          label="Contraseña"
+          icon="lock-closed-outline"
+          [type]="showPassword ? 'text' : 'password'"
+          placeholder="Contraseña"
+          name="password"
+          [required]="true"
+          [suffixIcon]="showPassword ? 'eye-off-outline' : 'eye-outline'"
+          (suffixClick)="togglePassword()"
+          [(ngModel)]="formData.password">
+        </app-shared-input>
       </div>
 
       <!-- Confirmar contraseña (solo en registro) -->
       <div class="form-group" *ngIf="!isLogin" [@slideIn]>
-        <ion-item class="custom-item">
-          <ion-icon name="lock-closed-outline" slot="start" class="form-icon"></ion-icon>
-          <ion-input 
-            [type]="showConfirmPassword ? 'text' : 'password'"
-            placeholder="Confirmar contraseña"
-            [(ngModel)]="formData.confirmPassword"
-            name="confirmPassword"
-            required>
-          </ion-input>
-          <ion-icon 
-            [name]="showConfirmPassword ? 'eye-off-outline' : 'eye-outline'"
-            slot="end"
-            (click)="toggleConfirmPassword()"
-            class="password-toggle">
-          </ion-icon>
-        </ion-item>
+        <app-shared-input
+          label="Confirmar contraseña"
+          icon="lock-closed-outline"
+          [type]="showConfirmPassword ? 'text' : 'password'"
+          placeholder="Confirmar contraseña"
+          name="confirmPassword"
+          [required]="true"
+          [suffixIcon]="showConfirmPassword ? 'eye-off-outline' : 'eye-outline'"
+          (suffixClick)="toggleConfirmPassword()"
+          [(ngModel)]="formData.confirmPassword">
+        </app-shared-input>
       </div>
 
       <!-- Botón principal -->

@@ -39,14 +39,15 @@ const config: CapacitorConfig = {
     PushNotifications: {
       presentationOptions: ['badge', 'sound', 'alert']
     },
-    // 🔥 Background Geolocation Configuration para notificaciones precisas
-    BackgroundGeolocation: {
-      backgroundMessage: "Recibiendo ofertas basadas en tu ubicación",
-      backgroundTitle: "AKI - Ubicación activa",
-      requestPermissions: true,
-      stale: false,
-      distanceFilter: 100 // Actualizar cada 100 metros (balance batería/precisión)
-    }
+    // ⚠️ Background Geolocation desactivado para evitar errores en iOS
+    // Si necesitas background tracking, debes tener permisos "Always" confirmados
+    // BackgroundGeolocation: {
+    //   backgroundMessage: "Recibiendo ofertas basadas en tu ubicación",
+    //   backgroundTitle: "AKI - Ubicación activa",
+    //   requestPermissions: false,
+    //   stale: false,
+    //   distanceFilter: 100
+    // }
   },
   // 🔥 Configuración para deep linking (OAuth redirect)
   android: {

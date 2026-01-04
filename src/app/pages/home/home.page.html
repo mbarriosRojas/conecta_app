@@ -27,7 +27,7 @@
           <ion-searchbar
             [(ngModel)]="searchQuery"
             (ionInput)="onSearch($event)"
-            placeholder="Buscar servicios o productos..."
+            placeholder="Que quieres buscar?"
             show-clear-button="focus"
             debounce="300"
             class="whatsapp-searchbar">
@@ -49,7 +49,9 @@
     <div class="banners-slider" #bannersSlider>
       <div class="swiper-wrapper">
         <div class="swiper-slide" *ngFor="let banner of banners">
-          <div class="banner-slide" [style.background-image]="'url(' + banner.image + ')'" (click)="banner.link && openBannerLink(banner.link)">
+          <!-- Usar variable CSS para background-image para evitar que reglas globales con !important
+               sobreescriban el background-image inline en modo oscuro -->
+          <div class="banner-slide" [style.--banner-image]="'url(' + banner.image + ')'" (click)="banner.link && openBannerLink(banner.link)">
             <div class="banner-overlay">
               <div class="banner-content" *ngIf="banner.title || banner.description">
                 <h2 class="banner-title" *ngIf="banner.title">{{ banner.title }}</h2>
@@ -308,7 +310,7 @@
     </ng-template>
   </div>
   <!-- Botón Ver Más -->
-  <div class="load-more-container" *ngIf="hasMoreData && !isLoading && !isLoadingMore">
+  <div class="load-more-container" *ngIf="hasMoreData && !isLoading && !isLoadingMore && !showExpandOption">
     <ion-button 
       size="small"
       fill="clear" 
@@ -328,10 +330,33 @@
     <p>Cargando más servicios...</p>
   </div>
 
+  <!-- 🔥 Opción discreta para ampliar rango (estilo Tinder) -->
+  <div class="expand-range-container" *ngIf="showExpandOption && !isLoading && !isExpandingRadius">
+    <div class="expand-range-card">
+      <div class="expand-range-content">
+        <ion-icon name="location-outline" class="expand-icon"></ion-icon>
+        <div class="expand-text">
+          <p class="expand-title">No hay más resultados cerca</p>
+          <p class="expand-subtitle">Ampliar búsqueda de {{ (currentRadius / 1000).toFixed(0) }}km a {{ (getSuggestedRadius(currentRadius) / 1000).toFixed(0) }}km</p>
+        </div>
+        <ion-button 
+          fill="solid" 
+          color="primary"
+          size="small"
+          (click)="onExpandRadius()"
+          [disabled]="isExpandingRadius"
+          class="expand-button">
+          <ion-spinner *ngIf="isExpandingRadius" name="crescent" slot="start"></ion-spinner>
+          <ion-icon *ngIf="!isExpandingRadius" name="expand-outline" slot="start"></ion-icon>
+          {{ isExpandingRadius ? 'Ampliando...' : 'Ampliar' }}
+        </ion-button>
+      </div>
+    </div>
+  </div>
 
-  <!-- Componente de no resultados (tipo Tinder) -->
+  <!-- Componente de no resultados (solo cuando se alcanza el máximo) -->
   <app-no-results-expand
-    *ngIf="showNoResults && !isLoading"
+    *ngIf="showNoResults && !isLoading && !showExpandOption && currentRadius >= maxRadius"
     [searchQuery]="searchQuery"
     [currentRadius]="currentRadius"
     [isLoading]="isExpandingRadius"

@@ -84,9 +84,8 @@ export class ServicesPage implements OnInit {
   }
 
   async refresh(event?: any) {
-    // Invalidar cache para forzar carga fresca
-    await this.cacheService.invalidateCache('user_services');
-    await this.cacheService.invalidateCacheByPattern('providers_page');
+    // 🔥 OPTIMIZADO: Invalidar cache para forzar carga fresca
+    await this.cacheService.invalidateProviderCaches();
     
     await this.loadUserProviders();
     if (event) {
@@ -131,14 +130,12 @@ export class ServicesPage implements OnInit {
     await loading.present();
 
     try {
-      await this.apiService.deleteUserProvider(providerId).toPromise();
+      await firstValueFrom(this.apiService.deleteUserProvider(providerId));
       
-      // 🚀 INVALIDAR CACHE para que la eliminación se refleje inmediatamente
-      await this.cacheService.invalidateCacheByPattern('providers_page');
-      await this.cacheService.invalidateCache('user_services');
+      // 🔥 OPTIMIZADO: Invalidar todos los caches relacionados con providers
+      await this.cacheService.invalidateProviderCaches();
+      // También invalidar el detalle específico del provider
       await this.cacheService.invalidateCache(`provider_detail_${providerId}`);
-      await this.cacheService.invalidateCache('home_data'); // 🔥 CRÍTICO: Invalidar cache de home
-      await this.cacheService.invalidateCacheByPattern('providers'); // Invalidar todos los providers
       
       console.log('✅ Cache invalidado - el servicio eliminado se reflejará inmediatamente');
       this.showSuccessToast('Servicio eliminado correctamente');

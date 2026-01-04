@@ -11,11 +11,13 @@ import {
   AuthError,
   UserCredential,
   sendPasswordResetEmail,
-  sendEmailVerification
+  sendEmailVerification,
+  signInWithCredential
 } from 'firebase/auth';
-import { Platform } from '@ionic/angular';
+import { Platform, ToastController, AlertController } from '@ionic/angular';
 import { environment } from 'src/environments/environment';
 import { HttpClient } from '@angular/common/http';
+import { firstValueFrom } from 'rxjs';
 
 @Injectable({
   providedIn: 'root'
@@ -31,6 +33,33 @@ export class GoogleAuthService {
     private http: HttpClient
   ) {
     this.initializeFirebase();
+  }
+
+  // Utilitario: detecta si estamos probando desde localhost en un dispositivo móvil
+  private isMobileLocalhost(): boolean {
+    try {
+      const host = window.location.hostname || '';
+      const usingLocalhost = host.includes('localhost') || host.includes('127.0.0.1');
+      const backendLocal = environment.apiUrl?.includes('localhost');
+
+      // Caso 1: abierto desde el navegador móvil (ionic serve abierto en el móvil) -> marcar como prueba
+      if (this.platform.is('mobileweb')) {
+        return usingLocalhost || backendLocal;
+      }
+
+      // Caso 2: Capacitor con livereload (la app nativa está cargando desde tu servidor dev, p. ej. http://192.168.x.y:8100)
+      // Detectamos si la URL usa http(s) y tiene puerto (común en livereload)
+      const isHttpProtocol = window.location.protocol.startsWith('http');
+      const hasDevPort = !!window.location.port;
+      if (this.platform.is('capacitor') && isHttpProtocol && hasDevPort) {
+        return usingLocalhost || backendLocal || window.location.href.includes(':8100');
+      }
+
+      // Caso 3: app nativa instalada (Capacitor) -> no tratar como prueba solo porque hostname es 'localhost'
+      return false;
+    } catch (e) {
+      return false;
+    }
   }
 
   private initializeFirebase(): void {
@@ -76,13 +105,50 @@ export class GoogleAuthService {
   async signInWithGoogle(): Promise<any> {
     try {
       console.log('🔐 Iniciando autenticación con Google...');
-      
+
+      // Detectar si estamos probando en un dispositivo móvil con localhost
+      if (this.isMobileLocalhost()) {
+        console.warn('⚠️ Detected mobile localhost testing environment');
+        // El caller (LoginPage) manejará el mensaje UI si ve testEnvironmentDetected
+        return { testEnvironmentDetected: true };
+      }
+
       let result: UserCredential;
-      
+
       if (this.platform.is('capacitor')) {
-        // En dispositivos móviles usar redirect
-        console.log('📱 Plataforma móvil: usando redirect');
-        result = await this.signInWithRedirect();
+        // En dispositivos móviles, preferir plugin nativo para evitar issues con redirect/popup
+        console.log('📱 Plataforma móvil: intentando usar plugin nativo de Google Sign-In');
+        try {
+          // Cargar plugin dinámicamente (evita falla si no está instalado en web)
+          const mod: any = await import('@codetrix-studio/capacitor-google-auth');
+          const GoogleAuth = mod.GoogleAuth;
+
+          const nativeRes: any = await GoogleAuth.signIn();
+          console.log('🔐 Google native sign-in result:', nativeRes);
+
+          // nativeRes puede contener idToken o authentication.idToken
+          const idToken = nativeRes?.idToken || nativeRes?.authentication?.idToken || nativeRes?.serverAuthCode;
+
+          if (!idToken) {
+            console.warn('⚠️ Google native sign-in no retornó idToken, fallback a redirect');
+            result = await this.signInWithRedirect();
+          } else {
+            // Usar el idToken para autenticarse con Firebase y obtener usuario Firebase
+            const credential = GoogleAuthProvider.credential(idToken);
+            const signInResult = await signInWithCredential(this.auth, credential);
+            result = signInResult as UserCredential;
+          }
+        } catch (nativeErr: any) {
+          console.warn('⚠️ Error usando plugin nativo de Google Sign-In, fallback a redirect:', nativeErr);
+
+          // En iOS, si el plugin falla y no está configurado, sugerir setup
+          if (this.platform.is('ios')) {
+            return { iosRequiresNativeSetup: true };
+          }
+
+          // Fallback: usar redirect (puede provocar issues si pruebas desde localhost)
+          result = await this.signInWithRedirect();
+        }
       } else {
         // En web usar popup
         console.log('🌐 Plataforma web: usando popup');
@@ -304,10 +370,10 @@ export class GoogleAuthService {
       const userData = this.mapGoogleUserToLocalUser(firebaseUser);
       
       // Llamar al endpoint del backend
-      const response: any = await this.http.post(`${environment.apiUrl}/api/users/auth/google`, {
+      const response: any = await firstValueFrom(this.http.post(`${environment.apiUrl}/api/users/auth/google`, {
         idToken,
         userData
-      }).toPromise();
+      }));
 
       console.log('✅ Usuario registrado/autenticado en backend:', response);
 
@@ -356,11 +422,11 @@ export class GoogleAuthService {
     try {
       console.log('🔧 Agregando contraseña a cuenta Google...');
       
-      const response: any = await this.http.post(`${environment.apiUrl}/api/users/auth/add-password`, {
+      const response: any = await firstValueFrom(this.http.post(`${environment.apiUrl}/api/users/auth/add-password`, {
         email,
         password,
         confirmPassword
-      }).toPromise();
+      }));
 
       console.log('✅ Contraseña agregada exitosamente');
       return response;

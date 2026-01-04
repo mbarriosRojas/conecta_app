@@ -332,23 +332,25 @@ export class LocationService {
   }
 
   /**
-   * 🔥 SISTEMA HÍBRIDO: Inicia tracking que funciona incluso con app cerrada
-   * - App abierta/minimizada: Cada 5 minutos
-   * - App cerrada: Tracking nativo basado en movimiento (cada 100m)
+   * 🔥 Sistema de tracking simplificado para evitar errores en iOS
+   * - App abierta/minimizada: Cada 5 minutos (foreground tracking)
+   * - App cerrada: NO se rastrea (evita problemas de permisos en iOS)
    */
   public async startBackgroundLocationUpdates(authService?: any) {
     if (this.isBackgroundUpdateEnabled) {
-      console.log('🔄 Actualización en segundo plano ya está activa');
+      console.log('🔄 Actualización de ubicación ya está activa');
       return;
     }
 
-    console.log('🚀 [LOCATION] Iniciando sistema híbrido de ubicación...');
+    console.log('🚀 [LOCATION] Iniciando actualización periódica de ubicación (foreground only)...');
     this.isBackgroundUpdateEnabled = true;
 
     // 1️⃣ Actualizar inmediatamente
     await this.updateLocationToBackend(authService);
 
     // 2️⃣ Timer para app abierta/minimizada (cada 5 min)
+    // NOTA: No usamos background tracking nativo para evitar errores en iOS
+    // El background tracking requiere permisos "Always" que causan problemas
     this.backgroundUpdateSubscription = interval(this.backgroundUpdateInterval).subscribe(async () => {
       try {
         await this.updateLocationToBackend(authService);
@@ -357,97 +359,46 @@ export class LocationService {
       }
     });
 
-    // 3️⃣ Background Geolocation para app cerrada (tracking nativo)
-    try {
-      await this.startNativeBackgroundTracking(authService);
-      console.log('✅ [LOCATION] Sistema híbrido completo iniciado');
-      console.log('   📍 Foreground: Cada 5 minutos');
-      console.log('   📍 Background: Cada 100 metros de movimiento');
-    } catch (error) {
-      console.error('⚠️ [LOCATION] Background tracking nativo no disponible, usando solo timer:', error);
-      console.log('✅ [LOCATION] Actualización en segundo plano iniciada (solo foreground, cada 5 minutos)');
-    }
+    console.log('✅ [LOCATION] Actualización de ubicación iniciada (foreground: cada 5 minutos)');
   }
 
   /**
-   * 🔥 Inicia tracking nativo que funciona con app cerrada
+   * ⚠️ DESACTIVADO: Tracking nativo en segundo plano
+   * Este método está desactivado para evitar errores en iOS relacionados con permisos "Always"
+   * Si necesitas background tracking, considera usar solo cuando tengas permisos "Always" confirmados
    */
   private async startNativeBackgroundTracking(authService?: any) {
+    // DESACTIVADO: No usamos background tracking nativo para evitar errores en iOS
+    // El error "Invalid parameter not satisfying: !stayUp || CLClientIsBa..." 
+    // ocurre cuando se intenta habilitar allowsBackgroundLocationUpdates sin permiso "Always"
+    console.log('⚠️ [LOCATION] Background tracking nativo desactivado para evitar errores en iOS');
+    return;
+    
+    /* Código original comentado - solo para referencia
     try {
       const deviceInfo = await Device.getInfo();
-      
-      // Solo en dispositivos móviles reales
       if (deviceInfo.platform === 'web') {
-        console.log('⚠️ [LOCATION] Background tracking no disponible en web');
         return;
       }
-
-      // Configurar y empezar watcher nativo
-      const watcherId = await BackgroundGeolocation.addWatcher(
-        {
-          // 🔥 Configuración optimizada para marketplace
-          backgroundMessage: "AKI está buscando promociones cercanas para ti",
-          backgroundTitle: "Buscando ofertas cerca de ti",
-          requestPermissions: true,
-          stale: false,
-          
-          // 🎯 Actualizar cada 100 metros de movimiento (no muy frecuente = ahorra batería)
-          distanceFilter: 100,
-        },
-        async (location: any, error: any) => {
-          if (error) {
-            if (error.code === 'NOT_AUTHORIZED') {
-              console.warn('⚠️ [LOCATION] Permisos de ubicación denegados');
-            }
-            return;
-          }
-
-          if (location) {
-            console.log('📍 [BACKGROUND] Nueva ubicación (app cerrada):', {
-              lat: location.latitude,
-              lng: location.longitude,
-              accuracy: location.accuracy
-            });
-
-            // Actualizar ubicación en backend
-            try {
-              const userId = this.anonymousUserId || this.generateUniqueId();
-              const response = await this.http.post(`${environment.apiUrl}/api/location/update`, {
-                userID: userId,
-                lat: location.latitude,
-                lng: location.longitude,
-                isAnonymous: !authService?.isAuthenticated(),
-              }).toPromise();
-
-              console.log('✅ [BACKGROUND] Ubicación sincronizada con backend');
-            } catch (error) {
-              console.error('❌ [BACKGROUND] Error sincronizando ubicación:', error);
-            }
-          }
-        }
-      );
-
-      this.backgroundGeolocationWatcherId = watcherId;
-      console.log('✅ [LOCATION] Background tracking nativo iniciado (watcher ID:', watcherId, ')');
-
-    } catch (error: any) {
-      console.error('❌ [LOCATION] Error iniciando background tracking nativo:', error);
+      // ... resto del código
+    } catch (error) {
       throw error;
     }
+    */
   }
 
   /**
    * Detiene la actualización automática de ubicación (ambos sistemas)
    */
   public async stopBackgroundLocationUpdates() {
-    // Detener timer foreground
+    // Detener timer de actualización periódica
     if (this.backgroundUpdateSubscription) {
       this.backgroundUpdateSubscription.unsubscribe();
       this.backgroundUpdateSubscription = null;
-      console.log('⏹️ [LOCATION] Timer foreground detenido');
+      console.log('⏹️ [LOCATION] Timer de actualización detenido');
     }
 
-    // Detener tracking nativo background
+    // Detener tracking nativo background (si existe, aunque está desactivado)
     if (this.backgroundGeolocationWatcherId) {
       try {
         await BackgroundGeolocation.removeWatcher({ id: this.backgroundGeolocationWatcherId });
@@ -459,7 +410,7 @@ export class LocationService {
     }
 
     this.isBackgroundUpdateEnabled = false;
-    console.log('⏹️ [LOCATION] Sistema híbrido de ubicación detenido completamente');
+    console.log('⏹️ [LOCATION] Actualización de ubicación detenida');
   }
 
   /**

@@ -1,0 +1,77 @@
+.shared-input {
+  --background: var(--shared-input-bg);
+  --border-radius: var(--shared-input-border-radius);
+  margin-bottom: 12px;
+  padding: 6px 10px;
+  --padding-start: 10px;
+  position: relative; /* necesario para posicionar el suffix absolute */
+
+  ion-icon.input-icon {
+    color: var(--ion-color-medium);
+    font-size: 20px;
+    margin-right: 6px;
+  }
+
+  ion-label.input-label {
+    font-size: 12px;
+    color: var(--ion-color-medium);
+    margin-bottom: 6px;
+  }
+
+  ion-input::part(native) {
+    background: var(--shared-input-bg);
+    border: var(--shared-input-border);
+    border-radius: var(--shared-input-border-radius);
+    padding: var(--shared-input-padding);
+    /* Reservar espacio a la derecha para iconos inline (ej. mostrar contraseña) */
+    padding-right: 56px; /* ajustado para alinear el suffix dentro del recuadro */
+    color: var(--shared-input-text-color);
+    font-size: 16px;
+    /* Asegurar altura consistente y centrar contenido verticalmente */
+    height: 44px;
+    line-height: 44px;
+    display: flex;
+    align-items: center;
+  }
+
+  .input-suffix {
+    --padding-start: 0;
+    --padding-end: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 36px;
+    width: 36px;
+    color: var(--ion-color-medium);
+    /* Posicionar absolute para quedar dentro del área del input y alineado verticalmente */
+    position: absolute;
+    right: 24px; /* mover ligeramente hacia adentro para quedar dentro del input */
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 10;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 18px;
+    color: var(--shared-input-suffix-color, var(--ion-color-medium));
+  }
+
+  .input-suffix ion-icon {
+    color: var(--shared-input-suffix-color, var(--ion-color-medium));
+    font-size: 18px;
+  }
+
+  ion-input::part(native)::placeholder {
+    color: var(--shared-input-placeholder-color);
+  }
+
+  &:focus-within {
+    box-shadow: 0 0 0 3px rgba(42,132,115,0.06);
+    border-color: var(--shared-input-focus-color);
+  }
+
+  .input-error {
+    color: var(--ion-color-danger);
+    font-size: 12px;
+  }
+}

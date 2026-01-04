@@ -282,19 +282,10 @@ export class PushNotificationService {
                         this.platform.is('ios') ? 'Apple' : 'Browser'
         };
 
-        // Obtener ubicación actual para enviar con el token
-        let currentLocation = null;
-        try {
-          const location = await this.locationService.getCurrentPosition();
-          currentLocation = {
-            lat: location.latitude,
-            lng: location.longitude
-          };
-          console.log('📍 Ubicación obtenida para registro:', currentLocation);
-        } catch (error) {
-          console.log('⚠️ No se pudo obtener ubicación para registro:', error);
-        }
-
+        // 🔥 MEJORA: Obtener ubicación actual con reintentos
+        // Esto asegura que los tokens se registren con ubicación cuando sea posible
+        const currentLocation = await this.getLocationWithRetry(3);
+        
         console.log('📤 Enviando petición al backend...');
         const registrationData: any = {
           userID: this.userID,
@@ -307,6 +298,9 @@ export class PushNotificationService {
         if (currentLocation) {
           registrationData.lat = currentLocation.lat;
           registrationData.lng = currentLocation.lng;
+          console.log('📍 Ubicación incluida en registro de token:', currentLocation);
+        } else {
+          console.log('⚠️ Token se registrará sin ubicación. Se intentará sincronizar después.');
         }
 
         const response = await firstValueFrom(
@@ -328,6 +322,32 @@ export class PushNotificationService {
       console.error('❌ Error registrando token en backend:', error);
       console.log('⚠️ Continuando sin registro en backend...');
     }
+  }
+
+  /**
+   * 🔥 MEJORA: Obtiene ubicación con reintentos
+   * Intenta obtener la ubicación hasta 3 veces antes de fallar
+   */
+  private async getLocationWithRetry(maxRetries: number = 3): Promise<{lat: number, lng: number} | null> {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        const location = await this.locationService.getCurrentPosition();
+        return {
+          lat: location.latitude,
+          lng: location.longitude
+        };
+      } catch (error) {
+        if (attempt < maxRetries) {
+          // Esperar antes de reintentar (backoff exponencial)
+          const waitTime = Math.pow(2, attempt) * 500; // 1s, 2s, 4s
+          console.warn(`⚠️ [FCM] Error obteniendo ubicación (intento ${attempt}/${maxRetries}). Reintentando en ${waitTime}ms...`, error);
+          await new Promise(resolve => setTimeout(resolve, waitTime));
+        } else {
+          console.error(`❌ [FCM] No se pudo obtener ubicación después de ${maxRetries} intentos:`, error);
+        }
+      }
+    }
+    return null;
   }
 
   /**

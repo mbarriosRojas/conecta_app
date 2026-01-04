@@ -684,15 +684,13 @@ export class EditServicePage implements OnInit {
         });
       }
 
-      const response = await this.apiService.updateUserProvider(this.providerId, formData).toPromise();
+      const response = await firstValueFrom(this.apiService.updateUserProvider(this.providerId, formData));
       
       if (response) {
-        // 🚀 INVALIDAR CACHE para que se muestre inmediatamente
-        await this.cacheService.invalidateCacheByPattern('providers_page');
-        await this.cacheService.invalidateCache('user_services');
+        // 🔥 OPTIMIZADO: Invalidar todos los caches relacionados con providers
+        await this.cacheService.invalidateProviderCaches();
+        // También invalidar el detalle específico del provider
         await this.cacheService.invalidateCache(`provider_detail_${this.providerId}`);
-        await this.cacheService.invalidateCache('home_data'); // 🔥 CRÍTICO: Invalidar cache de home
-        await this.cacheService.invalidateCacheByPattern('providers'); // Invalidar todos los providers
         
         console.log('✅ Cache invalidado - el servicio actualizado aparecerá inmediatamente');
         this.showSuccessToast('Servicio actualizado correctamente');
@@ -868,11 +866,10 @@ export class EditServicePage implements OnInit {
       }
 
       if (response) {
-        // 🚀 INVALIDAR CACHE para que los productos aparezcan inmediatamente
-        await this.cacheService.invalidateCacheByPattern('providers_page');
-        await this.cacheService.invalidateCache('user_services');
+        // 🔥 OPTIMIZADO: Invalidar todos los caches relacionados con providers
+        await this.cacheService.invalidateProviderCaches();
+        // También invalidar el detalle específico del provider
         await this.cacheService.invalidateCache(`provider_detail_${this.providerId}`);
-        await this.cacheService.invalidateCache('home_data'); // 🔥 CRÍTICO: Invalidar cache de home
         
         console.log('✅ Cache invalidado - el producto aparecerá inmediatamente');
         this.showSuccessToast(this.editingProduct ? 'Producto actualizado correctamente' : 'Producto creado correctamente');
@@ -929,11 +926,10 @@ export class EditServicePage implements OnInit {
             try {
               const response = await firstValueFrom(this.apiService.deleteProduct(productId));
               if (response) {
-                // 🚀 INVALIDAR CACHE para que la eliminación se refleje inmediatamente
-                await this.cacheService.invalidateCacheByPattern('providers_page');
-                await this.cacheService.invalidateCache('user_services');
+                // 🔥 OPTIMIZADO: Invalidar todos los caches relacionados con providers
+                await this.cacheService.invalidateProviderCaches();
+                // También invalidar el detalle específico del provider
                 await this.cacheService.invalidateCache(`provider_detail_${this.providerId}`);
-                await this.cacheService.invalidateCache('home_data'); // 🔥 CRÍTICO: Invalidar cache de home
                 
                 console.log('✅ Cache invalidado - el producto eliminado se reflejará inmediatamente');
                 this.products.splice(index, 1);
@@ -1160,6 +1156,10 @@ export class EditServicePage implements OnInit {
       );
 
       if (response?.status === 'success') {
+        // 🔥 OPTIMIZADO: Invalidar caches relacionados con promociones
+        await this.cacheService.invalidatePromotionCaches();
+        await this.cacheService.invalidateCache(`provider_detail_${this.providerId}`);
+        
         this.showSuccessToast('Promoción guardada exitosamente');
         this.closePromotionModal();
         await this.loadGeofenceStats();

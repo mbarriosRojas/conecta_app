@@ -4,6 +4,8 @@ import { FormsModule } from '@angular/forms';
 import { IonicModule, IonModal, ToastController } from '@ionic/angular';
 import { Router } from '@angular/router';
 import { GeofencingAnalyticsService } from '../../services/geofencing-analytics.service';
+import { StorageService } from '../../services/storage.service';
+import { Category } from '../../models/provider.model';
 import { LocationService } from '../../services/location.service';
 import { PromotionTrackingService } from '../../services/promotion-tracking.service';
 import { firstValueFrom } from 'rxjs';
@@ -57,6 +59,8 @@ export class PromotionsNearbyPage implements OnInit {
   // Filtros
   selectedCategory: string = '';
   selectedType: string = '';
+  // Categorías (para mostrar las píldoras)
+  categories: Category[] = [];
   
   // Estadísticas
   totalPromotions = 0;
@@ -85,11 +89,51 @@ export class PromotionsNearbyPage implements OnInit {
     private promotionTrackingService: PromotionTrackingService,
     private router: Router,
     private toastController: ToastController
+    ,private storageService: StorageService
   ) {}
 
   async ngOnInit() {
     await this.loadCurrentLocation();
+    await this.loadCategories();
     await this.loadPromotions();
+  }
+
+  async loadCategories() {
+    try {
+      // Intentar leer categorías cacheadas en storage
+      this.categories = await this.storageService.getCategories();
+      // Si no hay categorías en storage, dejar array vacío (home las cargará en otro flujo)
+      if (!this.categories || this.categories.length === 0) {
+        this.categories = [];
+      }
+    } catch (error) {
+      console.error('Error cargando categorías en promotions-nearby:', error);
+      this.categories = [];
+    }
+  }
+
+  async selectCategory(category: any | null) {
+    // category null -> todos
+    try {
+      this.isLoading = true;
+      this.selectedCategory = category ? category._id || category : '';
+      await this.loadPromotions();
+    } catch (error) {
+      console.error('Error seleccionando categoría:', error);
+    } finally {
+      this.isLoading = false;
+    }
+  }
+
+  onImageError(event: any) {
+    const img = event.target as HTMLImageElement;
+    const parent = img.parentElement as HTMLElement;
+    if (!parent) return;
+    parent.innerHTML = '';
+    const fallback = document.createElement('ion-icon');
+    fallback.setAttribute('name', 'business-outline');
+    fallback.className = 'category-icon';
+    parent.appendChild(fallback);
   }
 
   /**
@@ -324,21 +368,78 @@ export class PromotionsNearbyPage implements OnInit {
   }
 
   /**
+   * Maneja el evento cuando el modal está a punto de presentarse
+   */
+  async onMapModalWillPresent() {
+    console.log('📱 Modal del mapa a punto de presentarse');
+    // Este método se ejecuta cuando el modal está a punto de mostrarse
+    // No inicializamos el mapa aquí, lo hacemos en openMapModal después del delay
+  }
+
+  /**
    * Abre el modal del mapa
    */
   async openMapModal() {
     this.showMapModal = true;
     
-    // Esperar a que el modal se abra completamente
-    setTimeout(async () => {
-      try {
-        await this.loadGoogleMaps();
-        this.initializeMap();
-      } catch (error) {
-        console.error('Error loading map:', error);
-        await this.showErrorToast('Error cargando el mapa. Intenta nuevamente.');
-      }
-    }, 300);
+    // Esperar a que el modal se abra completamente en iOS
+    // Usar un delay más largo para iOS ya que necesita tiempo para renderizar
+    await new Promise(resolve => setTimeout(resolve, 600));
+    
+    try {
+      await this.loadGoogleMaps();
+      
+      // Verificar que el elemento esté disponible y tenga dimensiones
+      await this.waitForMapElement();
+      
+      this.initializeMap();
+      
+      // Forzar resize del mapa después de un pequeño delay para iOS
+      setTimeout(() => {
+        if (this.map && typeof google !== 'undefined' && google.maps) {
+          google.maps.event.trigger(this.map, 'resize');
+          console.log('🔄 Resize del mapa forzado para iOS');
+        }
+      }, 400);
+    } catch (error) {
+      console.error('Error loading map:', error);
+      await this.showErrorToast('Error cargando el mapa. Intenta nuevamente.');
+    }
+  }
+
+  /**
+   * Espera a que el elemento del mapa esté disponible y tenga dimensiones válidas
+   */
+  private async waitForMapElement(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const maxAttempts = 20;
+      let attempts = 0;
+      
+      const checkElement = () => {
+        attempts++;
+        const mapElement = document.getElementById('promotionsMap');
+        
+        if (mapElement) {
+          const rect = mapElement.getBoundingClientRect();
+          // Verificar que el elemento tenga dimensiones válidas
+          if (rect.width > 0 && rect.height > 0) {
+            console.log('✅ Elemento del mapa está listo con dimensiones:', rect.width, 'x', rect.height);
+            resolve();
+            return;
+          }
+        }
+        
+        if (attempts >= maxAttempts) {
+          console.error('❌ Timeout esperando elemento del mapa');
+          reject(new Error('El elemento del mapa no está disponible'));
+          return;
+        }
+        
+        setTimeout(checkElement, 100);
+      };
+      
+      checkElement();
+    });
   }
 
   /**
@@ -480,10 +581,23 @@ export class PromotionsNearbyPage implements OnInit {
    * Inicializa el mapa de Google
    */
   initializeMap() {
-    if (!this.currentLocation) return;
+    if (!this.currentLocation) {
+      console.error('❌ No hay ubicación actual para inicializar el mapa');
+      return;
+    }
 
     const mapElement = document.getElementById('promotionsMap');
-    if (!mapElement) return;
+    if (!mapElement) {
+      console.error('❌ Elemento del mapa no encontrado');
+      return;
+    }
+
+    // Verificar que el elemento tenga dimensiones válidas
+    const rect = mapElement.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) {
+      console.error('❌ El elemento del mapa no tiene dimensiones válidas');
+      return;
+    }
 
     // Verificar que Google Maps esté disponible
     if (typeof google === 'undefined' || !google.maps) {
@@ -491,20 +605,38 @@ export class PromotionsNearbyPage implements OnInit {
       return;
     }
 
-    this.map = new google.maps.Map(mapElement, {
-      center: { lat: this.currentLocation.lat, lng: this.currentLocation.lng },
-      zoom: 14, // Zoom inicial, se ajustará automáticamente
-      mapTypeControl: false,
-      streetViewControl: false,
-      fullscreenControl: true
-    });
+    console.log('🗺️ Inicializando mapa en:', this.currentLocation);
+    console.log('📐 Dimensiones del contenedor:', rect.width, 'x', rect.height);
 
-    // 🔥 Ajustar zoom inicial según el radio actual
-    setTimeout(() => {
-      this.adjustMapZoom();
-    }, 100); // Pequeño delay para asegurar que el mapa esté completamente cargado
+    try {
+      this.map = new google.maps.Map(mapElement, {
+        center: { lat: this.currentLocation.lat, lng: this.currentLocation.lng },
+        zoom: 14, // Zoom inicial, se ajustará automáticamente
+        mapTypeControl: false,
+        streetViewControl: false,
+        fullscreenControl: true,
+        gestureHandling: 'greedy', // Mejorar la experiencia táctil en móviles
+        zoomControl: true,
+        zoomControlOptions: {
+          position: google.maps.ControlPosition.RIGHT_CENTER
+        }
+      });
 
-    // Marcador del usuario
+      console.log('✅ Mapa inicializado correctamente');
+
+      // 🔥 Ajustar zoom inicial según el radio actual después de que el mapa esté listo
+      const idleListener = this.map.addListener('idle', () => {
+        google.maps.event.removeListener(idleListener); // Ejecutar solo una vez
+        setTimeout(() => {
+          this.adjustMapZoom();
+          // Forzar resize después de ajustar zoom (especialmente importante en iOS)
+          if (this.map) {
+            google.maps.event.trigger(this.map, 'resize');
+          }
+        }, 200);
+      });
+
+      // Marcador del usuario
     this.userMarker = new google.maps.Marker({
       position: { lat: this.currentLocation.lat, lng: this.currentLocation.lng },
       map: this.map,
@@ -530,6 +662,11 @@ export class PromotionsNearbyPage implements OnInit {
       strokeOpacity: 0.5,
       strokeWeight: 2
     });
+
+    } catch (error) {
+      console.error('❌ Error inicializando el mapa:', error);
+      return;
+    }
 
     // Marcadores de promociones
     this.promotions.forEach((promo, index) => {

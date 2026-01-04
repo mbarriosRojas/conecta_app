@@ -1,0 +1,26 @@
+<ion-item class="shared-input" [class.has-icon]="icon" lines="full">
+  <ion-icon *ngIf="icon" [name]="icon" slot="start" class="input-icon"></ion-icon>
+  <ion-label *ngIf="label" position="stacked" class="input-label">{{ label }} <span *ngIf="required" aria-hidden="true">*</span></ion-label>
+
+  <ion-input
+    [type]="type"
+    [placeholder]="placeholder"
+    [attr.name]="name"
+    [disabled]="disabled"
+    [attr.autocomplete]="autocomplete"
+    [(ngModel)]="value"
+    (ionInput)="handleInput($event.target.value || $event.detail.value)"
+    (ionBlur)="touched()"
+    [attr.aria-label]="label || placeholder"
+  >
+  </ion-input>
+
+  <!-- Suffix icon/button (optional) -->
+  <ion-button *ngIf="suffixIcon" fill="clear" slot="end" class="input-suffix" (click)="onSuffixClick()">
+    <ion-icon [name]="suffixIcon"></ion-icon>
+  </ion-button>
+
+  <ion-note slot="error" class="input-error" *ngIf="required && !value">
+    Este campo es requerido
+  </ion-note>
+</ion-item>

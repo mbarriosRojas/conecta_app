@@ -11,12 +11,14 @@ import { AuthService } from '../../services/auth.service';
 import { PromotionTrackingService } from '../../services/promotion-tracking.service';
 import { Provider, Product, Schedule } from '../../models/provider.model';
 import { environment } from '../../../environments/environment';
+import { mapConfig } from '../../../environments/environment.maps';
 import Swiper from 'swiper';
 import { SwiperOptions } from 'swiper/types';
 import { register } from 'swiper/element/bundle';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { InfiniteScrollCustomEvent } from '@ionic/angular';
 import { Subscription, firstValueFrom } from 'rxjs';
+// single environment import already declared above
 
 @Component({
   selector: 'app-provider-detail',
@@ -35,7 +37,7 @@ export class ProviderDetailPage implements OnInit, AfterViewInit, OnDestroy {
 
   provider: Provider | null = null;
   currentLocation: LocationData | null = null;
-  mapUrl: SafeResourceUrl = '';
+  // mapUrl removed — using Google Maps JS API exclusively
   products: Product[] = [];
   productCategories: string[] = [];
   selectedCategory = 'all';
@@ -161,6 +163,14 @@ export class ProviderDetailPage implements OnInit, AfterViewInit, OnDestroy {
     private sanitizer: DomSanitizer
   ) {}
 
+  // Google Maps integration
+  // Use the shared mapConfig used elsewhere in the app (promotions, map components)
+  googleMapsKey: string = mapConfig.googleMapsApiKey || '';
+  googleMapsAvailable = false;
+  private googleMapsScriptLoaded = false;
+  @ViewChild('providerMap', { static: false }) providerMap!: ElementRef;
+  @ViewChild('providerMapFull', { static: false }) providerMapFull!: ElementRef;
+
   async ngOnInit() {
     // 🔥 Verificar si viene desde una notificación con tab específica
     this.route.queryParams.subscribe(params => {
@@ -182,6 +192,91 @@ export class ProviderDetailPage implements OnInit, AfterViewInit, OnDestroy {
     if (this.activeSection === 'catalog') {
       console.log('📱 Cargando catálogo desde URL...');
       await this.loadProducts(true);
+    }
+  }
+
+  private loadGoogleMapsScript(key: string): Promise<void> {
+    if (this.googleMapsScriptLoaded) return Promise.resolve();
+
+    return new Promise((resolve, reject) => {
+      // If google already available, resolve
+      if ((window as any).google && (window as any).google.maps) {
+        this.googleMapsScriptLoaded = true;
+        resolve();
+        return;
+      }
+
+      const script = document.createElement('script');
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${key}`;
+      script.async = true;
+      script.defer = true;
+      script.onload = () => {
+        this.googleMapsScriptLoaded = true;
+        resolve();
+      };
+      script.onerror = (err) => reject(err);
+      document.head.appendChild(script);
+    });
+  }
+
+  private initGoogleMap(providerLat: number, providerLng: number, userLat?: number, userLng?: number, mapElement?: HTMLElement) {
+    try {
+      const mapEl = mapElement || this.providerMap?.nativeElement;
+      if (!mapEl) return;
+
+      const google = (window as any).google;
+      const center = { lat: providerLat, lng: providerLng };
+      const map = new google.maps.Map(mapEl, {
+        center,
+        zoom: 15,
+        disableDefaultUI: true,
+      });
+
+      // Business marker
+      new google.maps.Marker({
+        position: { lat: providerLat, lng: providerLng },
+        map,
+        title: this.provider?.name || 'Negocio'
+      });
+
+      // If user location available, add marker and draw route using DirectionsService
+      if (userLat !== undefined && userLng !== undefined && userLat !== null && userLng !== null) {
+        new google.maps.Marker({
+          position: { lat: userLat, lng: userLng },
+          map,
+          title: 'Tu ubicación',
+          icon: {
+            path: google.maps.SymbolPath.CIRCLE,
+            scale: 6,
+            fillColor: '#4285F4',
+            fillOpacity: 1,
+            strokeColor: 'white',
+            strokeWeight: 2
+          }
+        });
+
+        const directionsService = new google.maps.DirectionsService();
+        const directionsRenderer = new google.maps.DirectionsRenderer({ suppressMarkers: true });
+        directionsRenderer.setMap(map);
+
+        directionsService.route({
+          origin: { lat: userLat, lng: userLng },
+          destination: { lat: providerLat, lng: providerLng },
+          travelMode: 'DRIVING'
+        }, (result: any, status: any) => {
+          if (status === 'OK') {
+            directionsRenderer.setDirections(result);
+          } else {
+            console.warn('Directions request failed:', status);
+            const bounds = new google.maps.LatLngBounds();
+            if (userLat && userLng) bounds.extend(new google.maps.LatLng(userLat, userLng));
+            bounds.extend(new google.maps.LatLng(providerLat, providerLng));
+            map.fitBounds(bounds);
+          }
+        });
+      }
+    } catch (err) {
+      console.error('Error initializing Google Map:', err);
     }
   }
 
@@ -233,11 +328,11 @@ export class ProviderDetailPage implements OnInit, AfterViewInit, OnDestroy {
         `provider_detail_${providerId}`,
         'provider_detail',
         async () => {
-          return await this.apiService.getProviderById(
+          return await firstValueFrom(this.apiService.getProviderById(
             providerId,
             this.currentLocation?.latitude,
             this.currentLocation?.longitude
-          ).toPromise() || null;
+          )) || null;
         },
         { timeout: 5000 }
       );
@@ -248,7 +343,7 @@ export class ProviderDetailPage implements OnInit, AfterViewInit, OnDestroy {
         this.updateMapUrl();
         
         // Registrar vista del proveedor (en background, no bloqueante)
-        this.apiService.addView(providerId).toPromise().catch(err => 
+        firstValueFrom(this.apiService.addView(providerId)).catch(err => 
           console.log('View registration failed silently:', err)
         );
         
@@ -492,6 +587,25 @@ export class ProviderDetailPage implements OnInit, AfterViewInit, OnDestroy {
     await actionSheet.present();
   }
 
+  contactProvider() {
+    if (!this.provider?.phone_contact && !this.provider?.phone_number) {
+      this.showErrorToast('Número de teléfono no disponible');
+      return;
+    }
+
+    const raw = this.provider.phone_contact || this.provider.phone_number || '';
+    // Normalizar: quitar espacios, paréntesis, guiones y + si existen
+    const phoneNumber = (raw || '').toString().replace(/[^0-9]/g, '');
+    if (!phoneNumber) {
+      this.showErrorToast('Número de teléfono inválido');
+      return;
+    }
+
+    const message = encodeURIComponent(`Hola, me interesa conocer más sobre sus servicios.`);
+    // Abrir WhatsApp web/mobile
+    window.open(`https://wa.me/${phoneNumber}?text=${message}`, '_blank');
+  }
+
   openGallery(index: number = 0) {
     if (!this.provider?.images || this.provider.images.length === 0) {
       this.showErrorToast('No hay imágenes disponibles');
@@ -691,114 +805,50 @@ export class ProviderDetailPage implements OnInit, AfterViewInit, OnDestroy {
     }
 
     // Métodos para el mapa
-    updateMapUrl() {
-      if (this.provider && this.provider.address && this.provider.address.location) {
-        const providerLat = this.provider.address.location.coordinates[1];
-        const providerLng = this.provider.address.location.coordinates[0];
+    // Configura Google Maps y la marca del proveedor + usuario
+    async updateMapUrl() {
+      if (!this.provider || !this.provider.address || !this.provider.address.location) return;
 
-        if (this.currentLocation) {
-          // Si tenemos ubicación del usuario, crear ruta visual estilo Google Maps
-          const userLat = this.currentLocation.latitude;
-          const userLng = this.currentLocation.longitude;
-          
-          // Usar Leaflet con OpenStreetMap para mostrar ruta visual
-          // Crear URL que incluya marcadores y una línea de conexión
-          const mapUrl = this.createMapWithRoute(userLat, userLng, providerLat, providerLng);
-          this.mapUrl = this.sanitizer.bypassSecurityTrustResourceUrl(mapUrl);
-        } else {
-          // Sin ubicación del usuario, mostrar solo el negocio
-          const osmUrl = `https://www.openstreetmap.org/export/embed.html?bbox=${providerLng - 0.01},${providerLat - 0.01},${providerLng + 0.01},${providerLat + 0.01}&layer=mapnik&marker=${providerLat},${providerLng}`;
-          this.mapUrl = this.sanitizer.bypassSecurityTrustResourceUrl(osmUrl);
-        }
-      } else {
-        this.mapUrl = '';
+      const providerLat = this.provider.address.location.coordinates[1];
+      const providerLng = this.provider.address.location.coordinates[0];
+      const userLat = this.currentLocation?.latitude;
+      const userLng = this.currentLocation?.longitude;
+
+      if (!this.googleMapsKey) {
+        console.warn('Google Maps API key not configured (mapConfig.googleMapsApiKey)');
+        this.showErrorToast('Google Maps API key no configurada. Añade la clave en environment.maps.');
+        return;
+      }
+
+      try {
+        await this.loadGoogleMapsScript(this.googleMapsKey);
+        // Esperar un poco a que el DOM refleje el contenedor
+        setTimeout(() => {
+          this.initGoogleMap(providerLat, providerLng, userLat, userLng);
+        }, 250);
+      } catch (err) {
+        console.error('Error cargando Google Maps:', err);
+        this.showErrorToast('Error cargando Google Maps');
       }
     }
 
-    // Crear mapa con ruta visual entre dos puntos
-    private createMapWithRoute(userLat: number, userLng: number, providerLat: number, providerLng: number): string {
-      // Usar Leaflet con OpenStreetMap para crear un mapa con ruta visual
-      const centerLat = (userLat + providerLat) / 2;
-      const centerLng = (userLng + providerLng) / 2;
-      
-      // Calcular zoom apropiado basado en la distancia
-      const distance = this.calculateDistance(userLat, userLng, providerLat, providerLng);
-      let zoom = 10;
-      if (distance < 1) zoom = 15;
-      else if (distance < 5) zoom = 12;
-      else if (distance < 20) zoom = 10;
-      else if (distance < 100) zoom = 8;
-      else zoom = 6;
-      
-      // Crear HTML para el mapa con Leaflet
-      const mapHtml = `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-          <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-          <style>
-            body, html { margin: 0; padding: 0; height: 100%; }
-            #map { height: 100%; width: 100%; }
-          </style>
-        </head>
-        <body>
-          <div id="map"></div>
-          <script>
-            var map = L.map('map').setView([${centerLat}, ${centerLng}], ${zoom});
-            
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-              attribution: '© OpenStreetMap contributors'
-            }).addTo(map);
-            
-            // Marcador del usuario
-            var userIcon = L.divIcon({
-              className: 'user-marker',
-              html: '<div style="background: #4285f4; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 6px rgba(0,0,0,0.3);"></div>',
-              iconSize: [26, 26],
-              iconAnchor: [13, 13]
-            });
-            
-            // Marcador del negocio
-            var businessIcon = L.divIcon({
-              className: 'business-marker',
-              html: '<div style="background: #ea4335; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 6px rgba(0,0,0,0.3);"></div>',
-              iconSize: [26, 26],
-              iconAnchor: [13, 13]
-            });
-            
-            // Agregar marcadores
-            L.marker([${userLat}, ${userLng}], { icon: userIcon }).addTo(map)
-              .bindPopup('Tu ubicación');
-            
-            L.marker([${providerLat}, ${providerLng}], { icon: businessIcon }).addTo(map)
-              .bindPopup('${this.provider?.name || 'Negocio'}');
-            
-            // Crear ruta visual entre los puntos
-            var route = L.polyline([
-              [${userLat}, ${userLng}],
-              [${providerLat}, ${providerLng}]
-            ], {
-              color: '#4285f4',
-              weight: 4,
-              opacity: 0.8,
-              dashArray: '10, 10'
-            }).addTo(map);
-            
-            // Ajustar la vista para incluir ambos marcadores
-            var group = new L.featureGroup([L.marker([${userLat}, ${userLng}]), L.marker([${providerLat}, ${providerLng}])]);
-            map.fitBounds(group.getBounds().pad(0.1));
-          </script>
-        </body>
-        </html>
-      `;
-      
-      // Convertir HTML a data URL
-      return 'data:text/html;charset=utf-8,' + encodeURIComponent(mapHtml);
-    }
+    openDirections() {
+      if (!this.provider || !this.provider.address || !this.provider.address.location) return;
 
-    getMapUrl(): SafeResourceUrl {
-      return this.mapUrl;
+      const providerLat = this.provider.address.location.coordinates[1];
+      const providerLng = this.provider.address.location.coordinates[0];
+
+      let url = '';
+      if (this.currentLocation) {
+        const originLat = this.currentLocation.latitude;
+        const originLng = this.currentLocation.longitude;
+        // Open Google Maps directions in a new tab (mobile apps will handle it)
+        url = `https://www.google.com/maps/dir/?api=1&origin=${originLat},${originLng}&destination=${providerLat},${providerLng}&travelmode=driving`;
+      } else {
+        url = `https://www.google.com/maps?q=${providerLat},${providerLng}`;
+      }
+
+      window.open(url, '_blank');
     }
 
     // Métodos para el modal de producto
@@ -814,7 +864,24 @@ export class ProviderDetailPage implements OnInit, AfterViewInit, OnDestroy {
 
     // Métodos para el modal de mapa
     openFullScreenMap() {
-      this.isMapModalOpen = true;
+        this.isMapModalOpen = true;
+        // Inicializar mapa en modal después de que se abra
+        setTimeout(() => {
+          if (this.provider?.address?.location) {
+            const providerLat = this.provider.address.location.coordinates[1];
+            const providerLng = this.provider.address.location.coordinates[0];
+            const userLat = this.currentLocation?.latitude;
+            const userLng = this.currentLocation?.longitude;
+            try {
+              const el = this.providerMapFull?.nativeElement;
+              if (el) {
+                this.initGoogleMap(providerLat, providerLng, userLat, userLng, el);
+              }
+            } catch (err) {
+              console.error('Error initializing full screen map:', err);
+            }
+          }
+        }, 300);
     }
 
     closeMapModal() {
@@ -1004,5 +1071,93 @@ export class ProviderDetailPage implements OnInit, AfterViewInit, OnDestroy {
       });
       await toast.present();
     }
+  }
+
+  // Método para determinar si el negocio está abierto
+  isOpenNow(): boolean {
+    if (!this.provider?.schedule || this.provider.schedule.length === 0) {
+      return false;
+    }
+
+    const now = new Date();
+    const currentDay = this.getDayNameInSpanish(now.getDay());
+    const currentTime = now.getHours() * 60 + now.getMinutes(); // Convertir a minutos desde medianoche
+
+    // Normalizar nombres de días para comparación (sin acentos, minúsculas)
+    const normalizeDay = (day: string) => {
+      return day.toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '');
+    };
+
+    // Buscar el horario del día actual
+    const todaySchedule = this.provider.schedule.find(
+      schedule => normalizeDay(schedule.day) === normalizeDay(currentDay) && schedule.active
+    );
+
+    if (!todaySchedule) {
+      return false; // No hay horario para hoy o está inactivo
+    }
+
+    // Convertir horas de inicio y fin a minutos
+    const startTime = this.timeToMinutes(todaySchedule.start);
+    const endTime = this.timeToMinutes(todaySchedule.end);
+
+    // Verificar si la hora actual está dentro del rango
+    return currentTime >= startTime && currentTime <= endTime;
+  }
+
+  // Método auxiliar para convertir hora (HH:mm) a minutos desde medianoche
+  private timeToMinutes(time: string): number {
+    const [hours, minutes] = time.split(':').map(Number);
+    return hours * 60 + minutes;
+  }
+
+  // Método auxiliar para obtener el nombre del día en español
+  getDayNameInSpanish(dayIndex: number): string {
+    const days = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+    return days[dayIndex];
+  }
+  // Método para verificar si un horario específico es el de hoy y está abierto
+  isTodayAndOpen(schedule: Schedule): boolean {
+    if (!schedule.active) {
+      return false;
+    }
+
+    const now = new Date();
+    const currentDay = this.getDayNameInSpanish(now.getDay());
+    
+    // Normalizar nombres de días para comparación (sin acentos, minúsculas)
+    const normalizeDay = (day: string) => {
+      return day.toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '');
+    };
+    
+    // Verificar si es el día de hoy
+    if (normalizeDay(schedule.day) !== normalizeDay(currentDay)) {
+      return false;
+    }
+
+    const currentTime = now.getHours() * 60 + now.getMinutes();
+    const startTime = this.timeToMinutes(schedule.start);
+    const endTime = this.timeToMinutes(schedule.end);
+
+    return currentTime >= startTime && currentTime <= endTime;
+  }
+
+  // Método para verificar si un horario es del día actual (sin importar si está abierto)
+  isToday(schedule: Schedule): boolean {
+    const now = new Date();
+    const currentDay = this.getDayNameInSpanish(now.getDay());
+    
+    // Normalizar nombres de días para comparación (sin acentos, minúsculas)
+    const normalizeDay = (day: string) => {
+      return day.toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '');
+    };
+    
+    return normalizeDay(schedule.day) === normalizeDay(currentDay);
   }
 }

@@ -153,17 +153,19 @@
   box-shadow: none; // Sin sombra
   background: transparent; // Sin fondo
   border: 1px solid #e0e0e0; // Borde sutil
+  overflow: hidden;
   
   .expandable-header {
     cursor: pointer;
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: center; /* center title, icon will be absolute */
     padding: 16px;
     background: transparent; // Sin fondo
     border-radius: 12px 12px 0 0;
     transition: all 0.3s ease;
-    border-bottom: 1px solid #e0e0e0; // Borde inferior sutil
+    border-bottom: none; /* remove inner bottom border to rely on outer card border */
+    position: relative;
     
     &:hover {
       background: rgba(42, 132, 115, 0.05); // Hover sutil con color de la plataforma
@@ -176,16 +178,21 @@
       color: var(--ion-color-dark, #2a8473); // Color oscuro de la plataforma
       font-weight: 600;
       font-size: 16px;
-      
+
       ion-icon {
         margin-right: 8px;
         font-size: 18px;
         color: var(--ion-color-success, #2a8473); // Iconos en color de la plataforma
       }
     }
-    
+
+    /* Put expand/collapse chevron at the right */
     .expand-icon {
-      color: var(--ion-color-success, #2a8473); // Iconos de expansión en color de la plataforma
+      position: absolute;
+      right: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--ion-color-success, #2a8473);
       transition: transform 0.3s ease;
       font-size: 18px;
     }
@@ -267,14 +274,17 @@
   justify-content: center;
   margin-right: 16px;
   flex-shrink: 0;
+  border: none;
 }
 
 .item-icon ion-icon {
   font-size: 20px;
   color: #6b7280;
+  background: transparent !important;
+  border: none !important;
 }
 
-// Iconos específicos con colores
+// Iconos específicos con colores (solo para modo claro)
 .item-icon.facebook {
   background: #1877f2;
   color: white;
@@ -293,6 +303,33 @@
 .item-icon.linkedin {
   background: #0077b5;
   color: white;
+}
+
+// 🌙 Modo oscuro - iconos sin fondos
+@media (prefers-color-scheme: dark) {
+  .item-icon {
+    background: transparent !important;
+    border: none !important;
+    border-radius: 0 !important;
+    
+    ion-icon {
+      color: var(--dark-text-primary, #e5e5e5);
+      background: transparent !important;
+      border: none !important;
+    }
+    
+    // Mantener colores de marca solo en iconos de redes sociales si es necesario
+    &.facebook,
+    &.instagram,
+    &.tiktok,
+    &.linkedin {
+      background: transparent !important;
+      
+      ion-icon {
+        color: var(--dark-text-primary, #e5e5e5);
+      }
+    }
+  }
 }
 
 // Contenido del item
@@ -948,5 +985,183 @@ ion-checkbox {
   
   ion-icon {
     margin-right: 8px;
+  }
+}
+
+// 🌙 Dark Mode Support
+@media (prefers-color-scheme: dark) {
+  :root {
+    --app-dark-bg: var(--dark-bg-primary, #121212);
+    --app-dark-surface: var(--dark-surface, #1e1e1e);
+    --app-dark-surface-elevated: var(--dark-surface-elevated, #232323);
+    --app-dark-border: rgba(255,255,255,0.06);
+    --app-dark-muted: #bfbfbf;
+  }
+
+  .whatsapp-container,
+  .products-container,
+  .promotion-stats,
+  .settings-section,
+  .action-buttons {
+    background: var(--app-dark-bg) !important;
+    color: var(--dark-text-primary, #e6e6e6) !important;
+  }
+
+  .stat-card {
+    background: var(--app-dark-surface) !important;
+    border: 1px solid var(--app-dark-border) !important;
+    box-shadow: none !important;
+  }
+
+  .expandable-card {
+    background: transparent !important;
+    border: 1px solid var(--app-dark-border) !important;
+
+    .expandable-header {
+      background: transparent !important;
+      border-bottom: 1px solid var(--app-dark-border) !important;
+      color: var(--dark-text-primary, #e6e6e6) !important;
+    }
+
+    .expandable-content {
+      background: var(--app-dark-surface-elevated) !important;
+      color: var(--dark-text-primary, #e6e6e6) !important;
+      border: none !important;
+      box-shadow: none !important;
+    }
+  }
+
+  /* Make the ion-card itself (expandable-card) show a clear white-ish border in dark mode */
+  ion-card.expandable-card,
+  .expandable-card {
+    border: 1px solid rgba(255,255,255,0.08) !important; /* visible white line */
+    background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)) !important;
+  }
+
+  /* Keep inner content slightly darker so the border is visible */
+  .expandable-card .expandable-content {
+    background: rgba(0,0,0,0.18) !important;
+  }
+
+  .settings-item {
+    border-bottom: 1px solid rgba(255,255,255,0.03) !important;
+    background: transparent !important;
+  }
+
+  .item-label,
+  .section-title,
+  .product-name,
+  .stat-info .stat-value,
+  .stat-info .stat-label,
+  .product-description {
+    color: var(--dark-text-primary, #e6e6e6) !important;
+  }
+
+  /* Header and icons in expandable cards */
+  .expandable-header {
+    ion-card-title {
+      color: var(--dark-text-primary, #e6e6e6) !important;
+      font-weight: 600;
+    }
+
+    ion-icon {
+      color: var(--ion-color-success) !important;
+      opacity: 0.95;
+    }
+
+    .expand-icon {
+      color: var(--app-dark-muted) !important;
+    }
+  }
+
+  .item-icon {
+    background: transparent !important;
+    border: 1px solid rgba(255,255,255,0.02) !important;
+  }
+
+  .item-content ion-input,
+  .item-content ion-textarea,
+  .item-content ion-select,
+  .time-input ion-input,
+  .question-input ion-input,
+  .answer-input ion-textarea {
+    --background: var(--app-dark-surface, #1e1e1e) !important;
+    --border-radius: 8px !important;
+    --padding-start: 12px !important;
+    --padding-end: 12px !important;
+    color: var(--dark-text-primary, #e6e6e6) !important;
+    --placeholder-color: rgba(255,255,255,0.5) !important;
+  }
+
+  .item-content ion-input::part(native),
+  .item-content ion-textarea::part(native),
+  .item-content ion-select::part(native) {
+    background: transparent !important;
+    color: var(--dark-text-primary, #e6e6e6) !important;
+  }
+
+  /* Ion-select visible text and placeholder */
+  .item-content ion-select {
+    --background: var(--app-dark-surface) !important;
+    color: var(--dark-text-primary, #e6e6e6) !important;
+  }
+
+  .item-content ion-select .select-text,
+  .item-content ion-select .select-value,
+  .item-content ion-select .select-placeholder {
+    color: var(--dark-text-primary, #e6e6e6) !important;
+  }
+
+  /* Labels inside stacked ion-items */
+  ion-item ion-label[position="stacked"] {
+    color: var(--app-dark-muted) !important;
+  }
+
+  /* Make chevrons and forward icons visible */
+  ion-icon[slot="end"],
+  ion-icon.expand-icon {
+    color: var(--app-dark-muted) !important;
+    opacity: 0.9;
+  }
+
+  .action-buttons {
+    background: transparent !important;
+    border: 1px solid var(--app-dark-border) !important;
+  }
+
+  .action-buttons ion-button {
+    --background: var(--ion-color-primary) !important;
+    color: white !important;
+  }
+
+  .product-item,
+  .product-photo .no-image,
+  .current-logo {
+    background: transparent !important;
+    border: 1px solid rgba(255,255,255,0.03) !important;
+    color: var(--dark-text-primary, #e6e6e6) !important;
+  }
+
+  .product-photo .no-image {
+    background: rgba(255,255,255,0.02) !important;
+    color: var(--app-dark-muted) !important;
+  }
+
+  .location-map-container,
+  .promotion-stats,
+  .promotion-stat-card {
+    border-color: rgba(255,255,255,0.04) !important;
+    background: var(--app-dark-surface) !important;
+  }
+
+  // Ensure headers and notes are readable
+  ion-note p,
+  .info-banner p {
+    color: var(--dark-text-primary, #e6e6e6) !important;
+  }
+
+  // Small tweaks for better contrast
+  .settings-divider {
+    background: rgba(255,255,255,0.03) !important;
   }
 }

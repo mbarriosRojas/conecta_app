@@ -376,3 +376,40 @@
     transform: translateY(0);
   }
 }
+
+// 🌙 Dark Mode Support
+@media (prefers-color-scheme: dark) {
+  .profile-container {
+    --background: var(--ion-background-color, #1a1a1a);
+  }
+
+  .data-item {
+    --background: var(--ion-color-step-50, #1e1e1e);
+    border-color: var(--ion-color-step-200, #414141);
+
+    .label {
+      color: var(--ion-color-medium, #989aa2);
+    }
+
+    .value {
+      color: var(--ion-text-color, #ffffff);
+    }
+  }
+
+  .stats-container {
+    .stat-item {
+      background: var(--ion-color-step-50, #1e1e1e);
+      border-left-color: var(--ion-color-primary);
+
+      .stat-info {
+        .stat-label {
+          color: var(--ion-color-medium, #989aa2);
+        }
+
+        .stat-value {
+          color: var(--ion-text-color, #ffffff);
+        }
+      }
+    }
+  }
+}

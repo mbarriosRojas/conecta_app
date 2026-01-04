@@ -18,15 +18,16 @@ export class CacheService {
   // TTL por defecto: 5 minutos
   private defaultTTL = 5 * 60 * 1000;
   
-  // Configuraciones de TTL por tipo de dato
+  // 🔥 OPTIMIZADO: Configuraciones de TTL reducidas para datos dinámicos
+  // Reducidos para que los cambios se reflejen inmediatamente
   private cacheTTLConfig = {
-    'providers': 2 * 60 * 1000,      // 2 minutos para providers (datos dinámicos)
-    'categories': 30 * 60 * 1000,    // 30 minutos para categorías (casi estático)
-    'cities': 30 * 60 * 1000,        // 30 minutos para ciudades (casi estático)
-    'banners': 10 * 60 * 1000,       // 10 minutos para banners
-    'promotions': 3 * 60 * 1000,     // 3 minutos para promociones
-    'provider_detail': 5 * 60 * 1000, // 5 minutos para detalle de provider
-    'user_services': 1 * 60 * 1000   // 1 minuto para servicios del usuario (muy dinámico)
+    'providers': 30 * 1000,          // 30 segundos para providers (datos muy dinámicos)
+    'categories': 2 * 60 * 1000,     // 2 minutos para categorías (antes 10 minutos)
+    'cities': 30 * 60 * 1000,        // 30 minutos para ciudades (casi estático, se mantiene)
+    'banners': 5 * 60 * 1000,        // 5 minutos para banners (antes 10 minutos)
+    'promotions': 30 * 1000,         // 30 segundos para promociones (datos muy dinámicos)
+    'provider_detail': 1 * 60 * 1000, // 1 minuto para detalle de provider (antes 5 minutos)
+    'user_services': 10 * 1000       // 10 segundos para servicios del usuario (muy dinámico)
   };
 
   constructor(private storageService: StorageService) {
@@ -317,6 +318,44 @@ export class CacheService {
     } catch (error) {
       console.error(`Error invalidating cache by pattern ${pattern}:`, error);
     }
+  }
+
+  /**
+   * 🔥 Helper: Invalidar todos los caches relacionados con providers
+   * Útil cuando se crea/actualiza/elimina un provider
+   */
+  async invalidateProviderCaches(): Promise<void> {
+    await Promise.all([
+      this.invalidateCacheByPattern('providers_page'),
+      this.invalidateCacheByPattern('providers'),
+      this.invalidateCache('user_services'),
+      this.invalidateCacheByPattern('provider_detail')
+    ]);
+    console.log('🗑️ All provider-related caches invalidated');
+  }
+
+  /**
+   * 🔥 Helper: Invalidar todos los caches relacionados con categories
+   * Útil cuando se crea/actualiza/elimina una categoría
+   */
+  async invalidateCategoryCaches(): Promise<void> {
+    await Promise.all([
+      this.invalidateCache('categories'),
+      // También invalidar providers porque pueden verse afectados
+      this.invalidateCacheByPattern('providers_page')
+    ]);
+    console.log('🗑️ All category-related caches invalidated');
+  }
+
+  /**
+   * 🔥 Helper: Invalidar todos los caches relacionados con promociones
+   */
+  async invalidatePromotionCaches(): Promise<void> {
+    await Promise.all([
+      this.invalidateCacheByPattern('promotions'),
+      this.invalidateCacheByPattern('providers_page')
+    ]);
+    console.log('🗑️ All promotion-related caches invalidated');
   }
 
   /**

@@ -77,7 +77,9 @@ export class HomePage implements OnInit, AfterViewInit {
   // Estados para manejo de resultados
   showNoResults = false;
   isExpandingRadius = false;
+  showExpandOption = false; // 🔥 Nuevo: Mostrar opción discreta para ampliar rango (estilo Tinder)
   selectedRadius = environment.defaultRadius;
+  maxRadius = 100000; // 100km máximo
   
   // Filtros temporales (en el modal, no aplicados aún)
   tempSelectedCategory: Category | null = null;
@@ -228,6 +230,13 @@ export class HomePage implements OnInit, AfterViewInit {
       
       // Cargar datos iniciales
       await this.loadInitialData();
+
+      // Si venimos con categorías desde storage, forzar una actualización en background
+      if (this.categories && this.categories.length > 0) {
+        console.log('Home - Triggering background refresh for categories');
+        // No await: queremos actualizar en background sin bloquear la UI
+        this.loadCategories(true, true).catch(err => console.error('Background categories refresh failed:', err));
+      }
       
       // Inicializar geofencing (en segundo plano, no bloquea la UI)
       this.initializeGeofencing();
@@ -384,10 +393,33 @@ export class HomePage implements OnInit, AfterViewInit {
     }
   }
 
-  async loadCategories() {
-    console.log('Home - loadCategories started');
-    
+  async loadCategories(forceRefresh: boolean = false, background: boolean = false) {
+    console.log('Home - loadCategories started', { forceRefresh, background });
+
+    // Firma: loadCategories(forceRefresh = false, background = false)
+    // Cuando background=true y forceRefresh=true haremos la actualización en segundo plano
     try {
+      // Si se solicita background + forceRefresh, ejecutar pero no bloquear
+      if (forceRefresh === true && background === true) {
+        this.cacheService.cacheFirst(
+          'categories',
+          'categories',
+          async () => {
+            const categories = await firstValueFrom(this.apiService.getCategories());
+            await this.storageService.saveCategories(categories);
+            return categories;
+          },
+          { forceRefresh: true }
+        ).then(fresh => {
+          this.categories = fresh;
+          console.log('Home - Background categories refreshed:', this.categories.length);
+          setTimeout(() => this.initializeSwiper(), 100);
+        }).catch(err => {
+          console.error('Home - Background categories refresh error:', err);
+        });
+        return;
+      }
+
       // Usar estrategia Cache-First: muestra cache inmediatamente y actualiza en background
       this.categories = await this.cacheService.cacheFirst(
         'categories',
@@ -520,6 +552,11 @@ export class HomePage implements OnInit, AfterViewInit {
       // Usar el radio especificado o el radio actual
       const searchRadius = radius || this.currentRadius;
       
+      // 🔥 Actualizar currentRadius cuando se expande
+      if (radius) {
+        this.currentRadius = radius;
+      }
+      
       console.log('Home - Loading providers with filters:', currentFilters, 'radius:', searchRadius);
       console.log('Home - About to request page:', pageToRequest, '(reset:', reset, ', currentPage:', this.currentPage, ')');
       
@@ -531,7 +568,7 @@ export class HomePage implements OnInit, AfterViewInit {
         async () => {
           return await firstValueFrom(this.apiService.getProviders(currentFilters, searchRadius));
         },
-        { timeout: 5000 }
+        { timeout: reset ? 10000 : 5000 }
       );
       
       console.log('Home - Received response:', response);
@@ -623,6 +660,28 @@ export class HomePage implements OnInit, AfterViewInit {
         // Actualizar información de paginación
         this.hasMoreData = response.pagination?.hasNextPage || false;
         
+        // 🔥 ESTILO TINDER: Mostrar opción para ampliar rango si no hay más datos y no estamos en el máximo
+        // Se muestra cuando: no hay más páginas Y no estamos en el radio máximo
+        if (!this.hasMoreData && this.currentRadius < this.maxRadius) {
+          this.showExpandOption = true;
+          this.showNoResults = false;
+          console.log(`💡 [EXPAND OPTION] Mostrando opción para ampliar rango:`, {
+            hasMoreData: this.hasMoreData,
+            currentRadius: `${this.currentRadius/1000}km`,
+            maxRadius: `${this.maxRadius/1000}km`,
+            providersCount: this.providers.length,
+            reset: reset
+          });
+        } else {
+          this.showExpandOption = false;
+          console.log(`❌ [NO EXPAND OPTION] No se muestra porque:`, {
+            hasMoreData: this.hasMoreData,
+            currentRadius: `${this.currentRadius/1000}km`,
+            maxRadius: `${this.maxRadius/1000}km`,
+            reset: reset
+          });
+        }
+        
         // Actualizar currentPage basado en la página que se solicitó exitosamente
         if (reset) {
           this.currentPage = 1; // Asegurar que esté en página 1 después de reset
@@ -644,11 +703,31 @@ export class HomePage implements OnInit, AfterViewInit {
         
         if (this.providers.length === 0) {
           this.hasMoreData = false;
-          this.showNoResults = true;
-          console.log('❌ [NO RESULTS] No hay providers ni productos');
+          
+          // 🔥 ESTILO TINDER: Mostrar opción para ampliar rango si no estamos en el máximo
+          if (this.currentRadius < this.maxRadius) {
+            this.showExpandOption = true;
+            this.showNoResults = false;
+            console.log(`💡 [EXPAND OPTION] No hay resultados, mostrando opción para ampliar rango de ${this.currentRadius/1000}km`);
+          } else {
+            // Ya estamos en el máximo
+            this.showNoResults = true;
+            this.showExpandOption = false;
+            console.log('❌ [NO RESULTS] No hay providers ni productos (máximo alcanzado)');
+          }
         } else {
-          this.hasMoreData = false; // No hay más providers, solo productos
+          // Hay productos pero no más providers
+          this.hasMoreData = false;
           this.showNoResults = false;
+          
+          // 🔥 ESTILO TINDER: Mostrar opción para ampliar rango si no estamos en el máximo
+          if (this.currentRadius < this.maxRadius) {
+            this.showExpandOption = true;
+            console.log(`💡 [EXPAND OPTION] Solo productos, mostrando opción para ampliar rango de ${this.currentRadius/1000}km`);
+          } else {
+            this.showExpandOption = false;
+          }
+          
           console.log('✅ [PRODUCTS ONLY] Mostrando solo productos');
         }
       }
@@ -667,7 +746,17 @@ export class HomePage implements OnInit, AfterViewInit {
       // No resetear isLoadingMore aquí, se maneja en loadMore
       this.isRefreshing = false;
       this.isExpandingRadius = false;
+      // 🔥 NO resetear showExpandOption aquí - se establece en la lógica de arriba
     }
+  }
+
+  // 🔥 Helper para obtener el siguiente radio sugerido (estilo Tinder)
+  getSuggestedRadius(currentRadius: number): number {
+    if (currentRadius < 40000) return 40000;      // 20km -> 40km
+    if (currentRadius < 60000) return 60000;      // 40km -> 60km  
+    if (currentRadius < 80000) return 80000;      // 60km -> 80km
+    if (currentRadius < 100000) return 100000;    // 80km -> 100km
+    return this.maxRadius; // Ya está en el máximo
   }
 
   private searchTimeout: any;
@@ -728,8 +817,8 @@ export class HomePage implements OnInit, AfterViewInit {
   async refresh(event: any) {
     this.isRefreshing = true;
     
-    // Invalidar cache de providers para forzar carga fresca
-    await this.cacheService.invalidateCacheByPattern('providers_page');
+    // 🔥 OPTIMIZADO: Invalidar cache de providers para forzar carga fresca
+    await this.cacheService.invalidateProviderCaches();
     
     await this.loadProviders(true);
     event.target.complete();
@@ -1224,17 +1313,16 @@ export class HomePage implements OnInit, AfterViewInit {
 
 
   // Método para expandir el radio de búsqueda (tipo Tinder)
-  async onExpandRadius(newRadius: number) {
+  async onExpandRadius(newRadius?: number): Promise<void> {
+    const suggestedRadius = newRadius || this.getSuggestedRadius(this.currentRadius);
     this.isExpandingRadius = true;
     this.showNoResults = false;
+    this.showExpandOption = false;
     
-    console.log(`Expandiendo radio de búsqueda a ${newRadius}m`);
-    
-    // Mostrar toast informativo
-    this.showSuccessToast(`Buscando en un radio de ${(newRadius / 1000).toFixed(0)}km...`);
+    console.log(`🔄 Expandiendo radio de búsqueda de ${this.currentRadius/1000}km a ${suggestedRadius/1000}km`);
     
     // Cargar providers con el nuevo radio
-    await this.loadProviders(true, newRadius);
+    await this.loadProviders(true, suggestedRadius);
   }
 
   // Método para reintentar la búsqueda

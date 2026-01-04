@@ -253,3 +253,40 @@ ion-note p {
     padding-top: 12px;
   }
 }
+
+// 🌙 Dark Mode Support
+@media (prefers-color-scheme: dark) {
+  .expandable-card {
+    .expandable-header {
+      background: linear-gradient(135deg, var(--ion-color-step-100, #2a2a2a) 0%, var(--ion-color-step-150, #363636) 100%);
+      
+      &:hover {
+        background: linear-gradient(135deg, var(--ion-color-step-150, #363636) 0%, var(--ion-color-step-200, #414141) 100%);
+      }
+    }
+    
+    .expandable-content {
+      background: var(--ion-color-step-50, #1e1e1e);
+    }
+  }
+
+  .image-upload-section {
+    .upload-area {
+      border-color: var(--ion-color-step-200, #414141);
+      background: var(--ion-color-step-100, #2a2a2a);
+      
+      &:hover {
+        border-color: var(--ion-color-primary);
+        background: var(--ion-color-step-150, #363636);
+      }
+      
+      ion-icon, p {
+        color: var(--ion-color-medium, #989aa2);
+      }
+    }
+  }
+
+  .expandable-content {
+    background: var(--ion-color-step-50, #1e1e1e) !important;
+  }
+}

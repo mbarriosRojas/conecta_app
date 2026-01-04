@@ -5,8 +5,10 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { trigger, transition, style, animate } from '@angular/animations';
 import { GoogleAuthService } from '../../services/google-auth.service';
+import { firstValueFrom } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
 import { FirebaseAuthService } from '../../services/firebase-auth.service';
+import { SharedInputComponent } from '../../components/shared-input/shared-input.component';
 
 interface FormData {
   name?: string;
@@ -22,7 +24,7 @@ interface FormData {
   templateUrl: './login.page.html',
   styleUrls: ['./login.page.scss'],
   standalone: true,
-  imports: [CommonModule, FormsModule, IonicModule],
+  imports: [CommonModule, FormsModule, IonicModule, SharedInputComponent],
   animations: [
     trigger('slideIn', [
       transition(':enter', [
@@ -189,11 +191,11 @@ export class LoginPage implements OnInit {
     console.log('🔐 Realizando login...');
     
     try {
-      const response = await this.authService.login({
+      const response = await firstValueFrom(this.authService.login({
         email: this.formData.email,
         password: this.formData.password,
         platform: 'app'
-      }).toPromise();
+      }));
       
       console.log('✅ Login exitoso:', response);
       
@@ -241,13 +243,13 @@ export class LoginPage implements OnInit {
         throw new Error('El número de teléfono debe tener al menos 10 caracteres');
       }
       
-      const response = await this.authService.register({
+      const response = await firstValueFrom(this.authService.register({
         name: this.formData.name.trim(),
         lastname: this.formData.lastname.trim(),
         email: this.formData.email,
         password: this.formData.password,
         phone: phone || undefined // Enviar undefined si está vacío
-      }).toPromise();
+      }));
       
       console.log('✅ Registro exitoso:', response);
       
@@ -294,6 +296,42 @@ export class LoginPage implements OnInit {
       
       // Autenticación con Firebase + Backend
       const result: any = await this.googleAuthService.signInWithGoogle();
+      // Manejar caso de entorno de prueba (localhost en móvil)
+      if (result && result.testEnvironmentDetected) {
+        await loading.dismiss();
+        this.isLoading = false;
+        const alert = await this.alertController.create({
+          header: 'Prueba en dispositivo detectada',
+          subHeader: 'Google Sign-In no funciona con redirect a localhost en el navegador del dispositivo',
+          message: `Estás probando desde localhost o con live-reload en un dispositivo móvil. Opciones:
+• Construir la app nativa y ejecutar en dispositivo (recomendado). Asegúrate de añadir GoogleService-Info.plist / google-services.json y registrar los SHA en Firebase.
+• Si quieres seguir con live-reload, abre la app usando la IP de tu equipo (ej: http://192.168.x.y:8100) en lugar de localhost.
+Consulta: Docs/CONFIGURAR-GOOGLE-LOGIN-PASOS.md`,
+          buttons: ['Entendido']
+        });
+        await alert.present();
+        return;
+      }
+
+      // Manejar caso especial iOS nativo que requiere configuración específica
+      if (result && result.iosRequiresNativeSetup) {
+        await loading.dismiss();
+        this.isLoading = false;
+        const alert = await this.alertController.create({
+          header: 'iOS: configuración requerida',
+          subHeader: 'Google Sign-In en iOS requiere configuración nativa',
+          message: `Para que Google Sign-In funcione en iOS debes:
+• Agregar GoogleService-Info.plist al proyecto iOS
+• Añadir el URL type con el REVERSED_CLIENT_ID en Info.plist
+• Registrar el paquete y SHA-1 (para Android) y el Bundle ID en Firebase
+• Considerar usar un plugin nativo (ej. capacitor-community/google-sign-in) para iOS
+
+Si quieres, puedo documentarte los pasos o aplicar los cambios básicos en el proyecto iOS.`,
+          buttons: ['OK']
+        });
+        await alert.present();
+        return;
+      }
       
       console.log('🔥 Resultado de Google Auth:', result);
       

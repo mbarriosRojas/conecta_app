@@ -1,5 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { firstValueFrom } from 'rxjs';
+import { GoogleAuthService } from './google-auth.service';
 import { BehaviorSubject, Observable, tap } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { StorageService } from './storage.service';
@@ -68,6 +70,8 @@ export class AuthService {
     private storageService: StorageService,
     private pushNotificationService: PushNotificationService,
     private locationService: LocationService
+    ,
+    private googleAuthService: GoogleAuthService
   ) {
     this.initializationPromise = this.initializeAuth();
   }
@@ -131,6 +135,15 @@ export class AuthService {
   }
 
   async logout(): Promise<void> {
+    // Intentar cerrar sesión en Firebase/Google también si está disponible
+    try {
+      if (this.googleAuthService) {
+        await this.googleAuthService.signOut();
+      }
+    } catch (error) {
+      console.warn('AuthService.logout: error closing firebase session', error);
+    }
+
     await this.storageService.remove('auth_token');
     await this.storageService.remove('user_data');
     this.currentUserSubject.next(null);
@@ -342,9 +355,9 @@ export class AuthService {
 
   // Método para cambiar contraseña
   async updatePassword(currentPassword: string, newPassword: string): Promise<any> {
-    return await this.http.post<any>(`${this.baseUrl}/api/users/changePasswordUser/user/new`, {
+    return await firstValueFrom(this.http.post<any>(`${this.baseUrl}/api/users/changePasswordUser/user/new`, {
       lastpassword: currentPassword,
       newpassword: newPassword
-    }).toPromise();
+    }));
   }
 }

@@ -4,6 +4,8 @@ import { Router } from '@angular/router';
 import { LoadingController, ToastController, AlertController, ModalController } from '@ionic/angular';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { ChangePasswordModalComponent } from '../../components/change-password-modal/change-password-modal.component';
+import { SubscriptionService, UserSubscription, Plan } from '../../services/subscription.service';
+import { NotificationSettingsService, NotificationSettings } from '../../services/notification-settings.service';
 
 @Component({
   selector: 'app-profile',
@@ -27,13 +29,22 @@ export class ProfilePage implements OnInit {
     state: ''
   };
 
+  // 💳 Datos de suscripción y planes
+  currentSubscription: UserSubscription | null = null;
+  availablePlans: Plan[] = [];
+  
+  // 🔔 Configuración de notificaciones
+  notificationSettings: NotificationSettings | null = null;
+
   constructor(
     private authService: AuthService,
     private router: Router,
     private loadingController: LoadingController,
     private toastController: ToastController,
     private alertController: AlertController,
-    private modalController: ModalController
+    private modalController: ModalController,
+    private subscriptionService: SubscriptionService,
+    private notificationSettingsService: NotificationSettingsService
   ) {}
 
   ngOnInit() {
@@ -82,6 +93,12 @@ export class ProfilePage implements OnInit {
             this.showErrorToast('Error cargando datos del perfil');
           }
         });
+        
+        // Cargar suscripción y planes
+        this.loadSubscription();
+        
+        // Cargar preferencias de notificaciones
+        this.loadNotificationSettings();
       } else {
         // Si no hay usuario, redirigir al login
         this.router.navigate(['/login'], { replaceUrl: true });
@@ -426,5 +443,310 @@ export class ProfilePage implements OnInit {
       position: 'top'
     });
     await toast.present();
+  }
+
+  // 💳 MÉTODOS DE SUSCRIPCIÓN Y PLANES
+
+  async loadSubscription() {
+    try {
+      console.log('🔄 Cargando suscripción...');
+      this.currentSubscription = await this.subscriptionService.getCurrentSubscription();
+      this.availablePlans = await this.subscriptionService.getPlans();
+      console.log('✅ Suscripción cargada:', this.currentSubscription);
+      console.log('✅ Planes disponibles:', this.availablePlans);
+      
+      // Si no hay suscripción, intentar crear una por defecto
+      if (!this.currentSubscription) {
+        console.log('⚠️ No hay suscripción, se creará una por defecto al acceder al endpoint');
+      }
+    } catch (error) {
+      console.error('❌ Error cargando suscripción:', error);
+      // Mostrar error al usuario
+      this.showErrorToast('Error cargando información del plan');
+    }
+  }
+
+  async openChangePlanModal() {
+    if (!this.availablePlans.length) {
+      this.showErrorToast('No hay planes disponibles');
+      return;
+    }
+
+    const alert = await this.alertController.create({
+      header: 'Cambiar Plan',
+      message: 'Selecciona el plan que deseas activar:',
+      inputs: this.availablePlans.map(plan => ({
+        type: 'radio',
+        label: `${plan.name} - ${plan.price === 0 ? 'Gratis' : '$' + plan.price + '/' + plan.currency}`,
+        value: plan.code,
+        checked: this.currentSubscription?.planCode === plan.code,
+        handler: () => {
+          console.log('Plan seleccionado:', plan.code);
+        }
+      })),
+      buttons: [
+        {
+          text: 'Cancelar',
+          role: 'cancel'
+        },
+        {
+          text: 'Seleccionar',
+          handler: async (selectedPlanCode) => {
+            if (selectedPlanCode) {
+              await this.selectPlan(selectedPlanCode);
+            }
+          }
+        }
+      ]
+    });
+
+    await alert.present();
+  }
+
+  async selectPlan(planCode: string) {
+    const selectedPlan = this.availablePlans.find(p => p.code === planCode);
+    if (!selectedPlan) {
+      this.showErrorToast('Plan no encontrado');
+      return;
+    }
+
+    // Si el plan es gratis, activar directamente
+    if (selectedPlan.price === 0) {
+      await this.purchasePlan(planCode, 'free');
+      return;
+    }
+
+    // Si es un plan de pago, pedir información de pago
+    const alert = await this.alertController.create({
+      header: 'Información de Pago',
+      message: `Plan: ${selectedPlan.name} - $${selectedPlan.price} ${selectedPlan.currency}/mes`,
+      inputs: [
+        {
+          name: 'paymentMethod',
+          type: 'text',
+          placeholder: 'Método de pago (ej: tarjeta, transferencia)',
+          attributes: {
+            required: true
+          }
+        },
+        {
+          name: 'transactionId',
+          type: 'text',
+          placeholder: 'ID de transacción (opcional)',
+          attributes: {
+            required: false
+          }
+        }
+      ],
+      buttons: [
+        {
+          text: 'Cancelar',
+          role: 'cancel'
+        },
+        {
+          text: 'Confirmar',
+          handler: async (data): Promise<boolean> => {
+            if (!data.paymentMethod) {
+              this.showErrorToast('El método de pago es requerido');
+              return false;
+            }
+            
+            try {
+              await this.purchasePlan(planCode, data.paymentMethod, data.transactionId);
+              return true;
+            } catch (error) {
+              console.error('Error purchasing plan:', error);
+              return false;
+            }
+          }
+        }
+      ]
+    });
+
+    await alert.present();
+  }
+
+  async purchasePlan(planCode: string, paymentMethod: string, transactionId?: string) {
+    const loading = await this.loadingController.create({
+      message: 'Procesando plan...',
+      spinner: 'crescent'
+    });
+    await loading.present();
+
+    try {
+      const result = await this.subscriptionService.purchasePlan(planCode, paymentMethod, transactionId);
+      await loading.dismiss();
+      
+      this.showSuccessToast(`Plan ${result.subscription.planID.name} activado exitosamente`);
+      await this.loadSubscription(); // Recargar datos
+      
+    } catch (error: any) {
+      await loading.dismiss();
+      console.error('Error comprando plan:', error);
+      
+      let errorMessage = 'Error al procesar el plan';
+      if (error.error?.message) {
+        errorMessage = error.error.message;
+      }
+      
+      this.showErrorToast(errorMessage);
+    }
+  }
+
+  async reportPayment() {
+    if (!this.currentSubscription) {
+      this.showErrorToast('No hay suscripción activa');
+      return;
+    }
+
+    const alert = await this.alertController.create({
+      header: 'Reportar Pago',
+      message: 'Ingresa la información de tu pago:',
+      inputs: [
+        {
+          name: 'transactionId',
+          type: 'text',
+          placeholder: 'ID de transacción',
+          attributes: {
+            required: true
+          }
+        },
+        {
+          name: 'paymentMethod',
+          type: 'text',
+          placeholder: 'Método de pago',
+          value: 'transferencia',
+          attributes: {
+            required: true
+          }
+        },
+        {
+          name: 'amount',
+          type: 'number',
+          placeholder: 'Monto pagado',
+          attributes: {
+            required: true,
+            min: 0
+          }
+        }
+      ],
+      buttons: [
+        {
+          text: 'Cancelar',
+          role: 'cancel'
+        },
+        {
+          text: 'Reportar',
+          handler: async (data): Promise<boolean> => {
+            if (!data.transactionId || !data.paymentMethod || !data.amount) {
+              this.showErrorToast('Por favor completa todos los campos');
+              return false;
+            }
+
+            try {
+              await this.submitPaymentReport(
+                data.transactionId,
+                data.paymentMethod,
+                parseFloat(data.amount)
+              );
+              return true;
+            } catch (error) {
+              console.error('Error reporting payment:', error);
+              return false;
+            }
+          }
+        }
+      ]
+    });
+
+    await alert.present();
+  }
+
+  async submitPaymentReport(transactionId: string, paymentMethod: string, amount: number) {
+    if (!this.currentSubscription) return;
+
+    const loading = await this.loadingController.create({
+      message: 'Reportando pago...',
+      spinner: 'crescent'
+    });
+    await loading.present();
+
+    try {
+      // Intentar comprar el plan actual con la información de pago
+      await this.subscriptionService.purchasePlan(
+        this.currentSubscription.planCode,
+        paymentMethod,
+        transactionId
+      );
+      
+      await loading.dismiss();
+      this.showSuccessToast('Pago reportado exitosamente. Se verificará pronto.');
+      await this.loadSubscription();
+      
+    } catch (error: any) {
+      await loading.dismiss();
+      console.error('Error reportando pago:', error);
+      
+      let errorMessage = 'Error al reportar el pago';
+      if (error.error?.message) {
+        errorMessage = error.error.message;
+      }
+      
+      this.showErrorToast(errorMessage);
+    }
+  }
+
+  getLimitDisplay(limit: number): string {
+    return limit === -1 ? 'Ilimitado' : limit.toString();
+  }
+
+  getRemainingLimit(resourceType: 'services' | 'promotions' | 'products', serviceID?: string): number {
+    if (!this.currentSubscription) return 0;
+    return this.subscriptionService.getRemainingLimit(this.currentSubscription, resourceType, serviceID);
+  }
+
+  hasLimitAvailable(resourceType: 'services' | 'promotions' | 'products', serviceID?: string): boolean {
+    if (!this.currentSubscription) return false;
+    return this.subscriptionService.hasLimitAvailable(this.currentSubscription, resourceType, serviceID);
+  }
+
+  // 🔔 MÉTODOS DE NOTIFICACIONES
+
+  async loadNotificationSettings() {
+    try {
+      this.notificationSettings = await this.notificationSettingsService.getSettings();
+      console.log('✅ Preferencias de notificaciones cargadas:', this.notificationSettings);
+    } catch (error) {
+      console.error('Error cargando preferencias de notificaciones:', error);
+    }
+  }
+
+  async toggleNotifications(event: any) {
+    if (!this.notificationSettings) return;
+    
+    // Obtener el nuevo valor del evento del toggle
+    const newValue = event.detail.checked;
+    const oldValue = this.notificationSettings.notificationsEnabled;
+    
+    console.log('🔔 Cambiando notificaciones de', oldValue, 'a:', newValue);
+    
+    // Actualizar localmente primero para feedback inmediato
+    this.notificationSettings.notificationsEnabled = newValue;
+    
+    try {
+      // Llamar al servicio para actualizar en backend
+      const updated = await this.notificationSettingsService.toggleNotifications(newValue);
+      
+      // Actualizar con la respuesta del servidor
+      this.notificationSettings = updated;
+      
+      console.log('✅ Notificaciones actualizadas:', updated);
+      this.showSuccessToast(newValue ? 'Notificaciones activadas' : 'Notificaciones desactivadas');
+    } catch (error) {
+      console.error('❌ Error actualizando notificaciones:', error);
+      // Revertir cambio local si falla
+      this.notificationSettings.notificationsEnabled = oldValue;
+      this.showErrorToast('Error actualizando preferencias');
+    }
   }
 }

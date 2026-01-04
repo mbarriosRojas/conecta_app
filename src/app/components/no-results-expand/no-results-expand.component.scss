@@ -1,66 +1,55 @@
+// 🔥 ESTILO TINDER: Diseño más discreto y minimalista
 .no-results-card {
-  margin: 16px;
-  border-radius: 16px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  margin: 0;
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
+  border: none;
 }
 
+// 🔥 ESTILO TINDER: Contenido más discreto
 .no-results-content {
   text-align: center;
-  padding: 20px 0;
+  padding: 60px 24px;
+  background: transparent;
 }
 
 .icon-container {
-  margin-bottom: 20px;
+  margin-bottom: 16px;
   
   ion-icon {
-    font-size: 64px;
-    opacity: 0.6;
+    font-size: 48px;
+    opacity: 0.4;
+    color: var(--ion-color-medium);
   }
 }
 
 .message-container {
-  margin-bottom: 24px;
+  margin-bottom: 16px;
   
   h3 {
     color: var(--ion-color-dark);
-    font-size: 20px;
-    font-weight: 600;
+    font-size: 18px;
+    font-weight: 500;
     margin: 0 0 8px 0;
   }
   
   p {
     color: var(--ion-color-medium);
-    font-size: 16px;
-    line-height: 1.4;
+    font-size: 14px;
+    line-height: 1.5;
     margin: 0;
     
     strong {
-      color: var(--ion-color-primary);
+      color: var(--ion-color-dark);
       font-weight: 600;
     }
   }
 }
 
+// 🔥 ESTILO TINDER: Opciones más discretas (no se muestran, solo cuando se alcanza el máximo)
 .options-container {
-  margin-bottom: 20px;
-  
-  .suggestion-text {
-    color: var(--ion-color-dark);
-    font-size: 14px;
-    margin: 0 0 16px 0;
-    font-weight: 500;
-  }
-  
-  .expand-button {
-    margin: 0;
-    height: 48px;
-    font-weight: 600;
-    --border-radius: 24px;
-    
-    ion-icon {
-      margin-right: 8px;
-    }
-  }
+  display: none; // Ocultar opciones de expansión manual
 }
 
 .max-reached-container {

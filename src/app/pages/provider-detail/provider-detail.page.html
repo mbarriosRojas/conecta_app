@@ -90,51 +90,39 @@
   <!-- Sección de Información -->
   <div class="section-content" *ngIf="activeSection === 'info'">
     
-    <!-- Información de contacto -->
-    <ion-card class="contact-card">
-      <ion-card-header>
-        <ion-card-title>
-          <ion-icon name="call-outline" color="primary"></ion-icon>
-          Contacto
-        </ion-card-title>
-      </ion-card-header>
-      <ion-card-content>
-        <div class="contact-item" *ngIf="provider?.phone_contact || provider?.phone_number">
-          <ion-button 
-            expand="block" 
-            fill="outline" 
-            color="primary"
-            (click)="callProvider()">
-            <ion-icon name="call" slot="start"></ion-icon>
-            {{ provider?.phone_contact || provider?.phone_number }}
-          </ion-button>
-        </div>
-        
-        <div class="contact-item" *ngIf="provider?.phone_contact || provider?.phone_number">
-          <ion-button 
-            expand="block" 
-            fill="solid" 
-            color="success"
-            (click)="callProvider()">
-            <ion-icon name="logo-whatsapp" slot="start"></ion-icon>
-            WhatsApp
-          </ion-button>
-        </div>
-      </ion-card-content>
-    </ion-card>
 
+ <div class="contact-item" *ngIf="provider?.phone_contact || provider?.phone_number">
+          <ion-button
+            expand="block"
+            fill="solid"
+            color="success"
+            (click)="contactProvider()">
+            Contacto
+          </ion-button>
+        </div>
     <!-- Horarios de atención -->
     <ion-card class="schedule-card" *ngIf="provider?.schedule">
       <ion-card-header>
         <ion-card-title>
           <ion-icon name="time-outline" color="primary"></ion-icon>
           Horarios de Atención
+          <span class="status-badge" [class.open]="isOpenNow()" [class.closed]="!isOpenNow()">
+            {{ isOpenNow() ? 'Abierto' : 'Cerrado' }}
+          </span>
         </ion-card-title>
-      </ion-card-header>
+      </ion-card-header> 
       <ion-card-content>
-        <div class="schedule-item" *ngFor="let schedule of provider?.schedule">
+        <div class="schedule-item" 
+             *ngFor="let schedule of provider?.schedule"
+             [class.today]="isToday(schedule)"
+             [class.open-now]="isTodayAndOpen(schedule)">
           <span class="day">{{ schedule.day }}</span>
           <span class="hours">{{ schedule.start }} - {{ schedule.end }}</span>
+          <span class="status-indicator" 
+                *ngIf="isTodayAndOpen(schedule)"
+                [class.open]="isTodayAndOpen(schedule)">
+            ● Abierto ahora
+          </span>
         </div>
       </ion-card-content>
     </ion-card>
@@ -154,19 +142,11 @@
           <p>{{ provider?.address?.country }}</p>
         </div>
         
-        <!-- Mapa con ruta -->
-        <div class="map-container" *ngIf="mapUrl">
+        <!-- Mapa con Google Maps (siempre) -->
+        <div class="map-container" *ngIf="provider?.address?.location">
           <div class="map-wrapper">
-            <iframe
-              [src]="mapUrl"
-              width="100%"
-              height="300"
-              style="border:0; border-radius: 12px;"
-              allowfullscreen=""
-              loading="lazy"
-              referrerpolicy="no-referrer-when-downgrade"
-              class="interactive-map">
-            </iframe>
+            <div id="providerMap" #providerMap style="width:100%; height:300px; border-radius:12px;"></div>
+
             <div class="map-overlay" (click)="openFullScreenMap()">
               <ion-icon name="expand-outline"></ion-icon>
               <span>Ampliar mapa</span>
@@ -177,21 +157,10 @@
               <ion-icon name="navigate-outline"></ion-icon>
               <span><strong>Distancia:</strong> {{ getDistance() }}</span>
             </div>
-            <div class="route-info" *ngIf="currentLocation">
+            <div class="route-info" *ngIf="currentLocation" (click)="openDirections()" style="cursor: pointer;">
               <ion-icon name="location-outline"></ion-icon>
               <span>Ruta desde tu ubicación</span>
             </div>
-            <!--<div class="navigation-buttons">
-              <ion-button 
-                fill="outline" 
-                size="small" 
-                color="primary"
-                (click)="showNavigationInfo()"
-                *ngIf="provider?.address?.location">
-                <ion-icon name="information-circle" slot="start"></ion-icon>
-                Info Ubicación
-              </ion-button>
-            </div>-->
           </div>
         </div>
       </ion-card-content>
@@ -514,17 +483,8 @@
     </ion-header>
     
     <ion-content>
-      <div class="fullscreen-map-container" *ngIf="mapUrl">
-        <iframe
-          [src]="mapUrl"
-          width="100%"
-          height="100%"
-          style="border:0;"
-          allowfullscreen=""
-          loading="lazy"
-          referrerpolicy="no-referrer-when-downgrade"
-          class="fullscreen-map">
-        </iframe>
+      <div class="fullscreen-map-container" *ngIf="provider?.address?.location">
+        <div id="providerMapFull" #providerMapFull style="width:100%; height:100%;"></div>
         
         <!-- Botones de acción flotantes -->
         <div class="map-actions" *ngIf="provider?.address?.location">
