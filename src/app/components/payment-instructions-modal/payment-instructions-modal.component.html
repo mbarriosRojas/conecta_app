@@ -1,0 +1,133 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-title>Datos para Realizar el Pago</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="close()">
+        <ion-icon slot="icon-only" name="close"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="payment-instructions-content">
+  <div class="instructions-container">
+    
+    <!-- Plan Information -->
+    <ion-card class="plan-info-card">
+      <ion-card-header>
+        <ion-card-title>
+          <ion-icon name="checkmark-circle" color="success"></ion-icon>
+          Solicitud Recibida
+        </ion-card-title>
+        <ion-card-subtitle>
+          Plan: {{ plan?.name || 'Plan seleccionado' }} - ${{ plan?.price || 0 }} {{ plan?.currency || 'USD' }}/mes
+        </ion-card-subtitle>
+      </ion-card-header>
+      <ion-card-content>
+        <div class="status-message">
+          <ion-icon name="time-outline" color="warning"></ion-icon>
+          <p>Tu plan está en estado <strong>"Espera de Pago"</strong></p>
+        </div>
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Payment Instructions -->
+    <ion-card class="instructions-card">
+      <ion-card-header>
+        <ion-card-title>
+          <ion-icon name="information-circle-outline" color="primary"></ion-icon>
+          Instrucciones de Pago
+        </ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <p class="instruction-text">
+          Realiza la transferencia con los siguientes datos:
+        </p>
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Payment Details -->
+    <ion-card class="payment-details-card" *ngIf="paymentData">
+      <ion-card-content>
+        
+        <!-- Banco -->
+        <div class="payment-detail-item">
+          <div class="detail-icon">
+            <ion-icon name="business-outline" color="primary"></ion-icon>
+          </div>
+          <div class="detail-content">
+            <div class="detail-label">Banco</div>
+            <div class="detail-value">{{ paymentData.bank }}</div>
+          </div>
+        </div>
+
+        <!-- Separador -->
+        <div class="separator"></div>
+
+        <!-- Teléfono -->
+        <div class="payment-detail-item">
+          <div class="detail-icon">
+            <ion-icon name="call-outline" color="primary"></ion-icon>
+          </div>
+          <div class="detail-content">
+            <div class="detail-label">Teléfono</div>
+            <div class="detail-value">{{ paymentData.phoneNumber }}</div>
+          </div>
+        </div>
+
+        <!-- Separador -->
+        <div class="separator"></div>
+
+        <!-- Documento -->
+        <div class="payment-detail-item">
+          <div class="detail-icon">
+            <ion-icon name="card-outline" color="primary"></ion-icon>
+          </div>
+          <div class="detail-content">
+            <div class="detail-label">Documento</div>
+            <div class="detail-value">{{ paymentData.identificationNumber }}</div>
+          </div>
+        </div>
+
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Important Note -->
+    <ion-card class="important-note-card">
+      <ion-card-content>
+        <div class="important-note">
+          <ion-icon name="warning-outline" color="warning"></ion-icon>
+          <div class="note-content">
+            <strong>Importante:</strong>
+            <p>Después de realizar el pago, repórtalo desde tu perfil para activar tu plan.</p>
+          </div>
+        </div>
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Action Buttons -->
+    <div class="action-buttons">
+      <ion-button 
+        expand="block" 
+        fill="outline"
+        color="medium"
+        (click)="close()"
+        class="understood-button"
+      >
+        Entendido
+      </ion-button>
+      
+      <ion-button 
+        expand="block" 
+        color="primary"
+        (click)="reportPayment()"
+        class="report-button"
+      >
+        <ion-icon name="cash-outline" slot="start"></ion-icon>
+        Reportar Pago Ahora
+      </ion-button>
+    </div>
+
+  </div>
+</ion-content>
+

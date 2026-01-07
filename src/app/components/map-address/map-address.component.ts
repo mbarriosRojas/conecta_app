@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, OnInit, AfterViewInit, ViewChild, ElementRef } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, AfterViewInit, OnDestroy, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { IonicModule, IonInput, ModalController } from '@ionic/angular';
@@ -25,7 +25,7 @@ export interface AddressData {
   standalone: true,
   imports: [CommonModule, FormsModule, IonicModule]
 })
-export class MapAddressComponent implements OnInit, AfterViewInit {
+export class MapAddressComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('addressInput', { static: false }) addressInput!: IonInput;
   
   @Input() initialAddress: Partial<AddressData> = {};
@@ -70,6 +70,9 @@ export class MapAddressComponent implements OnInit, AfterViewInit {
     }
   }
 
+  private googleMapsLoadCheckInterval: any = null;
+  private maxLoadAttempts = 50; // Máximo 5 segundos (50 * 100ms)
+
   ngAfterViewInit() {
     console.log('🗺️ MapAddressComponent: Vista inicializada, cargando mapa...');
     
@@ -82,21 +85,29 @@ export class MapAddressComponent implements OnInit, AfterViewInit {
   private loadGoogleMaps() {
     console.log('🗺️ MapAddressComponent: Cargando Google Maps...');
     
-    if (typeof window.google !== 'undefined') {
+    // Verificar si Google Maps ya está disponible
+    if (typeof window.google !== 'undefined' && window.google.maps && window.google.maps.places) {
       console.log('🗺️ MapAddressComponent: Google Maps ya está disponible');
-      this.initializeMap();
+      this.initializeServices();
       return;
     }
 
     // Verificar si ya hay un script cargándose
-    if (document.querySelector('script[src*="maps.googleapis.com"]')) {
+    const existingScript = document.querySelector('script[src*="maps.googleapis.com"]');
+    if (existingScript) {
       console.log('🗺️ MapAddressComponent: Script de Google Maps ya está cargándose, esperando...');
-      // Esperar a que se cargue
-      const checkGoogle = setInterval(() => {
-        if (typeof window.google !== 'undefined') {
-          console.log('🗺️ MapAddressComponent: Google Maps cargado, inicializando mapa...');
-          clearInterval(checkGoogle);
-          this.initializeMap();
+      // Esperar a que se cargue con timeout
+      let attempts = 0;
+      this.googleMapsLoadCheckInterval = setInterval(() => {
+        attempts++;
+        if (typeof window.google !== 'undefined' && window.google.maps && window.google.maps.places) {
+          console.log('🗺️ MapAddressComponent: Google Maps cargado, inicializando servicios...');
+          clearInterval(this.googleMapsLoadCheckInterval);
+          this.initializeServices();
+        } else if (attempts >= this.maxLoadAttempts) {
+          console.error('🗺️ MapAddressComponent: Timeout esperando Google Maps');
+          clearInterval(this.googleMapsLoadCheckInterval);
+          this.isMapLoading = false;
         }
       }, 100);
       return;
@@ -104,16 +115,21 @@ export class MapAddressComponent implements OnInit, AfterViewInit {
 
     // Cargar Google Maps API si no está disponible
     const script = document.createElement('script');
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${this.getGoogleMapsApiKey()}&libraries=places&callback=initMap`;
+    const apiKey = this.getGoogleMapsApiKey();
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`;
     script.async = true;
     script.defer = true;
     
-    window.initMap = () => {
-      this.initializeMap();
+    script.onload = () => {
+      console.log('🗺️ MapAddressComponent: Script de Google Maps cargado');
+      // Esperar un momento para asegurar que todo esté inicializado
+      setTimeout(() => {
+        this.initializeServices();
+      }, 100);
     };
     
     script.onerror = () => {
-      console.error('Error cargando Google Maps API');
+      console.error('❌ Error cargando Google Maps API');
       this.isMapLoading = false;
     };
     
@@ -124,10 +140,46 @@ export class MapAddressComponent implements OnInit, AfterViewInit {
     return mapConfig.googleMapsApiKey;
   }
 
+  private initializeServices() {
+    console.log('🗺️ MapAddressComponent: Inicializando servicios de Google...');
+    
+    if (!window.google || !window.google.maps || !window.google.maps.places) {
+      console.error('🗺️ MapAddressComponent: Google Maps Places no está disponible');
+      this.isMapLoading = false;
+      return;
+    }
+
+    try {
+      // 🔥 INICIALIZAR AUTCOMPLETE SERVICE PRIMERO (no requiere mapa)
+      // Esto permite que el autocompletado funcione incluso si el mapa no está listo
+      if (!this.autocompleteService) {
+        this.autocompleteService = new window.google.maps.places.AutocompleteService();
+        console.log('✅ AutocompleteService inicializado');
+      }
+
+      // Inicializar geocoder (tampoco requiere mapa)
+      if (!this.geocoder) {
+        this.geocoder = new window.google.maps.Geocoder();
+        console.log('✅ Geocoder inicializado');
+      }
+
+      // Si showMap está activado, inicializar el mapa
+      if (this.showMap) {
+        this.initializeMap();
+      } else {
+        this.isMapLoading = false;
+        console.log('✅ Servicios inicializados (mapa deshabilitado)');
+      }
+    } catch (error) {
+      console.error('🗺️ MapAddressComponent: Error inicializando servicios:', error);
+      this.isMapLoading = false;
+    }
+  }
+
   private initializeMap() {
     console.log('🗺️ MapAddressComponent: Inicializando mapa...');
     
-    if (!window.google) {
+    if (!window.google || !window.google.maps) {
       console.error('🗺️ MapAddressComponent: Google Maps no está disponible');
       this.isMapLoading = false;
       return;
@@ -155,18 +207,19 @@ export class MapAddressComponent implements OnInit, AfterViewInit {
 
       this.map = new window.google.maps.Map(mapElement, mapOptions);
       
-      // Inicializar servicios de Google
-      this.autocompleteService = new window.google.maps.places.AutocompleteService();
-      this.placesService = new window.google.maps.places.PlacesService(this.map);
-      this.geocoder = new window.google.maps.Geocoder();
+      // Inicializar PlacesService (requiere mapa)
+      if (!this.placesService && this.map) {
+        this.placesService = new window.google.maps.places.PlacesService(this.map);
+        console.log('✅ PlacesService inicializado');
+      }
       
       // Crear marcador inicial
       this.createMarker(this.addressData.coordinates);
       
-      console.log('🗺️ MapAddressComponent: Mapa inicializado correctamente');
+      console.log('✅ Mapa inicializado correctamente');
       this.isMapLoading = false;
     } catch (error) {
-      console.error('🗺️ MapAddressComponent: Error inicializando el mapa:', error);
+      console.error('❌ Error inicializando el mapa:', error);
       this.isMapLoading = false;
     }
   }
@@ -206,6 +259,21 @@ export class MapAddressComponent implements OnInit, AfterViewInit {
       return;
     }
 
+    // 🔥 VERIFICAR que autocompleteService esté disponible
+    if (!this.autocompleteService) {
+      console.warn('⚠️ AutocompleteService no está disponible, intentando inicializar...');
+      
+      // Intentar inicializar si Google Maps está disponible
+      if (window.google && window.google.maps && window.google.maps.places) {
+        this.autocompleteService = new window.google.maps.places.AutocompleteService();
+        console.log('✅ AutocompleteService inicializado en onAddressSearch');
+      } else {
+        console.error('❌ Google Maps Places no está disponible');
+        this.showSuggestions = false;
+        return;
+      }
+    }
+
     this.isSearching = true;
     
     const request = {
@@ -214,16 +282,24 @@ export class MapAddressComponent implements OnInit, AfterViewInit {
       types: mapConfig.placeTypes
     };
 
-    this.autocompleteService?.getPlacePredictions(request, (predictions: any[], status: any) => {
+    try {
+      this.autocompleteService.getPlacePredictions(request, (predictions: any[], status: any) => {
+        this.isSearching = false;
+        
+        if (status === window.google?.maps?.places?.PlacesServiceStatus?.OK && predictions) {
+          this.searchSuggestions = predictions;
+          this.showSuggestions = true;
+          console.log(`✅ ${predictions.length} sugerencias encontradas`);
+        } else {
+          console.warn('⚠️ No se encontraron sugerencias o error:', status);
+          this.showSuggestions = false;
+        }
+      });
+    } catch (error) {
+      console.error('❌ Error en getPlacePredictions:', error);
       this.isSearching = false;
-      
-      if (status === window.google?.maps?.places?.PlacesServiceStatus?.OK && predictions) {
-        this.searchSuggestions = predictions;
-        this.showSuggestions = true;
-      } else {
-        this.showSuggestions = false;
-      }
-    });
+      this.showSuggestions = false;
+    }
   }
 
   // Seleccionar sugerencia
@@ -436,5 +512,12 @@ export class MapAddressComponent implements OnInit, AfterViewInit {
     setTimeout(() => {
       this.showSuggestions = false;
     }, 200);
+  }
+
+  ngOnDestroy() {
+    // Limpiar intervalos
+    if (this.googleMapsLoadCheckInterval) {
+      clearInterval(this.googleMapsLoadCheckInterval);
+    }
   }
 }

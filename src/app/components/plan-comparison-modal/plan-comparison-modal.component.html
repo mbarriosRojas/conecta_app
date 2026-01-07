@@ -1,0 +1,189 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-title>Seleccionar Plan</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="close()">
+        <ion-icon slot="icon-only" name="close"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="plan-selection-content">
+  <div class="plans-list-container">
+    
+    <!-- Lista de planes -->
+    <div class="plans-list" *ngIf="!showPaymentMethods">
+      <div 
+        *ngFor="let plan of availablePlans" 
+        class="plan-card"
+        [class.selected]="isPlanSelected(plan.code)"
+        [class.current]="isCurrentPlan(plan.code)"
+        (click)="selectPlan(plan)"
+      >
+        <!-- Badge Plan Actual -->
+        <div class="current-badge" *ngIf="isCurrentPlan(plan.code)">
+          <ion-icon name="checkmark-circle"></ion-icon>
+          <span>Plan Actual</span>
+        </div>
+
+        <!-- Check de selección -->
+        <div class="selection-check" *ngIf="isPlanSelected(plan.code)">
+          <ion-icon name="checkmark-circle" color="primary"></ion-icon>
+        </div>
+
+        <div class="plan-content">
+          <!-- Header del plan -->
+          <div class="plan-header-section">
+            <h2 class="plan-name">{{ plan.name }}</h2>
+            <div class="plan-price">
+              <span *ngIf="plan.price === 0" class="price-free">Gratis</span>
+              <span *ngIf="plan.price > 0">
+                <span class="currency">$</span>
+                <span class="amount">{{ plan.price }}</span>
+                <span class="period">/mes</span>
+              </span>
+            </div>
+          </div>
+
+          <!-- Descripción -->
+          <p class="plan-description">{{ plan.description }}</p>
+
+          <!-- Características del plan -->
+          <div class="plan-features">
+            <div class="feature-item">
+              <ion-icon name="business-outline"></ion-icon>
+              <span><strong>Servicios:</strong> {{ getLimitDisplay(plan.limits.services) }}</span>
+            </div>
+            <div class="feature-item">
+              <ion-icon name="megaphone-outline"></ion-icon>
+              <span><strong>Promociones por servicio:</strong> {{ getLimitDisplay(plan.limits.promotionsPerService) }}</span>
+            </div>
+            <div class="feature-item">
+              <ion-icon name="cube-outline"></ion-icon>
+              <span><strong>Productos por servicio:</strong> {{ getLimitDisplay(plan.limits.productsPerService) }}</span>
+            </div>
+            <div class="feature-item" *ngIf="plan.features?.analytics">
+              <ion-icon name="analytics-outline"></ion-icon>
+              <span>Analíticas avanzadas</span>
+            </div>
+            <div class="feature-item" *ngIf="plan.features?.prioritySupport">
+              <ion-icon name="headset-outline"></ion-icon>
+              <span>Soporte prioritario</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Selección de método de pago -->
+    <div class="payment-methods-section" *ngIf="showPaymentMethods && selectedPlan">
+      <div class="section-header">
+        <h2>Método de Pago</h2>
+        <p>Selecciona cómo deseas pagar tu plan <strong>{{ selectedPlan.name }}</strong></p>
+      </div>
+
+      <div class="payment-methods-list">
+        <div 
+          *ngFor="let method of paymentMethods"
+          class="payment-method-card"
+          [class.selected]="selectedPaymentMethod?.code === method.code"
+          (click)="selectPaymentMethod(method)"
+        >
+          <div class="method-check" *ngIf="selectedPaymentMethod?.code === method.code">
+            <ion-icon name="checkmark-circle" color="primary"></ion-icon>
+          </div>
+          <div class="method-content">
+            <h3>{{ method.name }}</h3>
+            <p>{{ method.description }}</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mostrar datos de pago cuando se selecciona un método -->
+      <div class="payment-data-section" *ngIf="selectedPaymentMethod && selectedPaymentMethod.paymentData">
+        <div class="payment-data-card">
+          <div class="payment-data-header">
+            <ion-icon name="information-circle-outline" color="primary"></ion-icon>
+            <h3>Datos para Realizar el Pago</h3>
+          </div>
+          <div class="payment-data-content">
+            <div class="payment-data-item">
+              <ion-icon name="business-outline"></ion-icon>
+              <div>
+                <strong>Banco:</strong>
+                <span>{{ selectedPaymentMethod.paymentData.bank }}</span>
+              </div>
+            </div>
+            <div class="payment-data-item">
+              <ion-icon name="call-outline"></ion-icon>
+              <div>
+                <strong>Teléfono:</strong>
+                <span>{{ selectedPaymentMethod.paymentData.phoneNumber }}</span>
+              </div>
+            </div>
+            <div class="payment-data-item">
+              <ion-icon name="card-outline"></ion-icon>
+              <div>
+                <strong>Documento:</strong>
+                <span>{{ selectedPaymentMethod.paymentData.identificationNumber }}</span>
+              </div>
+            </div>
+          </div>
+          <ion-note class="payment-data-note">
+            <ion-icon name="warning-outline"></ion-icon>
+            Realiza el pago con estos datos y luego repórtalo desde tu perfil
+          </ion-note>
+        </div>
+      </div>
+    </div>
+
+    <!-- Botones de acción -->
+    <div class="action-section">
+      <!-- Botón para continuar con el plan -->
+      <ion-button 
+        *ngIf="!showPaymentMethods"
+        expand="block" 
+        size="large"
+        color="primary"
+        [disabled]="!selectedPlan || isLoading"
+        (click)="continueToPayment()"
+        class="continue-button"
+      >
+        <ion-spinner *ngIf="isLoading" name="crescent"></ion-spinner>
+        <span *ngIf="!isLoading">
+          <span *ngIf="selectedPlan && selectedPlan.price === 0">Activar Plan Gratuito</span>
+          <span *ngIf="selectedPlan && selectedPlan.price > 0">Continuar con {{ selectedPlan.name }}</span>
+          <span *ngIf="!selectedPlan">Selecciona un Plan</span>
+        </span>
+      </ion-button>
+
+      <!-- Botones para método de pago -->
+      <div *ngIf="showPaymentMethods" class="payment-actions">
+        <ion-button 
+          expand="block" 
+          fill="outline"
+          color="medium"
+          (click)="goBackToPlans()"
+          class="back-button"
+        >
+          <ion-icon name="arrow-back" slot="start"></ion-icon>
+          Volver
+        </ion-button>
+        
+        <ion-button 
+          expand="block" 
+          size="large"
+          color="primary"
+          [disabled]="!selectedPaymentMethod || isLoading"
+          (click)="requestPlanWithPayment()"
+          class="request-plan-button"
+        >
+          <ion-spinner *ngIf="isLoading" name="crescent"></ion-spinner>
+          <span *ngIf="!isLoading">Solicitar Plan</span>
+        </ion-button>
+      </div>
+    </div>
+  </div>
+</ion-content>
+

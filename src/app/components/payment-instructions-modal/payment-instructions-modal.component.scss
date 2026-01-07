@@ -1,0 +1,231 @@
+.payment-instructions-content {
+  --background: #f5f5f5;
+}
+
+.instructions-container {
+  padding: 16px;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+// Plan Info Card
+.plan-info-card {
+  border-radius: 16px;
+  margin-bottom: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+
+  ion-card-header {
+    padding-bottom: 8px;
+  }
+
+  ion-card-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--ion-color-success);
+
+    ion-icon {
+      font-size: 1.5rem;
+    }
+  }
+
+  ion-card-subtitle {
+    font-size: 0.95rem;
+    color: var(--ion-color-dark);
+    font-weight: 500;
+    margin-top: 8px;
+  }
+}
+
+.status-message {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: #fff3cd;
+  border-radius: 8px;
+  border-left: 4px solid var(--ion-color-warning);
+
+  ion-icon {
+    font-size: 1.5rem;
+  }
+
+  p {
+    margin: 0;
+    font-size: 0.95rem;
+    color: #856404;
+
+    strong {
+      color: var(--ion-color-dark);
+      font-weight: 600;
+    }
+  }
+}
+
+// Instructions Card
+.instructions-card {
+  border-radius: 16px;
+  margin-bottom: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+
+  ion-card-header {
+    padding-bottom: 8px;
+  }
+
+  ion-card-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--ion-color-primary);
+
+    ion-icon {
+      font-size: 1.3rem;
+    }
+  }
+
+  .instruction-text {
+    margin: 0;
+    font-size: 0.95rem;
+    color: var(--ion-color-dark);
+    line-height: 1.5;
+  }
+}
+
+// Payment Details Card
+.payment-details-card {
+  border-radius: 16px;
+  margin-bottom: 16px;
+  box-shadow: 0 4px 12px rgba(var(--ion-color-primary-rgb), 0.2);
+  border: 2px solid var(--ion-color-primary);
+  background: linear-gradient(135deg, rgba(var(--ion-color-primary-rgb), 0.05) 0%, rgba(var(--ion-color-primary-rgb), 0.1) 100%);
+}
+
+.payment-detail-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 0;
+}
+
+.detail-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+
+  ion-icon {
+    font-size: 1.5rem;
+  }
+}
+
+.detail-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.detail-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--ion-color-medium);
+  letter-spacing: 0.5px;
+}
+
+.detail-value {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--ion-color-dark);
+  letter-spacing: 0.5px;
+}
+
+.separator {
+  height: 1px;
+  background: rgba(var(--ion-color-primary-rgb), 0.2);
+  margin: 8px 0;
+}
+
+// Important Note Card
+.important-note-card {
+  border-radius: 16px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  background: #fff3cd;
+  border-left: 4px solid var(--ion-color-warning);
+}
+
+.important-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+
+  ion-icon {
+    font-size: 1.5rem;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .note-content {
+    flex: 1;
+
+    strong {
+      display: block;
+      font-size: 1rem;
+      font-weight: 600;
+      color: #856404;
+      margin-bottom: 8px;
+    }
+
+    p {
+      margin: 0;
+      font-size: 0.9rem;
+      color: #856404;
+      line-height: 1.5;
+    }
+  }
+}
+
+// Action Buttons
+.action-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-bottom: 16px;
+}
+
+.understood-button,
+.report-button {
+  height: 48px;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 12px;
+}
+
+.report-button {
+  box-shadow: 0 4px 12px rgba(var(--ion-color-primary-rgb), 0.3);
+}
+
+// Responsive
+@media (max-width: 768px) {
+  .instructions-container {
+    padding: 12px;
+  }
+
+  .payment-detail-item {
+    padding: 12px 0;
+  }
+
+  .detail-value {
+    font-size: 1.2rem;
+  }
+}
+

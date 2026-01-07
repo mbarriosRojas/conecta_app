@@ -1,0 +1,185 @@
+.payment-report-content {
+  --background: #f8f9fa;
+}
+
+.form-container {
+  padding: 20px;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+ion-card {
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+ion-card-header {
+  ion-card-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.3rem;
+    font-weight: 600;
+
+    ion-icon {
+      font-size: 1.5rem;
+      color: var(--ion-color-primary);
+    }
+  }
+}
+
+ion-item {
+  --padding-start: 0;
+  --inner-padding-end: 0;
+  margin-bottom: 15px;
+
+  ion-label {
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+}
+
+.proof-actions {
+  display: flex;
+  gap: 10px;
+  margin: 15px 0;
+
+  ion-button {
+    flex: 1;
+  }
+}
+
+.proof-preview {
+  position: relative;
+  margin: 15px 0;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 2px solid var(--ion-color-light);
+
+  img {
+    width: 100%;
+    height: auto;
+    max-height: 300px;
+    object-fit: contain;
+    display: block;
+  }
+
+  ion-button {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    --background: rgba(0, 0, 0, 0.5);
+    --color: white;
+  }
+}
+
+.form-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 30px;
+
+  ion-button {
+    --border-radius: 12px;
+    height: 50px;
+    font-weight: 600;
+  }
+}
+
+// Estilos para datos de pago
+.payment-data-section {
+  padding: 16px;
+  background: #f8f9fa;
+  margin-bottom: 0;
+}
+
+.payment-data-card {
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  border: 2px solid var(--ion-color-primary);
+}
+
+.payment-data-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  
+  ion-icon {
+    font-size: 24px;
+  }
+  
+  h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--ion-color-primary);
+  }
+}
+
+.payment-data-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.payment-data-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  
+  ion-icon {
+    font-size: 20px;
+    color: var(--ion-color-primary);
+  }
+  
+  div {
+    display: flex;
+    flex-direction: column;
+    
+    strong {
+      font-size: 12px;
+      color: var(--ion-color-medium);
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+    
+    span {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--ion-color-dark);
+    }
+  }
+}
+
+.payment-data-note {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+  padding: 12px;
+  background: #fff3cd;
+  border-radius: 8px;
+  color: #856404;
+  font-size: 14px;
+  
+  ion-icon {
+    font-size: 18px;
+  }
+}
+
+// Responsive
+@media (max-width: 768px) {
+  .form-container {
+    padding: 15px;
+  }
+
+  .proof-actions {
+    flex-direction: column;
+  }
+}
+

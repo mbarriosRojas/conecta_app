@@ -1,0 +1,250 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-title>Reportar Pago</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="close()">
+        <ion-icon slot="icon-only" name="close"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="payment-report-content">
+  <div class="form-container">
+    <ion-card>
+      <ion-card-header>
+        <ion-card-title>
+          <ion-icon name="cash-outline"></ion-icon>
+          Información del Pago
+        </ion-card-title>
+        <ion-card-subtitle *ngIf="paymentMethod">
+          Método: {{ paymentMethod.name }}
+        </ion-card-subtitle>
+      </ion-card-header>
+
+      <!-- Mostrar datos de pago si están disponibles -->
+      <ion-card-content *ngIf="paymentMethod && paymentMethod.paymentData" class="payment-data-section">
+        <div class="payment-data-card">
+          <div class="payment-data-header">
+            <ion-icon name="information-circle-outline" color="primary"></ion-icon>
+            <h3>Datos para Realizar el Pago</h3>
+          </div>
+          <div class="payment-data-content">
+            <div class="payment-data-item" *ngIf="paymentMethod.paymentData.bank">
+              <ion-icon name="business-outline"></ion-icon>
+              <div>
+                <strong>Banco:</strong>
+                <span>{{ paymentMethod.paymentData.bank }}</span>
+              </div>
+            </div>
+            <div class="payment-data-item" *ngIf="paymentMethod.paymentData.phoneNumber">
+              <ion-icon name="call-outline"></ion-icon>
+              <div>
+                <strong>Teléfono:</strong>
+                <span>{{ paymentMethod.paymentData.phoneNumber }}</span>
+              </div>
+            </div>
+            <div class="payment-data-item" *ngIf="paymentMethod.paymentData.identificationNumber">
+              <ion-icon name="card-outline"></ion-icon>
+              <div>
+                <strong>Documento:</strong>
+                <span>{{ paymentMethod.paymentData.identificationNumber }}</span>
+              </div>
+            </div>
+          </div>
+          <ion-note class="payment-data-note">
+            <ion-icon name="warning-outline"></ion-icon>
+            Realiza el pago con estos datos y luego completa el formulario
+          </ion-note>
+        </div>
+      </ion-card-content>
+
+      <ion-card-content>
+        <form (ngSubmit)="submitReport()">
+          <!-- Fecha del pago -->
+          <ion-item>
+            <ion-label position="stacked">
+              Fecha del Pago <ion-text color="danger">*</ion-text>
+            </ion-label>
+            <ion-input
+              type="date"
+              [(ngModel)]="paymentDate"
+              name="paymentDate"
+              [max]="getMaxDate()"
+              required
+            ></ion-input>
+          </ion-item>
+
+          <!-- Monto reportado -->
+          <ion-item>
+            <ion-label position="stacked">
+              Monto Pagado <ion-text color="danger">*</ion-text>
+            </ion-label>
+            <ion-input
+              type="number"
+              [(ngModel)]="reportedAmount"
+              name="reportedAmount"
+              placeholder="0.00"
+              min="0"
+              step="0.01"
+              required
+            ></ion-input>
+            <ion-select
+              [(ngModel)]="reportedCurrency"
+              name="reportedCurrency"
+              slot="end"
+              interface="popover"
+            >
+              <ion-select-option value="USD">USD</ion-select-option>
+              <ion-select-option value="VES">VES</ion-select-option>
+              <ion-select-option value="COP">COP</ion-select-option>
+            </ion-select>
+          </ion-item>
+
+          <!-- Campos específicos según método de pago -->
+          
+          <!-- Pago Móvil -->
+          <ng-container *ngIf="paymentMethod?.code?.toLowerCase().includes('pago_movil')">
+            <ion-item>
+              <ion-label position="stacked">
+                Documento de Identidad <ion-text color="danger">*</ion-text>
+              </ion-label>
+              <ion-input
+                type="text"
+                [(ngModel)]="identificationNumber"
+                name="identificationNumber"
+                placeholder="Ej: 12345678"
+                maxlength="10"
+                required
+              ></ion-input>
+            </ion-item>
+
+            <ion-item>
+              <ion-label position="stacked">
+                Banco <ion-text color="danger">*</ion-text>
+              </ion-label>
+              <ion-input
+                type="text"
+                [(ngModel)]="bank"
+                name="bank"
+                placeholder="Ej: Mercantil, Banesco"
+                required
+              ></ion-input>
+            </ion-item>
+
+            <ion-item>
+              <ion-label position="stacked">
+                Últimos 6 Dígitos del Pago <ion-text color="danger">*</ion-text>
+              </ion-label>
+              <ion-input
+                type="text"
+                [(ngModel)]="lastSixDigits"
+                name="lastSixDigits"
+                placeholder="123456"
+                maxlength="6"
+                pattern="[0-9]{6}"
+                required
+              ></ion-input>
+            </ion-item>
+          </ng-container>
+
+          <!-- Transferencia Bancaria -->
+          <ng-container *ngIf="paymentMethod?.code?.toLowerCase().includes('transferencia') || paymentMethod?.code?.toLowerCase().includes('bank_transfer')">
+            <ion-item>
+              <ion-label position="stacked">
+                Número de Transacción <ion-text color="danger">*</ion-text>
+              </ion-label>
+              <ion-input
+                type="text"
+                [(ngModel)]="transactionNumber"
+                name="transactionNumber"
+                placeholder="Número de referencia de la transferencia"
+                required
+              ></ion-input>
+            </ion-item>
+          </ng-container>
+
+          <!-- Wompi u otros métodos -->
+          <ng-container *ngIf="paymentMethod?.code?.toLowerCase().includes('wompi') || (!paymentMethod?.code?.toLowerCase().includes('pago_movil') && !paymentMethod?.code?.toLowerCase().includes('transferencia'))">
+            <ion-item>
+              <ion-label position="stacked">
+                Número de Referencia
+              </ion-label>
+              <ion-input
+                type="text"
+                [(ngModel)]="referenceNumber"
+                name="referenceNumber"
+                placeholder="Número de referencia del pago"
+              ></ion-input>
+            </ion-item>
+          </ng-container>
+
+          <!-- Comprobante de pago (opcional) -->
+          <ion-item>
+            <ion-label>
+              <h3>Comprobante de Pago (Opcional)</h3>
+              <p>Adjunta una foto o captura del comprobante</p>
+            </ion-label>
+          </ion-item>
+
+          <div class="proof-actions" *ngIf="!paymentProofPreview">
+            <ion-button
+              expand="block"
+              fill="outline"
+              (click)="takePhoto()"
+              [disabled]="isSubmitting"
+            >
+              <ion-icon name="camera-outline" slot="start"></ion-icon>
+              Tomar Foto
+            </ion-button>
+            <ion-button
+              expand="block"
+              fill="outline"
+              (click)="selectPhoto()"
+              [disabled]="isSubmitting"
+            >
+              <ion-icon name="image-outline" slot="start"></ion-icon>
+              Seleccionar Foto
+            </ion-button>
+          </div>
+
+          <div class="proof-preview" *ngIf="paymentProofPreview">
+            <img [src]="paymentProofPreview" alt="Comprobante de pago">
+            <ion-button
+              fill="clear"
+              color="danger"
+              (click)="removePhoto()"
+              [disabled]="isSubmitting"
+            >
+              <ion-icon name="trash-outline" slot="icon-only"></ion-icon>
+            </ion-button>
+          </div>
+
+          <!-- Botones de acción -->
+          <div class="form-actions">
+            <ion-button
+              expand="block"
+              size="large"
+              color="primary"
+              type="submit"
+              [disabled]="isSubmitting || isLoading"
+            >
+              <ion-spinner *ngIf="isSubmitting" name="crescent"></ion-spinner>
+              <span *ngIf="!isSubmitting">Reportar Pago</span>
+            </ion-button>
+            <ion-button
+              expand="block"
+              fill="outline"
+              color="medium"
+              (click)="close()"
+              [disabled]="isSubmitting"
+            >
+              Cancelar
+            </ion-button>
+          </div>
+        </form>
+      </ion-card-content>
+    </ion-card>
+  </div>
+</ion-content>
+

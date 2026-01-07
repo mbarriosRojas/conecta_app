@@ -1,0 +1,370 @@
+.plan-selection-content {
+  --background: #f5f5f5;
+}
+
+.plans-list-container {
+  padding: 16px;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.plans-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.plan-card {
+  position: relative;
+  background: white;
+  border-radius: 16px;
+  padding: 20px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 3px solid transparent;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+
+  &.selected {
+    border-color: var(--ion-color-primary);
+    background: linear-gradient(135deg, rgba(var(--ion-color-primary-rgb), 0.05) 0%, rgba(var(--ion-color-primary-rgb), 0.15) 100%);
+    box-shadow: 0 4px 16px rgba(var(--ion-color-primary-rgb), 0.3);
+  }
+
+  &.current {
+    border-color: var(--ion-color-success);
+    background: linear-gradient(135deg, rgba(var(--ion-color-success-rgb), 0.05) 0%, rgba(var(--ion-color-success-rgb), 0.15) 100%);
+  }
+
+  &.current.selected {
+    border-color: var(--ion-color-primary);
+  }
+}
+
+.current-badge {
+  position: absolute;
+  top: -10px;
+  right: 16px;
+  background: var(--ion-color-success);
+  color: white;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  z-index: 10;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+
+  ion-icon {
+    font-size: 1rem;
+  }
+}
+
+.selection-check {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  z-index: 10;
+
+  ion-icon {
+    font-size: 2.2rem;
+    background: white;
+    border-radius: 50%;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  }
+}
+
+.plan-content {
+  margin-top: 8px;
+}
+
+.plan-header-section {
+  text-align: center;
+  margin-bottom: 16px;
+  padding-top: 8px;
+}
+
+.plan-name {
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin: 0 0 12px 0;
+  color: var(--ion-color-dark);
+}
+
+.plan-price {
+  margin: 12px 0;
+  
+  .price-free {
+    font-size: 2.2rem;
+    font-weight: 700;
+    color: var(--ion-color-success);
+  }
+
+  .currency {
+    font-size: 1.2rem;
+    vertical-align: top;
+    color: var(--ion-color-medium);
+  }
+
+  .amount {
+    font-size: 2.8rem;
+    font-weight: 700;
+    color: var(--ion-color-dark);
+  }
+
+  .period {
+    font-size: 1rem;
+    color: var(--ion-color-medium);
+    margin-left: 4px;
+  }
+}
+
+.plan-description {
+  font-size: 1rem;
+  color: var(--ion-color-medium);
+  margin: 0 0 20px 0;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.plan-features {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.feature-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.95rem;
+  color: var(--ion-color-dark);
+
+  ion-icon {
+    font-size: 1.3rem;
+    color: var(--ion-color-primary);
+    flex-shrink: 0;
+  }
+
+  span {
+    line-height: 1.4;
+  }
+}
+
+// Sección de métodos de pago
+.payment-methods-section {
+  animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.section-header {
+  text-align: center;
+  margin-bottom: 24px;
+
+  h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--ion-color-dark);
+    margin: 0 0 8px 0;
+  }
+
+  p {
+    font-size: 0.95rem;
+    color: var(--ion-color-medium);
+    margin: 0;
+  }
+}
+
+.payment-methods-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.payment-method-card {
+  position: relative;
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 3px solid transparent;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+
+  &.selected {
+    border-color: var(--ion-color-primary);
+    background: linear-gradient(135deg, rgba(var(--ion-color-primary-rgb), 0.05) 0%, rgba(var(--ion-color-primary-rgb), 0.15) 100%);
+    box-shadow: 0 4px 16px rgba(var(--ion-color-primary-rgb), 0.3);
+  }
+}
+
+.method-check {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 10;
+
+  ion-icon {
+    font-size: 1.8rem;
+    background: white;
+    border-radius: 50%;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  }
+}
+
+.method-content {
+  padding-right: 40px;
+
+  h3 {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--ion-color-dark);
+    margin: 0 0 8px 0;
+  }
+
+  p {
+    font-size: 0.9rem;
+    color: var(--ion-color-medium);
+    margin: 0;
+    line-height: 1.4;
+  }
+}
+
+// Botones de acción
+.action-section {
+  margin-top: 24px;
+  padding: 0;
+}
+
+.continue-button,
+.request-plan-button {
+  height: 56px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(var(--ion-color-primary-rgb), 0.3);
+  margin: 0;
+}
+
+.back-button {
+  height: 48px;
+  font-size: 1rem;
+  border-radius: 12px;
+  margin-bottom: 12px;
+}
+
+.payment-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+// Estilos para datos de pago
+.payment-data-section {
+  margin-top: 20px;
+  margin-bottom: 20px;
+}
+
+.payment-data-card {
+  background: #f8f9fa;
+  border-radius: 12px;
+  padding: 16px;
+  border: 2px solid var(--ion-color-primary);
+}
+
+.payment-data-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  
+  ion-icon {
+    font-size: 24px;
+  }
+  
+  h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--ion-color-primary);
+  }
+}
+
+.payment-data-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.payment-data-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: white;
+  border-radius: 8px;
+  
+  ion-icon {
+    font-size: 20px;
+    color: var(--ion-color-primary);
+  }
+  
+  div {
+    display: flex;
+    flex-direction: column;
+    
+    strong {
+      font-size: 12px;
+      color: var(--ion-color-medium);
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+    
+    span {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--ion-color-dark);
+    }
+  }
+}
+
+.payment-data-note {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+  padding: 12px;
+  background: #fff3cd;
+  border-radius: 8px;
+  color: #856404;
+  font-size: 14px;
+  
+  ion-icon {
+    font-size: 18px;
+  }
+}
+

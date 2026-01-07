@@ -285,7 +285,7 @@ export class PushNotificationService {
         // 🔥 MEJORA: Obtener ubicación actual con reintentos
         // Esto asegura que los tokens se registren con ubicación cuando sea posible
         const currentLocation = await this.getLocationWithRetry(3);
-        
+
         console.log('📤 Enviando petición al backend...');
         const registrationData: any = {
           userID: this.userID,

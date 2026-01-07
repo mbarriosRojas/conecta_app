@@ -90,12 +90,30 @@ export class SubscriptionService {
    */
   async getPlans(): Promise<Plan[]> {
     try {
+      const url = `${this.apiUrl}/plans`;
+      console.log('📡 SubscriptionService - getPlans URL:', url);
+      
       const response = await firstValueFrom(
-        this.http.get<{ status: string; data: Plan[] }>(`${this.apiUrl}/plans`)
+        this.http.get<{ status: string; data: Plan[] }>(url)
       );
-      return response.data;
-    } catch (error) {
-      console.error('Error getting plans:', error);
+      
+      console.log('📡 SubscriptionService - getPlans response:', response);
+      console.log('📡 SubscriptionService - response.status:', response.status);
+      console.log('📡 SubscriptionService - response.data:', response.data);
+      console.log('📡 SubscriptionService - response.data type:', typeof response.data);
+      console.log('📡 SubscriptionService - response.data is array?:', Array.isArray(response.data));
+      
+      // Asegurar que devolvemos un array
+      if (response.data && Array.isArray(response.data)) {
+        return response.data;
+      } else {
+        console.warn('⚠️ SubscriptionService - response.data no es un array válido:', response.data);
+        return [];
+      }
+    } catch (error: any) {
+      console.error('❌ SubscriptionService - Error getting plans:', error);
+      console.error('❌ SubscriptionService - Error status:', error.status);
+      console.error('❌ SubscriptionService - Error message:', error.message);
       throw error;
     }
   }
@@ -121,15 +139,20 @@ export class SubscriptionService {
    */
   async purchasePlan(
     planCode: string,
-    paymentMethod: string = 'unknown',
-    transactionId?: string
-  ): Promise<{ subscription: UserSubscription; purchase: SubscriptionPurchase }> {
+    paymentMethodCode?: string
+  ): Promise<{ subscription: UserSubscription; purchase: SubscriptionPurchase; paymentData?: { bank: string; phoneNumber: string; identificationNumber: string } }> {
     try {
       const headers = await this.getAuthHeaders();
+      const requestBody: any = { planCode };
+      
+      if (paymentMethodCode) {
+        requestBody.paymentMethodCode = paymentMethodCode;
+      }
+      
       const response = await firstValueFrom(
-        this.http.post<{ status: string; data: { subscription: UserSubscription; purchase: SubscriptionPurchase } }>(
+        this.http.post<{ status: string; data: { subscription: UserSubscription; purchase: SubscriptionPurchase; paymentData?: { bank: string; phoneNumber: string; identificationNumber: string } }; message: string }>(
           `${this.apiUrl}/purchase`,
-          { planCode, paymentMethod, transactionId },
+          requestBody,
           { headers }
         )
       );
@@ -152,6 +175,86 @@ export class SubscriptionService {
       return response.data;
     } catch (error) {
       console.error('Error getting purchase history:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Obtiene los métodos de pago disponibles según el país del usuario
+   */
+  async getPaymentMethods(): Promise<{ country: string; paymentMethods: any[] }> {
+    try {
+      const headers = await this.getAuthHeaders();
+      const response = await firstValueFrom(
+        this.http.get<{ status: string; data: { country: string; paymentMethods: any[] } }>(
+          `${this.apiUrl}/payment-methods`,
+          { headers }
+        )
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error getting payment methods:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Obtiene los datos de pago para un método específico
+   */
+  async getPaymentAccount(paymentMethodCode: string): Promise<any> {
+    try {
+      const headers = await this.getAuthHeaders();
+      const response = await firstValueFrom(
+        this.http.get<{ status: string; data: any }>(
+          `${this.apiUrl}/payment-accounts/${paymentMethodCode}`,
+          { headers }
+        )
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error getting payment account:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Reporta un pago para una suscripción pendiente
+   */
+  async reportPayment(
+    identificationNumber?: string,
+    bank?: string,
+    lastSixDigits?: string,
+    paymentProof?: string,
+    paymentDate?: string,
+    reportedAmount?: number,
+    reportedCurrency?: string,
+    transactionNumber?: string,
+    referenceNumber?: string
+  ): Promise<any> {
+    try {
+      const headers = await this.getAuthHeaders();
+      const response = await firstValueFrom(
+        this.http.post<{ status: string; data: any; message: string }>(
+          `${this.apiUrl}/report-payment`,
+          {
+            // Campos nuevos (requeridos)
+            paymentDate: paymentDate || new Date().toISOString(),
+            reportedAmount: reportedAmount || 0,
+            reportedCurrency: reportedCurrency || 'USD',
+            paymentProof: paymentProof || undefined,
+            // Campos específicos según método
+            identificationNumber: identificationNumber || undefined,
+            bank: bank || undefined,
+            lastSixDigits: lastSixDigits || undefined,
+            transactionNumber: transactionNumber || undefined,
+            referenceNumber: referenceNumber || undefined
+          },
+          { headers }
+        )
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error reporting payment:', error);
       throw error;
     }
   }

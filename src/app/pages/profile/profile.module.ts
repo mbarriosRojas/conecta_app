@@ -5,6 +5,9 @@ import { IonicModule } from '@ionic/angular';
 import { ProfilePageRoutingModule } from './profile-routing.module';
 import { ProfilePage } from './profile.page';
 import { ChangePasswordModalComponent } from '../../components/change-password-modal/change-password-modal.component';
+import { PlanComparisonModalComponent } from '../../components/plan-comparison-modal/plan-comparison-modal.component';
+import { PaymentReportModalComponent } from '../../components/payment-report-modal/payment-report-modal.component';
+import { PaymentInstructionsModalComponent } from '../../components/payment-instructions-modal/payment-instructions-modal.component';
 
 @NgModule({
   imports: [
@@ -14,7 +17,13 @@ import { ChangePasswordModalComponent } from '../../components/change-password-m
     IonicModule,
     ProfilePageRoutingModule
   ],
-  declarations: [ProfilePage, ChangePasswordModalComponent],
+  declarations: [
+    ProfilePage, 
+    ChangePasswordModalComponent, 
+    PlanComparisonModalComponent, 
+    PaymentReportModalComponent,
+    PaymentInstructionsModalComponent
+  ],
   exports: [ProfilePage],
   providers: [DatePipe]
 })

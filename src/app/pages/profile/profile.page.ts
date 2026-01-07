@@ -4,6 +4,9 @@ import { Router } from '@angular/router';
 import { LoadingController, ToastController, AlertController, ModalController } from '@ionic/angular';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { ChangePasswordModalComponent } from '../../components/change-password-modal/change-password-modal.component';
+import { PlanComparisonModalComponent } from '../../components/plan-comparison-modal/plan-comparison-modal.component';
+import { PaymentReportModalComponent } from '../../components/payment-report-modal/payment-report-modal.component';
+import { PaymentInstructionsModalComponent } from '../../components/payment-instructions-modal/payment-instructions-modal.component';
 import { SubscriptionService, UserSubscription, Plan } from '../../services/subscription.service';
 import { NotificationSettingsService, NotificationSettings } from '../../services/notification-settings.service';
 
@@ -32,6 +35,8 @@ export class ProfilePage implements OnInit {
   // 💳 Datos de suscripción y planes
   currentSubscription: UserSubscription | null = null;
   availablePlans: Plan[] = [];
+  paymentMethods: any[] = [];
+  userCountry: string = 'VE';
   
   // 🔔 Configuración de notificaciones
   notificationSettings: NotificationSettings | null = null;
@@ -448,21 +453,87 @@ export class ProfilePage implements OnInit {
   // 💳 MÉTODOS DE SUSCRIPCIÓN Y PLANES
 
   async loadSubscription() {
+    // 🔥 IMPORTANTE: Inicializar availablePlans como array vacío por defecto
+    this.availablePlans = [];
+    
     try {
-      console.log('🔄 Cargando suscripción...');
-      this.currentSubscription = await this.subscriptionService.getCurrentSubscription();
-      this.availablePlans = await this.subscriptionService.getPlans();
-      console.log('✅ Suscripción cargada:', this.currentSubscription);
-      console.log('✅ Planes disponibles:', this.availablePlans);
+      console.log('🔄 Cargando planes disponibles...');
+      console.log('🔗 SubscriptionService apiUrl:', this.subscriptionService['apiUrl'] || 'no disponible');
       
-      // Si no hay suscripción, intentar crear una por defecto
-      if (!this.currentSubscription) {
-        console.log('⚠️ No hay suscripción, se creará una por defecto al acceder al endpoint');
+      // 🔥 MEJORADO: Cargar planes primero (no requiere suscripción)
+      const plans = await this.subscriptionService.getPlans();
+      console.log('✅ Respuesta de getPlans():', plans);
+      console.log('✅ Tipo de respuesta:', typeof plans);
+      console.log('✅ Es array?:', Array.isArray(plans));
+      
+      // Asegurar que sea un array
+      if (Array.isArray(plans)) {
+        this.availablePlans = plans;
+        console.log('✅ Planes disponibles:', this.availablePlans.length);
+        console.log('✅ Planes:', this.availablePlans);
+      } else {
+        console.warn('⚠️ La respuesta no es un array:', plans);
+        this.availablePlans = [];
       }
-    } catch (error) {
-      console.error('❌ Error cargando suscripción:', error);
+      
+    } catch (error: any) {
+      console.error('❌ Error cargando planes:', error);
+      console.error('❌ Error status:', error.status);
+      console.error('❌ Error message:', error.message);
+      console.error('❌ Error completo:', error);
+      
       // Mostrar error al usuario
-      this.showErrorToast('Error cargando información del plan');
+      let errorMessage = 'Error cargando planes disponibles';
+      if (error.status === 0) {
+        errorMessage = 'Error de conexión. Verifica que el servidor esté funcionando.';
+      } else if (error.status === 404) {
+        errorMessage = 'Endpoint no encontrado. Verifica la configuración del servidor.';
+      } else if (error.error?.message) {
+        errorMessage = error.error.message;
+      }
+      
+      this.showErrorToast(errorMessage);
+      // Asegurar que availablePlans sea un array vacío
+      this.availablePlans = [];
+    }
+
+    // 🔥 NUEVO: Cargar métodos de pago disponibles
+    try {
+      console.log('🔄 Cargando métodos de pago...');
+      const paymentData = await this.subscriptionService.getPaymentMethods();
+      this.paymentMethods = paymentData.paymentMethods || [];
+      this.userCountry = paymentData.country || 'VE';
+      console.log('✅ Métodos de pago cargados:', this.paymentMethods);
+      console.log('✅ País del usuario:', this.userCountry);
+      // 🔥 DEBUG: Verificar si los métodos tienen paymentData
+      this.paymentMethods.forEach(method => {
+        if (method.paymentData) {
+          console.log(`✅ Método ${method.code} tiene paymentData:`, method.paymentData);
+        } else if (method.requiresManualVerification) {
+          console.log(`⚠️ Método ${method.code} requiere verificación manual pero NO tiene paymentData`);
+        }
+      });
+    } catch (error: any) {
+      console.error('❌ Error cargando métodos de pago:', error);
+      this.paymentMethods = [];
+    }
+
+    try {
+      console.log('🔄 Cargando suscripción actual...');
+      // 🔥 MEJORADO: Intentar cargar suscripción (puede no existir)
+      this.currentSubscription = await this.subscriptionService.getCurrentSubscription();
+      console.log('✅ Suscripción cargada:', this.currentSubscription);
+    } catch (error: any) {
+      // 🔥 MEJORADO: Manejar 404 como caso normal (usuario sin plan)
+      if (error.status === 404 || error.status === 400) {
+        console.log('ℹ️ Usuario no tiene suscripción activa (esto es normal)');
+        this.currentSubscription = null; // Asegurar que sea null
+      } else {
+        console.error('❌ Error cargando suscripción:', error);
+        // Solo mostrar error si no es un 404 (usuario sin plan es normal)
+        this.showErrorToast('Error cargando información del plan. Por favor, intenta de nuevo.');
+        this.currentSubscription = null; // Asegurar que sea null en caso de error
+      }
     }
   }
 
@@ -472,28 +543,157 @@ export class ProfilePage implements OnInit {
       return;
     }
 
-    const alert = await this.alertController.create({
-      header: 'Cambiar Plan',
-      message: 'Selecciona el plan que deseas activar:',
-      inputs: this.availablePlans.map(plan => ({
-        type: 'radio',
-        label: `${plan.name} - ${plan.price === 0 ? 'Gratis' : '$' + plan.price + '/' + plan.currency}`,
-        value: plan.code,
-        checked: this.currentSubscription?.planCode === plan.code,
-        handler: () => {
-          console.log('Plan seleccionado:', plan.code);
+    const modal = await this.modalController.create({
+      component: PlanComparisonModalComponent,
+      componentProps: {
+        availablePlans: this.availablePlans,
+        currentPlanCode: this.currentSubscription?.planCode || null,
+        paymentMethods: this.paymentMethods
+      },
+      cssClass: 'plan-comparison-modal'
+    });
+
+    await modal.present();
+
+    const { data } = await modal.onDidDismiss();
+
+    if (data?.error) {
+      this.showErrorToast(data.error);
+      return;
+    }
+
+    if (data?.success) {
+      console.log('🔥 Modal dismissed with success:', {
+        subscriptionStatus: data.subscription?.status,
+        hasPaymentData: !!data.paymentData,
+        showPaymentInstructions: data.showPaymentInstructions,
+        plan: data.plan
+      });
+
+      // Si fue exitoso, recargar suscripción primero
+      await this.loadSubscription();
+      
+      // Si el plan está en estado pending, SIEMPRE mostrar instrucciones de pago
+      if (data.subscription?.status === 'pending') {
+        console.log('🔥 Subscription is pending, showing payment instructions');
+        
+        // 🔥 MEJORADO: Buscar datos de pago en el método seleccionado (ya vienen en paymentMethods)
+        let paymentData = data.paymentData;
+        
+        // Si paymentData tiene un error, ignorarlo y buscar en los métodos
+        if (paymentData && (paymentData.error || paymentData.requiresSupport)) {
+          console.warn('⚠️ Payment data from response has error, searching in payment methods:', paymentData);
+          paymentData = null;
         }
-      })),
+        
+        if (!paymentData) {
+          // Buscar en los métodos de pago cargados
+          // Primero intentar con el método de la suscripción
+          let selectedPaymentMethod = this.paymentMethods.find(
+            m => m.code === data.subscription?.paymentMethod
+          );
+          
+          // Si no se encuentra, buscar en la compra pendiente
+          if (!selectedPaymentMethod) {
+            try {
+              const purchases = await this.subscriptionService.getPurchaseHistory();
+              const pendingPurchase = purchases.find(p => p.paymentStatus === 'pending');
+              if (pendingPurchase?.paymentMethod) {
+                selectedPaymentMethod = this.paymentMethods.find(
+                  m => m.code === pendingPurchase.paymentMethod
+                );
+              }
+            } catch (error) {
+              console.error('Error getting purchase history:', error);
+            }
+          }
+          
+          console.log('🔍 Searching payment data in methods:', {
+            subscriptionPaymentMethod: data.subscription?.paymentMethod,
+            selectedMethod: selectedPaymentMethod,
+            hasPaymentData: !!selectedPaymentMethod?.paymentData,
+            allMethods: this.paymentMethods.map(m => ({ 
+              code: m.code, 
+              hasPaymentData: !!m.paymentData,
+              paymentData: m.paymentData 
+            }))
+          });
+          
+          if (selectedPaymentMethod?.paymentData) {
+            paymentData = selectedPaymentMethod.paymentData;
+            console.log('✅ Payment data found in payment method:', paymentData);
+          } else {
+            // Si aún no hay datos, intentar con el primer método que tenga paymentData
+            const methodWithData = this.paymentMethods.find(m => m.paymentData);
+            if (methodWithData?.paymentData) {
+              paymentData = methodWithData.paymentData;
+              console.log('✅ Using payment data from first available method:', paymentData);
+            }
+          }
+        }
+        
+        if (paymentData && !paymentData.error && !paymentData.requiresSupport) {
+          await this.showPaymentInstructions(paymentData, data.plan);
+        } else {
+          console.error('❌ No payment data available:', paymentData);
+          this.showErrorToast('No se pudieron obtener los datos de pago. Por favor contacta soporte.');
+        }
+      } else {
+        // Plan activado directamente
+        this.showSuccessToast(`Plan ${data.plan.name} activado exitosamente`);
+      }
+      return;
+    }
+
+    if (data?.planSelected && data?.showPaymentMethods) {
+      // Si el usuario seleccionó un plan de pago con múltiples métodos, mostrar selector
+      await this.selectPaymentMethod(data.planSelected);
+    }
+  }
+
+  async selectPaymentMethod(plan: Plan) {
+    if (this.paymentMethods.length === 0) {
+      this.showErrorToast('No hay métodos de pago disponibles para tu país');
+      return;
+    }
+
+    if (this.paymentMethods.length === 1) {
+      // Si solo hay un método, usarlo directamente
+      await this.requestPlan(plan.code, this.paymentMethods[0].code);
+      return;
+    }
+
+    // Crear inputs para seleccionar método de pago
+    const paymentMethodInputs = this.paymentMethods.map(method => ({
+      type: 'radio' as const,
+      label: method.name,
+      value: method.code,
+      checked: this.paymentMethods.length === 1
+    }));
+
+    const alert = await this.alertController.create({
+      header: 'Seleccionar Método de Pago',
+      message: `Plan: ${plan.name}\nPrecio: $${plan.price} ${plan.currency}/mes\n\nSelecciona tu método de pago:`,
+      inputs: paymentMethodInputs,
       buttons: [
         {
           text: 'Cancelar',
           role: 'cancel'
         },
         {
-          text: 'Seleccionar',
-          handler: async (selectedPlanCode) => {
-            if (selectedPlanCode) {
-              await this.selectPlan(selectedPlanCode);
+          text: 'Solicitar Plan',
+          handler: async (data): Promise<boolean> => {
+            if (!data) {
+              this.showErrorToast('Por favor selecciona un método de pago');
+              return false;
+            }
+
+            try {
+              await this.requestPlan(plan.code, data);
+              return true;
+            } catch (error) {
+              console.error('Error requesting plan:', error);
+              return false;
             }
           }
         }
@@ -512,50 +712,46 @@ export class ProfilePage implements OnInit {
 
     // Si el plan es gratis, activar directamente
     if (selectedPlan.price === 0) {
-      await this.purchasePlan(planCode, 'free');
+      await this.requestPlan(planCode);
       return;
     }
 
-    // Si es un plan de pago, pedir información de pago
+    // 🔥 NUEVO: Si es un plan de pago, mostrar métodos de pago disponibles
+    if (this.paymentMethods.length === 0) {
+      this.showErrorToast('No hay métodos de pago disponibles para tu país');
+      return;
+    }
+
+    // Crear inputs para seleccionar método de pago
+    const paymentMethodInputs = this.paymentMethods.map(method => ({
+      type: 'radio' as const,
+      label: method.name,
+      value: method.code,
+      checked: this.paymentMethods.length === 1 // Si solo hay uno, seleccionarlo por defecto
+    }));
+
     const alert = await this.alertController.create({
-      header: 'Información de Pago',
-      message: `Plan: ${selectedPlan.name} - $${selectedPlan.price} ${selectedPlan.currency}/mes`,
-      inputs: [
-        {
-          name: 'paymentMethod',
-          type: 'text',
-          placeholder: 'Método de pago (ej: tarjeta, transferencia)',
-          attributes: {
-            required: true
-          }
-        },
-        {
-          name: 'transactionId',
-          type: 'text',
-          placeholder: 'ID de transacción (opcional)',
-          attributes: {
-            required: false
-          }
-        }
-      ],
+      header: 'Seleccionar Método de Pago',
+      message: `Plan: ${selectedPlan.name}\nPrecio: $${selectedPlan.price} ${selectedPlan.currency}/mes\n\nSelecciona tu método de pago:`,
+      inputs: paymentMethodInputs,
       buttons: [
         {
           text: 'Cancelar',
           role: 'cancel'
         },
         {
-          text: 'Confirmar',
+          text: 'Solicitar Plan',
           handler: async (data): Promise<boolean> => {
-            if (!data.paymentMethod) {
-              this.showErrorToast('El método de pago es requerido');
+            if (!data) {
+              this.showErrorToast('Por favor selecciona un método de pago');
               return false;
             }
-            
+
             try {
-              await this.purchasePlan(planCode, data.paymentMethod, data.transactionId);
+              await this.requestPlan(planCode, data);
               return true;
             } catch (error) {
-              console.error('Error purchasing plan:', error);
+              console.error('Error requesting plan:', error);
               return false;
             }
           }
@@ -566,25 +762,33 @@ export class ProfilePage implements OnInit {
     await alert.present();
   }
 
-  async purchasePlan(planCode: string, paymentMethod: string, transactionId?: string) {
+  async requestPlan(planCode: string, paymentMethodCode?: string) {
     const loading = await this.loadingController.create({
-      message: 'Procesando plan...',
+      message: 'Procesando solicitud...',
       spinner: 'crescent'
     });
     await loading.present();
 
     try {
-      const result = await this.subscriptionService.purchasePlan(planCode, paymentMethod, transactionId);
+      const result = await this.subscriptionService.purchasePlan(planCode, paymentMethodCode);
+      
       await loading.dismiss();
       
-      this.showSuccessToast(`Plan ${result.subscription.planID.name} activado exitosamente`);
+      // Si el plan quedó en pending, mostrar datos de pago
+      if (result.subscription.status === 'pending' && result.paymentData) {
+        const selectedPlan = this.availablePlans.find(p => p.code === planCode);
+        await this.showPaymentInstructions(result.paymentData, selectedPlan || { name: 'Plan seleccionado' });
+      } else {
+        this.showSuccessToast('Plan activado exitosamente');
+      }
+      
       await this.loadSubscription(); // Recargar datos
       
     } catch (error: any) {
       await loading.dismiss();
-      console.error('Error comprando plan:', error);
+      console.error('Error solicitando plan:', error);
       
-      let errorMessage = 'Error al procesar el plan';
+      let errorMessage = 'Error al procesar la solicitud';
       if (error.error?.message) {
         errorMessage = error.error.message;
       }
@@ -593,106 +797,125 @@ export class ProfilePage implements OnInit {
     }
   }
 
-  async reportPayment() {
-    if (!this.currentSubscription) {
-      this.showErrorToast('No hay suscripción activa');
+  async showPaymentInstructions(paymentData: any, plan: any) {
+    const planName = plan?.name || 'Plan seleccionado';
+    const planPrice = plan?.price || 0;
+    const planCurrency = plan?.currency || 'USD';
+
+    // Validar que paymentData tenga los datos necesarios
+    if (!paymentData) {
+      console.error('❌ Payment data is null or undefined');
+      this.showErrorToast('Error: No se pudieron obtener los datos de pago. Por favor contacta soporte.');
       return;
     }
 
-    const alert = await this.alertController.create({
-      header: 'Reportar Pago',
-      message: 'Ingresa la información de tu pago:',
-      inputs: [
-        {
-          name: 'transactionId',
-          type: 'text',
-          placeholder: 'ID de transacción',
-          attributes: {
-            required: true
-          }
-        },
-        {
-          name: 'paymentMethod',
-          type: 'text',
-          placeholder: 'Método de pago',
-          value: 'transferencia',
-          attributes: {
-            required: true
-          }
-        },
-        {
-          name: 'amount',
-          type: 'number',
-          placeholder: 'Monto pagado',
-          attributes: {
-            required: true,
-            min: 0
-          }
-        }
-      ],
-      buttons: [
-        {
-          text: 'Cancelar',
-          role: 'cancel'
-        },
-        {
-          text: 'Reportar',
-          handler: async (data): Promise<boolean> => {
-            if (!data.transactionId || !data.paymentMethod || !data.amount) {
-              this.showErrorToast('Por favor completa todos los campos');
-              return false;
-            }
+    // Si paymentData tiene un error, mostrar mensaje específico
+    if (paymentData.error || paymentData.requiresSupport) {
+      console.error('❌ Payment data error:', paymentData);
+      const errorMessage = paymentData.error || 'No se pudieron obtener los datos de pago. Por favor contacta soporte.';
+      const suggestion = paymentData.suggestion ? `\n\nSugerencia: ${paymentData.suggestion}` : '';
+      this.showErrorToast(errorMessage + suggestion);
+      return;
+    }
 
-            try {
-              await this.submitPaymentReport(
-                data.transactionId,
-                data.paymentMethod,
-                parseFloat(data.amount)
-              );
-              return true;
-            } catch (error) {
-              console.error('Error reporting payment:', error);
-              return false;
-            }
-          }
-        }
-      ]
+    // Validar que paymentData tenga los datos necesarios
+    if (!paymentData.bank || !paymentData.phoneNumber || !paymentData.identificationNumber) {
+      console.error('❌ Payment data incomplete:', paymentData);
+      this.showErrorToast('Error: No se pudieron obtener los datos de pago completos. Por favor contacta soporte.');
+      return;
+    }
+
+    console.log('✅ Showing payment instructions:', { planName, paymentData });
+
+    // 🔥 NUEVO: Usar modal personalizado en lugar de alert
+    const modal = await this.modalController.create({
+      component: PaymentInstructionsModalComponent,
+      componentProps: {
+        plan: {
+          name: planName,
+          price: planPrice,
+          currency: planCurrency
+        },
+        paymentData: paymentData
+      },
+      cssClass: 'payment-instructions-modal'
     });
 
-    await alert.present();
+    await modal.present();
+
+    const { data } = await modal.onDidDismiss();
+
+    if (data?.reportPayment) {
+      // Si el usuario quiere reportar el pago, abrir el modal de reporte
+      setTimeout(() => {
+        this.reportPayment();
+      }, 300);
+    }
   }
 
-  async submitPaymentReport(transactionId: string, paymentMethod: string, amount: number) {
-    if (!this.currentSubscription) return;
 
-    const loading = await this.loadingController.create({
-      message: 'Reportando pago...',
-      spinner: 'crescent'
-    });
-    await loading.present();
-
+  async reportPayment() {
+    // Validar que haya una suscripción pendiente
+    let pendingSubscription: UserSubscription | null = null;
     try {
-      // Intentar comprar el plan actual con la información de pago
-      await this.subscriptionService.purchasePlan(
-        this.currentSubscription.planCode,
-        paymentMethod,
-        transactionId
-      );
+      pendingSubscription = await this.subscriptionService.getCurrentSubscription();
       
-      await loading.dismiss();
-      this.showSuccessToast('Pago reportado exitosamente. Se verificará pronto.');
-      await this.loadSubscription();
-      
-    } catch (error: any) {
-      await loading.dismiss();
-      console.error('Error reportando pago:', error);
-      
-      let errorMessage = 'Error al reportar el pago';
-      if (error.error?.message) {
-        errorMessage = error.error.message;
+      // Verificar que la suscripción esté pendiente
+      if (!pendingSubscription || pendingSubscription.status !== 'pending') {
+        this.showErrorToast('No tienes una solicitud de plan pendiente de pago');
+        return;
       }
+    } catch (error: any) {
+      if (error.status === 404 || error.status === 400) {
+        // No hay suscripción, esto es normal
+      } else {
+        console.error('Error obteniendo suscripción:', error);
+      }
+    }
+    
+    if (!pendingSubscription || pendingSubscription.status !== 'pending') {
+      this.showErrorToast('No tienes una solicitud de plan pendiente. Por favor solicita un plan primero.');
+      return;
+    }
+
+    // 🔥 Obtener el método de pago usado en la compra pendiente
+    let paymentMethod = null;
+    try {
+      // Buscar la compra pendiente para obtener el método de pago
+      const purchases = await this.subscriptionService.getPurchaseHistory();
+      const pendingPurchase = purchases.find(p => p.paymentStatus === 'pending');
       
-      this.showErrorToast(errorMessage);
+      if (pendingPurchase && pendingPurchase.paymentMethod) {
+        // Buscar el método de pago en la lista de métodos disponibles
+        paymentMethod = this.paymentMethods.find(m => m.code === pendingPurchase.paymentMethod);
+      }
+    } catch (error) {
+      console.error('Error obteniendo método de pago:', error);
+    }
+
+    // Si no se encuentra el método, usar el primero disponible (fallback)
+    if (!paymentMethod && this.paymentMethods.length > 0) {
+      paymentMethod = this.paymentMethods[0];
+    }
+
+    // 🔥 Abrir modal de reporte de pago
+    const modal = await this.modalController.create({
+      component: PaymentReportModalComponent,
+      componentProps: {
+        subscription: pendingSubscription,
+        paymentMethod: paymentMethod
+      },
+      cssClass: 'payment-report-modal'
+    });
+
+    await modal.present();
+
+    const { data } = await modal.onDidDismiss();
+
+    if (data?.success) {
+      // Recargar suscripción para actualizar el estado
+      await this.loadSubscription();
+      this.showSuccessToast('Pago reportado exitosamente. Tu pago será verificado y el plan se activará pronto.');
     }
   }
 

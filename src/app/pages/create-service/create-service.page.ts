@@ -6,6 +6,7 @@ import { FormsModule } from '@angular/forms';
 import { IonicModule } from '@ionic/angular';
 import { ApiService } from '../../services/api.service';
 import { firstValueFrom } from 'rxjs';
+import { timeout } from 'rxjs/operators';
 import { CacheService } from '../../services/cache.service';
 import { AuthService } from '../../services/auth.service';
 import { Category, Question } from '../../models/provider.model';
@@ -222,49 +223,64 @@ export class CreateServicePage implements OnInit {
       return;
     }
 
-    this.isLoading = true;
+    // 🔥 MEJORADO: Crear loading antes de validaciones adicionales
     const loading = await this.loadingController.create({
       message: 'Creando servicio...',
-      spinner: 'crescent'
+      spinner: 'crescent',
+      backdropDismiss: false // Evitar que se cierre accidentalmente
     });
     await loading.present();
 
+    this.isLoading = true;
+
     try {
-      const formData = new FormData();
-      
-      // 🔥 IMPORTANTE: Agregar userId del usuario autenticado
+      // 🔥 IMPORTANTE: Validar usuario autenticado ANTES de crear FormData
       const currentUser = this.authService.getCurrentUser();
-      if (currentUser) {
-        formData.append('userId', currentUser.id);
-        console.log('✅ Agregando userId al formulario:', currentUser.id);
-      } else {
+      if (!currentUser) {
         console.error('❌ No se encontró usuario autenticado');
-        this.showErrorToast('Debes estar logueado para crear un servicio');
+        await loading.dismiss();
+        this.isLoading = false;
+        await this.showErrorToast('Debes estar logueado para crear un servicio');
         return;
       }
+
+      const formData = new FormData();
+      
+      // Agregar userId del usuario autenticado
+      formData.append('userId', currentUser.id);
+      console.log('✅ Agregando userId al formulario:', currentUser.id);
       
       // Basic information
-      formData.append('name', this.formData.name);
-      formData.append('description', this.formData.description);
+      formData.append('name', this.formData.name.trim());
+      formData.append('description', this.formData.description.trim());
       formData.append('category', this.formData.categoryId);
-      formData.append('phone_contact', this.formData.phone_contact);
-      formData.append('phone_number', this.formData.phone_number);
-      formData.append('email', this.formData.email);
-      formData.append('site_web', this.formData.site_web);
+      formData.append('phone_contact', this.formData.phone_contact.trim());
+      formData.append('phone_number', this.formData.phone_number.trim() || '');
+      formData.append('email', this.formData.email.trim() || '');
+      formData.append('site_web', this.formData.site_web.trim() || '');
       formData.append('isHighlighted', this.formData.isHighlighted.toString());
       formData.append('isVerified', this.formData.isVerified.toString());
 
       // Social media
-      formData.append('facebook', this.formData.facebook);
-      formData.append('instagram', this.formData.instagram);
-      formData.append('tiktok', this.formData.tiktok);
-      formData.append('linkedin', this.formData.linkedin);
+      formData.append('facebook', this.formData.facebook.trim() || '');
+      formData.append('instagram', this.formData.instagram.trim() || '');
+      formData.append('tiktok', this.formData.tiktok.trim() || '');
+      formData.append('linkedin', this.formData.linkedin.trim() || '');
 
       // Schedule and questions
       formData.append('schedule', JSON.stringify(this.formData.schedule));
       formData.append('questions', JSON.stringify(this.formData.questions));
 
-      // Address
+      // Address - Validar que tenga coordenadas válidas
+      if (!this.formData.address.location.coordinates || 
+          this.formData.address.location.coordinates[0] === 0 || 
+          this.formData.address.location.coordinates[1] === 0) {
+        await loading.dismiss();
+        this.isLoading = false;
+        await this.showErrorToast('Por favor, confirma la ubicación en el mapa');
+        return;
+      }
+      
       formData.append('address', JSON.stringify(this.formData.address));
 
       // Images
@@ -278,22 +294,62 @@ export class CreateServicePage implements OnInit {
         });
       }
 
-      const response = await firstValueFrom(this.apiService.createProvider(formData));
+      // 🔥 MEJORADO: Agregar timeout y mejor manejo de errores
+      console.log('📤 Enviando petición para crear servicio...');
       
-      if (response) {
-        // 🔥 OPTIMIZADO: Invalidar todos los caches relacionados con providers
+      const response = await firstValueFrom(
+        this.apiService.createProvider(formData).pipe(
+          timeout(60000) // Timeout de 60 segundos
+        )
+      );
+      
+      // 🔥 MEJORADO: Validar respuesta del servidor
+      if (response && response.status === 'success') {
+        console.log('✅ Servicio creado exitosamente:', response);
+        
+        // Invalidar todos los caches relacionados con providers
         await this.cacheService.invalidateProviderCaches();
         
         console.log('✅ Cache invalidado - el servicio aparecerá inmediatamente');
-        this.showSuccessToast('Servicio creado correctamente');
-        this.router.navigate(['/tabs/services']);
+        await loading.dismiss();
+        await this.showSuccessToast('Servicio creado correctamente');
+        
+        // Navegar después de mostrar el toast
+        setTimeout(() => {
+          this.router.navigate(['/tabs/services']);
+        }, 500);
+      } else {
+        // Respuesta del servidor indica error
+        const errorMessage = response?.message || 'El servidor no respondió correctamente';
+        console.error('❌ Error en respuesta del servidor:', response);
+        await loading.dismiss();
+        this.isLoading = false;
+        await this.showErrorToast(errorMessage);
       }
-    } catch (error) {
-      console.error('Error creating provider:', error);
-      this.showErrorToast('Error al crear el servicio');
-    } finally {
-      this.isLoading = false;
+    } catch (error: any) {
+      console.error('❌ Error creating provider:', error);
+      
+      // 🔥 MEJORADO: Mostrar mensaje de error específico
+      let errorMessage = 'Error al crear el servicio';
+      
+      if (error.name === 'TimeoutError') {
+        errorMessage = 'La solicitud tardó demasiado. Por favor, intenta de nuevo';
+      } else if (error.error) {
+        // Error del servidor
+        if (error.error.message) {
+          errorMessage = error.error.message;
+        } else if (error.error.error) {
+          errorMessage = error.error.error;
+        } else if (typeof error.error === 'string') {
+          errorMessage = error.error;
+        }
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
       await loading.dismiss();
+      this.isLoading = false;
+      await this.showErrorToast(errorMessage);
     }
   }
 
