@@ -29,13 +29,16 @@ export class AppComponent implements OnInit, OnDestroy {
     console.log('🚀 AppComponent: Iniciando aplicación AKI...');
     
     try {
-      // Inicializar StatusBar
-      await this.initializeStatusBar();
-      console.log('✅ AppComponent: StatusBar inicializado');
-      
       // Esperar a que la plataforma esté lista
       await this.platform.ready();
       console.log('✅ AppComponent: Plataforma lista');
+      
+      // 🔥 FORZAR MODO CLARO - Desactivar modo oscuro del sistema
+      this.forceLightMode();
+      
+      // Inicializar StatusBar
+      await this.initializeStatusBar();
+      console.log('✅ AppComponent: StatusBar inicializado');
       
       // 🔥 Iniciar actualizaciones automáticas de ubicación
       await this.initializeLocationTracking();
@@ -152,6 +155,42 @@ export class AppComponent implements OnInit, OnDestroy {
       }
     } catch (error) {
       console.error('❌ Error configurando deep linking:', error);
+    }
+  }
+
+  /**
+   * 🔥 Fuerza el modo claro, desactivando el modo oscuro del sistema
+   */
+  private forceLightMode() {
+    try {
+      // Remover clase dark del body si existe
+      if (document.body.classList.contains('dark')) {
+        document.body.classList.remove('dark');
+      }
+      
+      // Forzar tema claro en el documento
+      document.documentElement.setAttribute('data-theme', 'light');
+      document.documentElement.style.colorScheme = 'light';
+      
+      // Prevenir que Ionic detecte preferencias de modo oscuro
+      const style = document.createElement('style');
+      style.textContent = `
+        :root {
+          color-scheme: light !important;
+        }
+        html {
+          color-scheme: light !important;
+        }
+        body {
+          background-color: #ffffff !important;
+          color: #222428 !important;
+        }
+      `;
+      document.head.appendChild(style);
+      
+      console.log('✅ Modo claro forzado correctamente');
+    } catch (error) {
+      console.error('❌ Error forzando modo claro:', error);
     }
   }
 

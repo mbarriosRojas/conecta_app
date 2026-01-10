@@ -37,12 +37,18 @@
  * https://ionicframework.com/docs/theming/dark-mode
  */
 
+/* 🔥 MODE OSCURO DESACTIVADO - Siempre modo claro */
 /* @import "@ionic/angular/css/palettes/dark.always.css"; */
 /* @import "@ionic/angular/css/palettes/dark.class.css"; */
-@import "@ionic/angular/css/palettes/dark.system.css";
+/* @import "@ionic/angular/css/palettes/dark.system.css"; */
 
-/* 🌙 Dark Mode Theme - Hoja de estilos separada */
-@import "./theme/dark-mode.theme.scss";
+/* 🌙 Dark Mode Theme - DESACTIVADO para siempre usar modo claro */
+/* @import "./theme/dark-mode.theme.scss"; */
+
+/* Fuente global consistente (WhatsApp style) */
+* {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+}
 
 /* App Variables - Modo Claro */
 :root {
@@ -112,12 +118,12 @@ ion-button.primary-action {
   outline: none !important;
 }
 
-/* Variante para modo oscuro: mantener contraste */
-@media (prefers-color-scheme: dark) {
+/* 🔥 Modo oscuro desactivado - siempre usar modo claro */
+/* @media (prefers-color-scheme: dark) {
   ion-button.primary-action {
     box-shadow: 0 6px 18px rgba(0,0,0,0.45);
   }
-}
+} */
 
 ion-item.custom-item ion-input::part(native)::placeholder,
 ion-item.shared-input ion-input::part(native)::placeholder {
@@ -178,8 +184,8 @@ ion-app {
   }
 }
 
-/* 🌙 Dark Mode - Variables personalizadas básicas (más detalladas en dark-mode.theme.scss) */
-@media (prefers-color-scheme: dark) {
+/* 🔥 Modo oscuro desactivado - siempre usar modo claro */
+/* @media (prefers-color-scheme: dark) {
   :root {
     --whatsapp-background: #1a1a1a;
     --whatsapp-border: #2d2d2d;
@@ -189,7 +195,6 @@ ion-app {
     --selected-purple: #fcb567;
   }
   
-  /* Safe area y headers - mantener aquí para compatibilidad */
   ion-header {
     ion-toolbar {
       --padding-top: env(safe-area-inset-top);
@@ -197,19 +202,18 @@ ion-app {
       --padding-end: env(safe-area-inset-right);
       --min-height: calc(56px + env(safe-area-inset-top));
       
-      padding-top: constant(safe-area-inset-top); /* iOS 11.0 */
-      padding-top: env(safe-area-inset-top); /* iOS 11.2+ */
+      padding-top: constant(safe-area-inset-top);
+      padding-top: env(safe-area-inset-top);
     }
   }
   
-  /* Modal de cambio de contraseña - específico */
   .change-password-modal {
     ion-item {
       --background: #2d2d2d;
       --color: #e5e5e5;
     }
   }
-}
+} */
 
 /* ========================================
    SAFE AREA FIX - Solución para la barra de estado
@@ -236,11 +240,11 @@ ion-header {
   top: 0 !important;
 }
 
-// Modo oscuro - asegurar que el safe area tenga el color correcto
-@media (prefers-color-scheme: dark) {
+// 🔥 Modo oscuro desactivado - siempre usar modo claro
+/* @media (prefers-color-scheme: dark) {
   ion-header {
     ion-toolbar {
       --background: var(--ion-toolbar-background, #1a1a1a);
     }
   }
-}
+} */

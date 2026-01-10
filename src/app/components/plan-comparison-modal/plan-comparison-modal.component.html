@@ -108,27 +108,50 @@
             <h3>Datos para Realizar el Pago</h3>
           </div>
           <div class="payment-data-content">
-            <div class="payment-data-item">
-              <ion-icon name="business-outline"></ion-icon>
-              <div>
-                <strong>Banco:</strong>
-                <span>{{ selectedPaymentMethod.paymentData.bank }}</span>
+            
+            <!-- Pago Móvil / Transferencia -->
+            <ng-container *ngIf="selectedPaymentMethod.paymentData.type === 'pago_movil' || (!selectedPaymentMethod.paymentData.type && selectedPaymentMethod.paymentData.bank)">
+              <div class="payment-data-item" *ngIf="selectedPaymentMethod.paymentData.bank">
+                <ion-icon name="business-outline"></ion-icon>
+                <div>
+                  <strong>Banco:</strong>
+                  <span>{{ selectedPaymentMethod.paymentData.bank }}</span>
+                </div>
               </div>
-            </div>
-            <div class="payment-data-item">
-              <ion-icon name="call-outline"></ion-icon>
-              <div>
-                <strong>Teléfono:</strong>
-                <span>{{ selectedPaymentMethod.paymentData.phoneNumber }}</span>
+              <div class="payment-data-item" *ngIf="selectedPaymentMethod.paymentData.phoneNumber">
+                <ion-icon name="call-outline"></ion-icon>
+                <div>
+                  <strong>Teléfono:</strong>
+                  <span>{{ selectedPaymentMethod.paymentData.phoneNumber }}</span>
+                </div>
               </div>
-            </div>
-            <div class="payment-data-item">
-              <ion-icon name="card-outline"></ion-icon>
-              <div>
-                <strong>Documento:</strong>
-                <span>{{ selectedPaymentMethod.paymentData.identificationNumber }}</span>
+              <div class="payment-data-item" *ngIf="selectedPaymentMethod.paymentData.identificationNumber">
+                <ion-icon name="card-outline"></ion-icon>
+                <div>
+                  <strong>Documento:</strong>
+                  <span>{{ selectedPaymentMethod.paymentData.identificationNumber }}</span>
+                </div>
               </div>
-            </div>
+            </ng-container>
+
+            <!-- Binance Pay -->
+            <ng-container *ngIf="selectedPaymentMethod.paymentData.type === 'binance' || selectedPaymentMethod.paymentData.email">
+              <div class="payment-data-item" *ngIf="selectedPaymentMethod.paymentData.email">
+                <ion-icon name="mail-outline"></ion-icon>
+                <div>
+                  <strong>Correo:</strong>
+                  <span>{{ selectedPaymentMethod.paymentData.email }}</span>
+                </div>
+              </div>
+              <div class="payment-data-item" *ngIf="selectedPaymentMethod.paymentData.binanceId">
+                <ion-icon name="wallet-outline"></ion-icon>
+                <div>
+                  <strong>ID Binance:</strong>
+                  <span>{{ selectedPaymentMethod.paymentData.binanceId }}</span>
+                </div>
+              </div>
+            </ng-container>
+
           </div>
           <ion-note class="payment-data-note">
             <ion-icon name="warning-outline"></ion-icon>

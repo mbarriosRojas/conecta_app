@@ -31,6 +31,7 @@ export class MapAddressComponent implements OnInit, AfterViewInit, OnDestroy {
   @Input() initialAddress: Partial<AddressData> = {};
   @Input() height: string = '300px';
   @Input() showMap: boolean = true;
+  @Input() hideHeader: boolean = false; // Ocultar header cuando se usa dentro de acordeón
   
   @Output() addressSelected = new EventEmitter<AddressData>();
   @Output() addressChanged = new EventEmitter<Partial<AddressData>>();
@@ -72,14 +73,62 @@ export class MapAddressComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private googleMapsLoadCheckInterval: any = null;
   private maxLoadAttempts = 50; // Máximo 5 segundos (50 * 100ms)
+  private mapInitialized = false; // Flag para evitar múltiples inicializaciones
+  private checkMapVisibilityInterval: any = null;
 
   ngAfterViewInit() {
-    console.log('🗺️ MapAddressComponent: Vista inicializada, cargando mapa...');
+    console.log('🗺️ MapAddressComponent: Vista inicializada, verificando visibilidad del mapa...');
     
-    // Esperar un poco para asegurar que el DOM esté completamente renderizado
-    setTimeout(() => {
-      this.loadGoogleMaps();
-    }, 100);
+    // Verificar si el elemento del mapa es visible antes de inicializar
+    this.checkMapVisibility();
+  }
+
+  ngOnDestroy() {
+    // Limpiar todos los intervalos
+    if (this.googleMapsLoadCheckInterval) {
+      clearInterval(this.googleMapsLoadCheckInterval);
+      this.googleMapsLoadCheckInterval = null;
+    }
+    if (this.checkMapVisibilityInterval) {
+      clearInterval(this.checkMapVisibilityInterval);
+      this.checkMapVisibilityInterval = null;
+    }
+    
+    // Limpiar el mapa si existe
+    if (this.map) {
+      // Google Maps no requiere limpieza explícita, pero podemos resetear la referencia
+      this.map = null;
+    }
+  }
+
+  private checkMapVisibility() {
+    // Verificar cada 200ms si el elemento del mapa es visible
+    let attempts = 0;
+    const maxAttempts = 50; // 10 segundos máximo
+    
+    this.checkMapVisibilityInterval = setInterval(() => {
+      attempts++;
+      const mapElement = document.getElementById('addressMap');
+      
+      if (mapElement) {
+        // Verificar si el elemento es visible (no está oculto por display: none o dentro de un acordeón colapsado)
+        const isVisible = mapElement.offsetWidth > 0 && mapElement.offsetHeight > 0;
+        
+        if (isVisible && !this.mapInitialized) {
+          console.log('🗺️ MapAddressComponent: Elemento del mapa es visible, inicializando...');
+          clearInterval(this.checkMapVisibilityInterval);
+          this.mapInitialized = true;
+          // Esperar un poco para asegurar que el DOM esté completamente renderizado
+          setTimeout(() => {
+            this.loadGoogleMaps();
+          }, 100);
+        }
+      } else if (attempts >= maxAttempts) {
+        console.warn('🗺️ MapAddressComponent: Elemento del mapa no encontrado después de varios intentos');
+        clearInterval(this.checkMapVisibilityInterval);
+        this.isMapLoading = false;
+      }
+    }, 200);
   }
 
   private loadGoogleMaps() {
@@ -93,27 +142,48 @@ export class MapAddressComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     // Verificar si ya hay un script cargándose
-    const existingScript = document.querySelector('script[src*="maps.googleapis.com"]');
+    const existingScript = document.querySelector('script[src*="maps.googleapis.com"]') as HTMLScriptElement;
     if (existingScript) {
-      console.log('🗺️ MapAddressComponent: Script de Google Maps ya está cargándose, esperando...');
-      // Esperar a que se cargue con timeout
+      console.log('🗺️ MapAddressComponent: Script de Google Maps ya existe, esperando carga...');
+      
+      // Si el script ya tiene un onload, significa que ya se cargó o está en proceso
+      // Esperar a que se cargue con timeout más largo
       let attempts = 0;
+      const maxWaitAttempts = 100; // 10 segundos (100 * 100ms)
+      
+      // Limpiar intervalo anterior si existe
+      if (this.googleMapsLoadCheckInterval) {
+        clearInterval(this.googleMapsLoadCheckInterval);
+      }
+      
       this.googleMapsLoadCheckInterval = setInterval(() => {
         attempts++;
+        
+        // Verificar si Google Maps está disponible
         if (typeof window.google !== 'undefined' && window.google.maps && window.google.maps.places) {
-          console.log('🗺️ MapAddressComponent: Google Maps cargado, inicializando servicios...');
+          console.log('✅ MapAddressComponent: Google Maps cargado, inicializando servicios...');
           clearInterval(this.googleMapsLoadCheckInterval);
+          this.googleMapsLoadCheckInterval = null;
           this.initializeServices();
-        } else if (attempts >= this.maxLoadAttempts) {
-          console.error('🗺️ MapAddressComponent: Timeout esperando Google Maps');
+        } else if (attempts >= maxWaitAttempts) {
+          console.error('❌ MapAddressComponent: Timeout esperando Google Maps (10s)');
           clearInterval(this.googleMapsLoadCheckInterval);
+          this.googleMapsLoadCheckInterval = null;
           this.isMapLoading = false;
+          
+          // Intentar cargar un nuevo script si el anterior falló
+          console.log('🔄 MapAddressComponent: Intentando cargar nuevo script...');
+          this.loadNewGoogleMapsScript();
         }
       }, 100);
       return;
     }
 
     // Cargar Google Maps API si no está disponible
+    this.loadNewGoogleMapsScript();
+  }
+
+  private loadNewGoogleMapsScript() {
     const script = document.createElement('script');
     const apiKey = this.getGoogleMapsApiKey();
     script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`;
@@ -121,15 +191,28 @@ export class MapAddressComponent implements OnInit, AfterViewInit, OnDestroy {
     script.defer = true;
     
     script.onload = () => {
-      console.log('🗺️ MapAddressComponent: Script de Google Maps cargado');
-      // Esperar un momento para asegurar que todo esté inicializado
+      console.log('✅ MapAddressComponent: Script de Google Maps cargado (onload)');
+      // Esperar un momento para asegurar que Google Maps esté completamente inicializado
       setTimeout(() => {
-        this.initializeServices();
-      }, 100);
+        if (typeof window.google !== 'undefined' && window.google.maps && window.google.maps.places) {
+          this.initializeServices();
+        } else {
+          console.warn('⚠️ MapAddressComponent: Script cargado pero Google Maps no disponible aún, reintentando...');
+          // Reintentar después de más tiempo
+          setTimeout(() => {
+            if (typeof window.google !== 'undefined' && window.google.maps && window.google.maps.places) {
+              this.initializeServices();
+            } else {
+              console.error('❌ MapAddressComponent: Google Maps no disponible después de esperar');
+              this.isMapLoading = false;
+            }
+          }, 1000);
+        }
+      }, 300);
     };
     
     script.onerror = () => {
-      console.error('❌ Error cargando Google Maps API');
+      console.error('❌ MapAddressComponent: Error cargando Google Maps API');
       this.isMapLoading = false;
     };
     
@@ -143,9 +226,24 @@ export class MapAddressComponent implements OnInit, AfterViewInit, OnDestroy {
   private initializeServices() {
     console.log('🗺️ MapAddressComponent: Inicializando servicios de Google...');
     
-    if (!window.google || !window.google.maps || !window.google.maps.places) {
-      console.error('🗺️ MapAddressComponent: Google Maps Places no está disponible');
+    // Verificar múltiples veces que Google Maps esté completamente cargado
+    if (!window.google || !window.google.maps) {
+      console.error('🗺️ MapAddressComponent: Google Maps no está disponible');
       this.isMapLoading = false;
+      return;
+    }
+
+    // Esperar un poco más para asegurar que Places esté disponible
+    if (!window.google.maps.places) {
+      console.warn('⚠️ MapAddressComponent: Places aún no está disponible, esperando...');
+      setTimeout(() => {
+        if (window.google && window.google.maps && window.google.maps.places) {
+          this.initializeServices();
+        } else {
+          console.error('❌ MapAddressComponent: Places no disponible después de esperar');
+          this.isMapLoading = false;
+        }
+      }, 500);
       return;
     }
 
@@ -192,7 +290,20 @@ export class MapAddressComponent implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
 
-    console.log('🗺️ MapAddressComponent: Elemento del mapa encontrado:', mapElement);
+    // Verificar que el elemento sea visible antes de inicializar
+    const isVisible = mapElement.offsetWidth > 0 && mapElement.offsetHeight > 0;
+    if (!isVisible) {
+      console.warn('🗺️ MapAddressComponent: Elemento del mapa no es visible aún, reintentando en 500ms...');
+      // Reintentar después de un tiempo si el mapa aún no está inicializado
+      setTimeout(() => {
+        if (!this.mapInitialized && this.showMap) {
+          this.initializeMap();
+        }
+      }, 500);
+      return;
+    }
+
+    console.log('🗺️ MapAddressComponent: Elemento del mapa encontrado y visible:', mapElement);
 
     try {
       const mapOptions = {
@@ -261,14 +372,22 @@ export class MapAddressComponent implements OnInit, AfterViewInit, OnDestroy {
 
     // 🔥 VERIFICAR que autocompleteService esté disponible
     if (!this.autocompleteService) {
-      console.warn('⚠️ AutocompleteService no está disponible, intentando inicializar...');
+      // Verificar si Google Maps está completamente cargado
+      if (!window.google || !window.google.maps || !window.google.maps.places) {
+        // Silenciar el error - solo mostrar una vez
+        if (!this.mapInitialized) {
+          console.warn('⚠️ MapAddressComponent: Google Maps aún no está disponible para búsqueda');
+        }
+        this.showSuggestions = false;
+        return;
+      }
       
       // Intentar inicializar si Google Maps está disponible
-      if (window.google && window.google.maps && window.google.maps.places) {
+      try {
         this.autocompleteService = new window.google.maps.places.AutocompleteService();
         console.log('✅ AutocompleteService inicializado en onAddressSearch');
-      } else {
-        console.error('❌ Google Maps Places no está disponible');
+      } catch (error) {
+        console.error('❌ Error inicializando AutocompleteService:', error);
         this.showSuggestions = false;
         return;
       }
@@ -329,26 +448,34 @@ export class MapAddressComponent implements OnInit, AfterViewInit, OnDestroy {
     // Actualizar mapa y marcador
     if (this.map) {
       this.map.setCenter(coordinates);
+      this.map.setZoom(16); // 🔥 Zoom más cercano cuando se selecciona una dirección
     }
     this.createMarker(coordinates);
 
     // Procesar componentes de dirección
     const addressComponents = this.parseAddressComponents(place.address_components);
     
+    // 🔥 Asegurar que siempre tengamos un street válido
+    const streetAddress = this.buildStreetAddress(addressComponents);
+    const cityAddress = addressComponents.city || addressComponents.locality || addressComponents.administrative_area_level_2 || '';
+    
     this.addressData = {
       ...this.addressData,
-      street: this.buildStreetAddress(addressComponents),
-      city: addressComponents.city || addressComponents.locality || addressComponents.administrative_area_level_2 || '',
+      street: streetAddress || place.formatted_address || place.name || 'Dirección sin nombre', // Fallback si no hay street
+      city: cityAddress || 'Ciudad no especificada',
       department: addressComponents.administrative_area_level_1 || addressComponents.state || '',
       country: addressComponents.country || 'Colombia',
       coordinates: coordinates,
-      formattedAddress: place.formatted_address
+      formattedAddress: place.formatted_address || place.name || ''
     };
 
     // Actualizar también el input de búsqueda con la dirección formateada
     if (this.addressInput) {
-      this.addressInput.value = place.formatted_address;
+      this.addressInput.value = this.addressData.formattedAddress || this.addressData.street;
     }
+
+    // Cerrar sugerencias
+    this.showSuggestions = false;
 
     this.emitAddressChanged();
   }
@@ -445,29 +572,50 @@ export class MapAddressComponent implements OnInit, AfterViewInit, OnDestroy {
           
           console.log('Parsed address components:', addressComponents);
           
+          // 🔥 Asegurar que siempre tengamos valores válidos
+          const streetAddress = this.buildStreetAddress(addressComponents);
+          const cityAddress = addressComponents.city || addressComponents.locality || addressComponents.administrative_area_level_2 || '';
+          
           // Crear un nuevo objeto para forzar la detección de cambios
           this.addressData = {
             ...this.addressData,
             coordinates: { lat, lng },
-            street: this.buildStreetAddress(addressComponents),
-            city: addressComponents.city || addressComponents.locality || addressComponents.administrative_area_level_2 || '',
+            street: streetAddress || place.formatted_address || `Lat: ${lat.toFixed(6)}, Lng: ${lng.toFixed(6)}`, // Fallback
+            city: cityAddress || 'Ciudad no especificada',
             department: addressComponents.administrative_area_level_1 || addressComponents.state || '',
             country: addressComponents.country || 'Colombia',
-            formattedAddress: place.formatted_address
+            formattedAddress: place.formatted_address || ''
           };
 
           console.log('Updated address data:', this.addressData);
 
           // Actualizar también el input de búsqueda con la dirección formateada
           if (this.addressInput) {
-            this.addressInput.value = place.formatted_address;
+            this.addressInput.value = this.addressData.formattedAddress || this.addressData.street;
           }
 
           this.emitAddressChanged();
         } else {
           console.error('Geocoding failed:', status);
+          // 🔥 Si falla el geocoding, al menos actualizar las coordenadas
+          this.addressData = {
+            ...this.addressData,
+            coordinates: { lat, lng },
+            street: this.addressData.street || `Lat: ${lat.toFixed(6)}, Lng: ${lng.toFixed(6)}`,
+            formattedAddress: `Lat: ${lat.toFixed(6)}, Lng: ${lng.toFixed(6)}`
+          };
+          this.emitAddressChanged();
         }
       });
+    } else {
+      // Si no hay geocoder, al menos actualizar las coordenadas
+      this.addressData = {
+        ...this.addressData,
+        coordinates: { lat, lng },
+        street: this.addressData.street || `Lat: ${lat.toFixed(6)}, Lng: ${lng.toFixed(6)}`,
+        formattedAddress: `Lat: ${lat.toFixed(6)}, Lng: ${lng.toFixed(6)}`
+      };
+      this.emitAddressChanged();
     }
   }
 
@@ -497,14 +645,26 @@ export class MapAddressComponent implements OnInit, AfterViewInit, OnDestroy {
     );
   }
 
-  // Confirmar dirección
+  // Confirmar dirección (ahora opcional, ya que se auto-confirma)
   confirmAddress() {
-    this.addressSelected.emit(this.addressData);
+    // Solo confirmar si hay datos válidos
+    if (this.addressData.street && this.addressData.city && this.addressData.coordinates) {
+      this.addressSelected.emit(this.addressData);
+    }
   }
 
   // Emitir cambios
   private emitAddressChanged() {
     this.addressChanged.emit(this.addressData);
+    
+    // 🔥 NUEVO: Auto-confirmar si la dirección es válida
+    // Esto hace que la confirmación sea automática sin necesidad de botón
+    if (this.addressData.street && this.addressData.city && this.addressData.coordinates) {
+      // Pequeño delay para asegurar que el geocoding haya terminado
+      setTimeout(() => {
+        this.addressSelected.emit(this.addressData);
+      }, 300);
+    }
   }
 
   // Cerrar sugerencias
@@ -512,12 +672,5 @@ export class MapAddressComponent implements OnInit, AfterViewInit, OnDestroy {
     setTimeout(() => {
       this.showSuggestions = false;
     }, 200);
-  }
-
-  ngOnDestroy() {
-    // Limpiar intervalos
-    if (this.googleMapsLoadCheckInterval) {
-      clearInterval(this.googleMapsLoadCheckInterval);
-    }
   }
 }

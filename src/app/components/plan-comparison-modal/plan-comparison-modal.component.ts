@@ -48,9 +48,10 @@ export class PlanComparisonModalComponent implements OnInit {
       return;
     }
 
-    // Si es plan gratis, activar directamente
+    // 🔥 MEJORADO: Si es plan gratis, activar directamente sin método de pago
     if (this.selectedPlan.price === 0) {
-      this.requestPlanWithPayment();
+      console.log('🔥 Plan gratuito seleccionado, activando directamente...');
+      this.requestPlanWithPayment(); // Esto llamará con paymentMethodCode = undefined
       return;
     }
 
@@ -90,15 +91,19 @@ export class PlanComparisonModalComponent implements OnInit {
     this.isLoading = true;
 
     try {
-      // Si es plan gratis, no necesita método de pago
-      const paymentMethodCode = this.selectedPlan.price === 0 
-        ? undefined 
+      // 🔥 MEJORADO: Si es plan gratis, no necesita método de pago (undefined)
+      // Solo enviar paymentMethodCode si es plan de pago
+      const isFreePlan = this.selectedPlan.price === 0;
+      const paymentMethodCode = isFreePlan 
+        ? undefined // Plan gratis no necesita método de pago
         : (this.selectedPaymentMethod?.code || this.paymentMethods[0]?.code);
 
       console.log('🔥 Requesting plan:', {
         planCode: this.selectedPlan.code,
-        paymentMethodCode,
-        planPrice: this.selectedPlan.price
+        planName: this.selectedPlan.name,
+        planPrice: this.selectedPlan.price,
+        isFreePlan: isFreePlan,
+        paymentMethodCode: paymentMethodCode
       });
 
       const result = await this.subscriptionService.purchasePlan(
@@ -109,40 +114,41 @@ export class PlanComparisonModalComponent implements OnInit {
       console.log('🔥 Plan purchase result:', {
         subscriptionStatus: result.subscription?.status,
         hasPaymentData: !!result.paymentData,
-        paymentData: result.paymentData
+        paymentData: result.paymentData,
+        planCode: result.subscription?.planCode
       });
       
-      // Si el plan quedó en estado pending, SIEMPRE cerrar modal y mostrar instrucciones
-      // 🔥 MEJORADO: Usar paymentData del método seleccionado (ya viene incluido en los métodos)
-      let paymentData: any = result.paymentData;
-      
-      // Si paymentData tiene un error, ignorarlo y usar el del método
-      if (paymentData && (paymentData.error || paymentData.requiresSupport)) {
-        console.warn('⚠️ Payment data from response has error, using method data:', paymentData);
-        paymentData = null;
+      // 🔥 MEJORADO: Plan gratis siempre debe estar 'active', nunca 'pending'
+      if (isFreePlan && result.subscription?.status !== 'active') {
+        console.error('❌ ERROR: Plan gratuito no debería estar en estado:', result.subscription?.status);
+        console.error('❌ Subscription:', result.subscription);
       }
       
-      // Si no hay paymentData válido, usar el del método seleccionado
-      if (!paymentData && this.selectedPaymentMethod?.paymentData) {
-        paymentData = this.selectedPaymentMethod.paymentData;
-        console.log('✅ Using payment data from selected method:', paymentData);
-      }
-      
+      // Si el plan quedó en estado pending, mostrar instrucciones de pago
+      // Esto solo debería pasar con planes de pago que requieren verificación manual
       if (result.subscription?.status === 'pending') {
         console.log('🔥 Plan is pending, dismissing with payment data:', {
-          hasPaymentData: !!paymentData,
-          paymentData: paymentData
+          hasPaymentData: !!result.paymentData,
+          paymentData: result.paymentData
         });
+        
+        // 🔥 MEJORADO: Usar paymentData del método seleccionado si no viene en la respuesta
+        let paymentData: any = result.paymentData;
+        if (!paymentData && this.selectedPaymentMethod?.paymentData) {
+          paymentData = this.selectedPaymentMethod.paymentData;
+          console.log('✅ Using payment data from selected method:', paymentData);
+        }
+        
         await this.modalController.dismiss({ 
           success: true, 
           plan: this.selectedPlan,
           subscription: result.subscription,
           paymentData: paymentData || null,
-          showPaymentInstructions: true // 🔥 SIEMPRE mostrar instrucciones si está pending
+          showPaymentInstructions: true
         });
       } else {
         // Plan activado directamente (gratis o pago automático)
-        console.log('🔥 Plan activated directly');
+        console.log('✅ Plan activated directly with status:', result.subscription?.status);
         await this.modalController.dismiss({ 
           success: true, 
           plan: this.selectedPlan,

@@ -2,8 +2,8 @@ import { Component, Input, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { IonicModule, ModalController, LoadingController, ToastController } from '@ionic/angular';
-import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { SubscriptionService } from '../../services/subscription.service';
+import { CameraService } from '../../services/camera.service';
 
 @Component({
   selector: 'app-payment-report-modal',
@@ -36,7 +36,8 @@ export class PaymentReportModalComponent implements OnInit {
     private modalController: ModalController,
     private subscriptionService: SubscriptionService,
     private loadingController: LoadingController,
-    private toastController: ToastController
+    private toastController: ToastController,
+    private cameraService: CameraService
   ) {}
 
   ngOnInit() {
@@ -44,11 +45,12 @@ export class PaymentReportModalComponent implements OnInit {
     const today = new Date();
     this.paymentDate = today.toISOString().split('T')[0];
     
-    // Establecer monto por defecto desde la suscripción
-    if (this.subscription?.planID?.price) {
-      this.reportedAmount = this.subscription.planID.price;
-      this.reportedCurrency = this.subscription.planID.currency || 'USD';
-    }
+          // Establecer monto por defecto desde la suscripción
+          if (this.subscription?.planID?.price) {
+            this.reportedAmount = this.subscription.planID.price;
+            // La moneda se determina automáticamente desde el plan
+            this.reportedCurrency = this.subscription.planID.currency || 'USD';
+          }
 
     // Determinar qué campos mostrar según el método de pago
     this.setupFieldsForPaymentMethod();
@@ -93,35 +95,43 @@ export class PaymentReportModalComponent implements OnInit {
 
   async takePhoto() {
     try {
-      const image = await Camera.getPhoto({
-        quality: 90,
-        allowEditing: false,
-        resultType: CameraResultType.Base64,
-        source: CameraSource.Camera
-      });
+      const image = await this.cameraService.takePhoto(90);
+      
+      if (!image) {
+        // Usuario canceló, no es un error
+        return;
+      }
 
-      this.paymentProof = `data:image/${image.format};base64,${image.base64String}`;
-      this.paymentProofPreview = this.paymentProof;
-    } catch (error) {
+      this.paymentProof = image.base64String || '';
+      this.paymentProofPreview = image.dataUrl || '';
+      
+      if (this.paymentProofPreview) {
+        this.showToast('Foto tomada exitosamente', 'success');
+      }
+    } catch (error: any) {
       console.error('Error taking photo:', error);
-      this.showToast('Error al tomar la foto', 'danger');
+      this.showToast(error.message || 'Error al tomar la foto', 'danger');
     }
   }
 
   async selectPhoto() {
     try {
-      const image = await Camera.getPhoto({
-        quality: 90,
-        allowEditing: false,
-        resultType: CameraResultType.Base64,
-        source: CameraSource.Photos
-      });
+      const image = await this.cameraService.selectPhoto(90);
+      
+      if (!image) {
+        // Usuario canceló, no es un error
+        return;
+      }
 
-      this.paymentProof = `data:image/${image.format};base64,${image.base64String}`;
-      this.paymentProofPreview = this.paymentProof;
-    } catch (error) {
+      this.paymentProof = image.base64String || '';
+      this.paymentProofPreview = image.dataUrl || '';
+      
+      if (this.paymentProofPreview) {
+        this.showToast('Foto seleccionada exitosamente', 'success');
+      }
+    } catch (error: any) {
       console.error('Error selecting photo:', error);
-      this.showToast('Error al seleccionar la foto', 'danger');
+      this.showToast(error.message || 'Error al seleccionar la foto', 'danger');
     }
   }
 
@@ -194,7 +204,7 @@ export class PaymentReportModalComponent implements OnInit {
     await loading.present();
 
     try {
-      await this.subscriptionService.reportPayment(
+      const result = await this.subscriptionService.reportPayment(
         this.identificationNumber || undefined,
         this.bank || undefined,
         this.lastSixDigits || undefined,
@@ -205,10 +215,16 @@ export class PaymentReportModalComponent implements OnInit {
         this.transactionNumber || undefined,
         this.referenceNumber || undefined
       );
-
+      
+      console.log('✅ Payment reported successfully:', result);
+      console.log('✅ Subscription status:', result?.subscription?.status);
+      
       await loading.dismiss();
       this.showToast('Pago reportado exitosamente', 'success');
-      await this.modalController.dismiss({ success: true });
+      await this.modalController.dismiss({ 
+        success: true,
+        subscription: result?.subscription // 🔥 Pasar la suscripción actualizada
+      });
     } catch (error: any) {
       await loading.dismiss();
       console.error('Error reporting payment:', error);

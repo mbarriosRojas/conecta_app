@@ -19,6 +19,26 @@ export class PaymentInstructionsModalComponent implements OnInit {
   ngOnInit() {
   }
 
+  getOtherDataKeys(paymentData: any): string[] {
+    return Object.keys(paymentData).filter(key => 
+      key !== 'type' && 
+      typeof paymentData[key] === 'string' || 
+      typeof paymentData[key] === 'number'
+    );
+  }
+
+  getLabelForKey(key: string): string {
+    const labels: { [key: string]: string } = {
+      email: 'Correo',
+      binanceId: 'ID Binance',
+      bank: 'Banco',
+      phoneNumber: 'Teléfono',
+      identificationNumber: 'Documento',
+      accountNumber: 'Número de Cuenta'
+    };
+    return labels[key] || key.charAt(0).toUpperCase() + key.slice(1);
+  }
+
   async reportPayment() {
     await this.modalController.dismiss({ reportPayment: true });
   }

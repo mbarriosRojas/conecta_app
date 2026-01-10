@@ -105,13 +105,25 @@
       </ion-card-content>
     </ion-card>
 
-    <!-- Dirección con Mapa -->
-    <app-map-address
-      [initialAddress]="initialAddressData"
-      [height]="'250px'"
-      (addressSelected)="onAddressSelected($event)"
-      (addressChanged)="onAddressChanged($event)">
-    </app-map-address>
+    <!-- Ubicación - Sección desplegable -->
+    <ion-card class="expandable-card">
+      <ion-card-header (click)="toggleSection('location')" class="expandable-header">
+        <ion-card-title>
+          <ion-icon name="location-outline"></ion-icon>
+          Ubicación
+        </ion-card-title>
+        <ion-icon [name]="expandedSections.location ? 'chevron-up' : 'chevron-down'" class="expand-icon"></ion-icon>
+      </ion-card-header>
+      <ion-card-content *ngIf="expandedSections.location" class="expandable-content">
+        <app-map-address
+          [initialAddress]="initialAddressData"
+          [height]="'250px'"
+          [hideHeader]="true"
+          (addressSelected)="onAddressSelected($event)"
+          (addressChanged)="onAddressChanged($event)">
+        </app-map-address>
+      </ion-card-content>
+    </ion-card>
 
     <!-- Horarios - Sección desplegable -->
     <ion-card class="expandable-card">
@@ -237,7 +249,7 @@
               </ion-button>
             </div>
             
-            <div class="upload-area" *ngIf="imagesPreviews.length < 10" (click)="triggerImagesUpload()">
+            <div class="upload-area" *ngIf="imagesPreviews.length < 3" (click)="triggerImagesUpload()">
               <ion-icon name="add-circle-outline" size="large" color="medium"></ion-icon>
               <p>Agregar imagen</p>
             </div>
@@ -256,7 +268,7 @@
           <p>• Selecciona al menos una imagen del servicio</p>
           <p>• Formatos recomendados: JPG, PNG</p>
           <p>• Tamaño máximo: 5MB por imagen</p>
-          <p>• Máximo 10 imágenes</p>
+          <p>• Máximo 3 imágenes</p>
         </ion-note>
       </ion-card-content>
     </ion-card>

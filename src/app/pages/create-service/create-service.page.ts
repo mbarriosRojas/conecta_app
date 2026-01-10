@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
-import { LoadingController, ToastController } from '@ionic/angular';
+import { AlertController, LoadingController, ToastController } from '@ionic/angular';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { IonicModule } from '@ionic/angular';
@@ -28,6 +28,7 @@ export class CreateServicePage implements OnInit {
     basic: true,      // Información básica siempre abierta
     contact: false,
     social: false,
+    location: false,
     schedule: false,
     questions: false,
     images: false
@@ -92,7 +93,8 @@ export class CreateServicePage implements OnInit {
     private cacheService: CacheService,
     private authService: AuthService,
     private loadingController: LoadingController,
-    private toastController: ToastController
+    private toastController: ToastController,
+    private alertController: AlertController
   ) {}
 
   ngOnInit() {
@@ -168,17 +170,36 @@ export class CreateServicePage implements OnInit {
 
   onImagesSelected(event: any) {
     const files = Array.from(event.target.files) as File[];
-    this.selectedImages = files;
     
-    // Crear previsualizaciones
-    this.imagesPreviews = [];
+    // Validar límite de 3 imágenes
+    const totalAfterAdd = this.selectedImages.length + files.length;
+    if (totalAfterAdd > 3) {
+      this.showErrorToast(`Máximo 3 imágenes permitidas. Ya tienes ${this.selectedImages.length}, puedes agregar ${3 - this.selectedImages.length} más.`);
+      // Resetear el input
+      event.target.value = '';
+      return;
+    }
+    
+    // Agregar nuevas imágenes a las existentes (no reemplazar)
     files.forEach(file => {
+      // Validar tamaño (5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        this.showErrorToast(`La imagen ${file.name} excede el tamaño máximo de 5MB`);
+        return;
+      }
+      
+      this.selectedImages.push(file);
+      
+      // Crear previsualización
       const reader = new FileReader();
       reader.onload = (e: any) => {
         this.imagesPreviews.push(e.target.result);
       };
       reader.readAsDataURL(file);
     });
+    
+    // Resetear el input para permitir seleccionar más imágenes
+    event.target.value = '';
   }
 
   // Métodos para manejar previsualización de imágenes
@@ -190,7 +211,8 @@ export class CreateServicePage implements OnInit {
   }
 
   triggerImagesUpload() {
-    const imagesInput = document.querySelectorAll('input[type="file"]')[1] as HTMLInputElement;
+    // Buscar el input de imágenes específicamente
+    const imagesInput = document.querySelector('input[type="file"][multiple]') as HTMLInputElement;
     if (imagesInput) {
       imagesInput.click();
     }
@@ -202,8 +224,10 @@ export class CreateServicePage implements OnInit {
   }
 
   removeImage(index: number) {
-    this.selectedImages.splice(index, 1);
-    this.imagesPreviews.splice(index, 1);
+    if (index >= 0 && index < this.selectedImages.length) {
+      this.selectedImages.splice(index, 1);
+      this.imagesPreviews.splice(index, 1);
+    }
   }
 
   addQuestion() {
@@ -329,27 +353,31 @@ export class CreateServicePage implements OnInit {
     } catch (error: any) {
       console.error('❌ Error creating provider:', error);
       
-      // 🔥 MEJORADO: Mostrar mensaje de error específico
-      let errorMessage = 'Error al crear el servicio';
-      
-      if (error.name === 'TimeoutError') {
-        errorMessage = 'La solicitud tardó demasiado. Por favor, intenta de nuevo';
-      } else if (error.error) {
-        // Error del servidor
-        if (error.error.message) {
-          errorMessage = error.error.message;
-        } else if (error.error.error) {
-          errorMessage = error.error.error;
-        } else if (typeof error.error === 'string') {
-          errorMessage = error.error;
-        }
-      } else if (error.message) {
-        errorMessage = error.message;
-      }
-      
       await loading.dismiss();
       this.isLoading = false;
-      await this.showErrorToast(errorMessage);
+      
+      // 🔥 MEJORADO: Manejo específico de errores de suscripción
+      if (error.error) {
+        const errorCode = error.error.error || error.error.errorCode;
+        const errorMessage = error.error.message || 'Error al crear el servicio';
+        const subscriptionStatus = error.error.subscriptionStatus;
+        
+        // Mostrar mensaje de error
+        await this.showErrorToast(errorMessage);
+        
+        // Si es un error de suscripción, mostrar alerta con acciones
+        if (errorCode === 'NO_SUBSCRIPTION' || errorCode === 'SUBSCRIPTION_PENDING' || errorCode === 'SUBSCRIPTION_VERIFYING') {
+          await this.showSubscriptionErrorAlert(errorCode, errorMessage);
+        } else if (errorCode === 'LIMIT_EXCEEDED') {
+          // Si alcanzó el límite, sugerir cambiar de plan
+          await this.showLimitExceededAlert(errorMessage);
+        }
+      } else if (error.name === 'TimeoutError') {
+        await this.showErrorToast('La solicitud tardó demasiado. Por favor, intenta de nuevo');
+      } else {
+        const errorMessage = error.message || 'Error al crear el servicio';
+        await this.showErrorToast(errorMessage);
+      }
     }
   }
 
@@ -410,5 +438,47 @@ export class CreateServicePage implements OnInit {
       position: 'bottom'
     });
     await toast.present();
+  }
+
+  // 🔥 NUEVO: Mostrar alerta cuando hay error de suscripción
+  async showSubscriptionErrorAlert(errorCode: string, message: string) {
+    const alert = await this.alertController.create({
+      header: 'Plan No Activo',
+      message: message,
+      buttons: [
+        {
+          text: 'Ver Mi Plan',
+          handler: () => {
+            this.router.navigate(['/tabs/profile']);
+          }
+        },
+        {
+          text: 'Entendido',
+          role: 'cancel'
+        }
+      ]
+    });
+    await alert.present();
+  }
+
+  // 🔥 NUEVO: Mostrar alerta cuando se alcanzó el límite
+  async showLimitExceededAlert(message: string) {
+    const alert = await this.alertController.create({
+      header: 'Límite Alcanzado',
+      message: message,
+      buttons: [
+        {
+          text: 'Cambiar Plan',
+          handler: () => {
+            this.router.navigate(['/tabs/profile']);
+          }
+        },
+        {
+          text: 'Entendido',
+          role: 'cancel'
+        }
+      ]
+    });
+    await alert.present();
   }
 }

@@ -25,7 +25,7 @@
       <ion-card>
         <ion-card-header>
           <ion-card-title>
-            <ion-icon name="person-outline"></ion-icon>
+            <ion-icon name="person-outline" style="color: #6b7280;"></ion-icon>
             Información Personal
           </ion-card-title>
           <ion-button 
@@ -141,7 +141,7 @@
       <ion-card *ngIf="!isEditing && currentSubscription">
         <ion-card-header>
           <ion-card-title>
-            <ion-icon name="card-outline"></ion-icon>
+            <ion-icon name="card-outline" style="color: #6b7280;"></ion-icon>
             Plan Actual
           </ion-card-title>
         </ion-card-header>
@@ -150,6 +150,12 @@
           <div class="pending-payment-badge" *ngIf="currentSubscription.status === 'pending'">
             <ion-icon name="time-outline"></ion-icon>
             <span>Esperando confirmación de pago</span>
+          </div>
+
+          <!-- 🔥 NUEVO: Badge de estado verificando -->
+          <div class="verifying-payment-badge" *ngIf="currentSubscription.status === 'verifying'">
+            <ion-icon name="checkmark-circle-outline"></ion-icon>
+            <span>Verificando pago</span>
           </div>
 
           <div class="plan-info">
@@ -206,7 +212,9 @@
 
           <!-- Acciones del plan -->
           <div class="plan-actions">
+            <!-- Mostrar botón de cambiar plan solo si NO está en verificación -->
             <ion-button 
+              *ngIf="currentSubscription && currentSubscription.status !== 'verifying'"
               expand="block" 
               fill="solid"
               color="primary"
@@ -235,7 +243,7 @@
       <ion-card *ngIf="!isEditing && !currentSubscription && availablePlans.length > 0">
         <ion-card-header>
           <ion-card-title>
-            <ion-icon name="card-outline"></ion-icon>
+            <ion-icon name="card-outline" style="color: #6b7280;"></ion-icon>
             Plan de Suscripción
           </ion-card-title>
         </ion-card-header>
@@ -246,31 +254,7 @@
             <p>Selecciona un plan para comenzar a crear servicios y promociones.</p>
           </div>
 
-          <!-- Lista de planes disponibles -->
-          <div class="available-plans-list">
-            <h3>Planes Disponibles:</h3>
-            <ion-list>
-              <ion-item *ngFor="let plan of availablePlans" button (click)="selectPlan(plan.code)" class="plan-item">
-                <ion-label>
-                  <h2>{{ plan.name }}</h2>
-                  <p>{{ plan.description }}</p>
-                  <p class="plan-price-item">
-                    <strong *ngIf="plan.price > 0">${{ plan.price }} {{ plan.currency }}/mes</strong>
-                    <strong *ngIf="plan.price === 0">Gratis</strong>
-                  </p>
-                  <div class="plan-features">
-                    <ion-note>
-                      • {{ plan.limits.services === -1 ? 'Servicios: Ilimitados' : plan.limits.services + ' Servicios' }}
-                      • {{ plan.limits.promotionsPerService === -1 ? 'Promociones: Ilimitadas' : plan.limits.promotionsPerService + ' Promociones por servicio' }}
-                      • {{ plan.limits.productsPerService === -1 ? 'Productos: Ilimitados' : plan.limits.productsPerService + ' Productos por servicio' }}
-                    </ion-note>
-                  </div>
-                </ion-label>
-                <ion-icon name="chevron-forward-outline" slot="end" color="medium"></ion-icon>
-              </ion-item>
-            </ion-list>
-          </div>
-
+          <!-- 🔥 MEJORADO: Solo mostrar botón, no la lista completa de planes -->
           <!-- Botón para seleccionar plan -->
           <div class="plan-actions">
             <ion-button 

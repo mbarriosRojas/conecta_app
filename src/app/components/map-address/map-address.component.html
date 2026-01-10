@@ -1,4 +1,4 @@
-<ion-card class="map-address-card">
+<ion-card class="map-address-card" *ngIf="!hideHeader">
   <ion-card-header>
     <ion-card-title>
       <ion-icon name="location-outline"></ion-icon>
@@ -7,145 +7,153 @@
   </ion-card-header>
   
   <ion-card-content>
-    <!-- Campo de búsqueda de dirección -->
-    <div class="search-container">
-      <ion-item class="address-search-item">
-        <ion-input
-          #addressInput
-          placeholder="Buscar dirección..."
-          [(ngModel)]="addressData.street"
-          (ionInput)="onAddressSearch($event)"
-          (ionBlur)="onInputBlur()"
-          clearInput="true">
-        </ion-input>
-        <ion-icon name="search-outline" slot="end" color="medium"></ion-icon>
-      </ion-item>
-
-      <!-- Sugerencias de autocompletado -->
-      <div class="suggestions-container" *ngIf="showSuggestions && searchSuggestions.length > 0">
-        <ion-list>
-          <ion-item 
-            *ngFor="let suggestion of searchSuggestions" 
-            button
-            (click)="selectSuggestion(suggestion)"
-            class="suggestion-item">
-            <ion-icon name="location-outline" slot="start" color="primary"></ion-icon>
-            <ion-label>
-              <h3>{{ suggestion.structured_formatting.main_text }}</h3>
-              <p>{{ suggestion.structured_formatting.secondary_text }}</p>
-            </ion-label>
-          </ion-item>
-        </ion-list>
-      </div>
-    </div>
-
-    <!-- Mapa -->
-    <div class="map-container" *ngIf="showMap">
-      <!-- Instrucciones mejoradas -->
-      <div class="map-instructions">
-        <div class="instruction-card">
-          <ion-icon name="search-outline" color="primary"></ion-icon>
-          <div class="instruction-content">
-            <h4>🔍 Busca tu dirección</h4>
-            <p>Usa el campo de búsqueda para encontrar tu ubicación</p>
-          </div>
-        </div>
-        <div class="instruction-card">
-          <ion-icon name="hand-left-outline" color="secondary"></ion-icon>
-          <div class="instruction-content">
-            <h4>📍 Arrastra el marcador rojo</h4>
-            <p>Para ajustar la ubicación exacta de tu servicio</p>
-          </div>
-        </div>
-      </div>
-      
-      <div 
-        id="addressMap" 
-        class="address-map"
-        [style.height]="height">
-        <!-- Indicador de carga -->
-        <div *ngIf="isMapLoading" class="map-loading">
-          <ion-spinner name="crescent"></ion-spinner>
-          <p>Cargando mapa...</p>
-        </div>
-      </div>
-      
-    </div>
-
-    <!-- Información de la dirección seleccionada -->
-    <div class="address-info" *ngIf="addressData.formattedAddress">
-      
-      <ion-item>
-        <ion-icon name="checkmark-circle" slot="start" color="success"></ion-icon>
-        <ion-label>
-          <h3>Dirección seleccionada</h3>
-          <p>{{ addressData.formattedAddress }}</p>
-        </ion-label>
-      </ion-item>
-    </div>
-
-    <!-- Campos de dirección (solo lectura) -->
-    <div class="address-fields">
-      <ion-item>
-        <ion-label position="stacked">Dirección *</ion-label>
-        <ion-input 
-          [value]="addressData.street" 
-          readonly
-          placeholder="Selecciona una dirección en el mapa">
-        </ion-input>
-      </ion-item>
-
-      <ion-item>
-        <ion-label position="stacked">Ciudad *</ion-label>
-        <ion-input 
-          [value]="addressData.city" 
-          readonly
-          placeholder="Se detectará automáticamente">
-        </ion-input>
-      </ion-item>
-
-      <ion-item>
-        <ion-label position="stacked">Departamento</ion-label>
-        <ion-input 
-          [value]="addressData.department" 
-          readonly
-          placeholder="Se detectará automáticamente">
-        </ion-input>
-      </ion-item>
-
-      <ion-item>
-        <ion-label position="stacked">País</ion-label>
-        <ion-input 
-          [value]="addressData.country" 
-          readonly>
-        </ion-input>
-      </ion-item>
-    </div>
-
-    <!-- Botones de acción -->
-    <div class="action-buttons">
-      <ion-button 
-        expand="block" 
-        fill="outline" 
-        color="primary"
-        (click)="useCurrentLocation()"
-        class="location-button">
-        <ion-icon name="locate" slot="start"></ion-icon>
-        Usar mi ubicación actual
-      </ion-button>
-
-      <ion-button 
-        expand="block" 
-        fill="solid" 
-        color="primary"
-        (click)="confirmAddress()"
-        [disabled]="!addressData.street || !addressData.city"
-        class="confirm-button">
-        <ion-icon name="checkmark" slot="start"></ion-icon>
-        Confirmar ubicación
-      </ion-button>
-    </div>
-
-
+    <ng-container *ngTemplateOutlet="contentTemplate"></ng-container>
   </ion-card-content>
 </ion-card>
+
+<!-- Versión sin card cuando hideHeader es true -->
+<div class="map-address-content" *ngIf="hideHeader">
+  <ng-container *ngTemplateOutlet="contentTemplate"></ng-container>
+</div>
+
+<!-- Template del contenido para evitar duplicación -->
+<ng-template #contentTemplate>
+  <!-- Campo de búsqueda de dirección -->
+  <div class="search-container">
+    <ion-item class="address-search-item">
+      <ion-input
+        #addressInput
+        placeholder="Buscar dirección..."
+        [(ngModel)]="addressData.street"
+        (ionInput)="onAddressSearch($event)"
+        (ionBlur)="onInputBlur()"
+        clearInput="true">
+      </ion-input>
+      <ion-icon name="search-outline" slot="end" color="medium"></ion-icon>
+    </ion-item>
+
+    <!-- Sugerencias de autocompletado -->
+    <div class="suggestions-container" *ngIf="showSuggestions && searchSuggestions.length > 0">
+      <ion-list>
+        <ion-item 
+          *ngFor="let suggestion of searchSuggestions" 
+          button
+          (click)="selectSuggestion(suggestion)"
+          class="suggestion-item">
+          <ion-icon name="location-outline" slot="start" color="primary"></ion-icon>
+          <ion-label>
+            <h3>{{ suggestion.structured_formatting.main_text }}</h3>
+            <p>{{ suggestion.structured_formatting.secondary_text }}</p>
+          </ion-label>
+        </ion-item>
+      </ion-list>
+    </div>
+  </div>
+
+  <!-- Mapa -->
+  <div class="map-container" *ngIf="showMap">
+      <!-- Instrucciones informativas -->
+      <div class="map-instructions">
+        <div class="instruction-card">
+          <ion-icon name="information-circle-outline"></ion-icon>
+          <div class="instruction-content">
+            <p><strong>Busca tu dirección</strong> usando el campo de búsqueda o <strong>arrastra el marcador rojo</strong> en el mapa para ajustar la ubicación exacta.</p>
+          </div>
+        </div>
+      </div>
+    
+    <div 
+      id="addressMap" 
+      class="address-map"
+      [style.height]="height">
+      <!-- Indicador de carga -->
+      <div *ngIf="isMapLoading" class="map-loading">
+        <ion-spinner name="crescent"></ion-spinner>
+        <p>Cargando mapa...</p>
+      </div>
+    </div>
+    
+  </div>
+
+  <!-- Información de la dirección seleccionada -->
+  <div class="address-info" *ngIf="addressData.formattedAddress">
+    
+    <ion-item>
+      <ion-icon name="checkmark-circle" slot="start" color="success"></ion-icon>
+      <ion-label>
+        <h3>Dirección seleccionada</h3>
+        <p>{{ addressData.formattedAddress }}</p>
+      </ion-label>
+    </ion-item>
+  </div>
+
+  <!-- Campos de dirección (solo lectura) -->
+  <div class="address-fields">
+    <ion-item>
+      <ion-label position="stacked">Dirección *</ion-label>
+      <ion-input 
+        [value]="addressData.street" 
+        readonly
+        placeholder="Selecciona una dirección en el mapa">
+      </ion-input>
+    </ion-item>
+
+    <ion-item>
+      <ion-label position="stacked">Ciudad *</ion-label>
+      <ion-input 
+        [value]="addressData.city" 
+        readonly
+        placeholder="Se detectará automáticamente">
+      </ion-input>
+    </ion-item>
+
+    <ion-item>
+      <ion-label position="stacked">Departamento</ion-label>
+      <ion-input 
+        [value]="addressData.department" 
+        readonly
+        placeholder="Se detectará automáticamente">
+      </ion-input>
+    </ion-item>
+
+    <ion-item>
+      <ion-label position="stacked">País</ion-label>
+      <ion-input 
+        [value]="addressData.country" 
+        readonly>
+      </ion-input>
+    </ion-item>
+  </div>
+
+  <!-- Botones de acción -->
+  <div class="action-buttons">
+    <ion-button 
+      expand="block" 
+      fill="outline" 
+      color="primary"
+      (click)="useCurrentLocation()"
+      class="location-button">
+      <ion-icon name="locate" slot="start"></ion-icon>
+      Usar mi ubicación actual
+    </ion-button>
+
+    <!-- 🔥 MEJORADO: Botón de confirmación ahora opcional y menos prominente -->
+    <!-- La dirección se confirma automáticamente al seleccionar o mover el marcador -->
+    <ion-button 
+      expand="block" 
+      fill="outline" 
+      color="medium"
+      (click)="confirmAddress()"
+      [disabled]="!addressData.street || !addressData.city"
+      class="confirm-button">
+      <ion-icon name="checkmark" slot="start"></ion-icon>
+      Confirmar manualmente (opcional)
+    </ion-button>
+    
+    <!-- Mensaje informativo -->
+    <ion-note color="medium" class="auto-confirm-note">
+      <ion-icon name="information-circle-outline"></ion-icon>
+      <span>La ubicación se confirma automáticamente al seleccionar o mover el marcador</span>
+    </ion-note>
+  </div>
+</ng-template>

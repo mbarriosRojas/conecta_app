@@ -284,29 +284,53 @@ export class LocationService {
   // 🔥 ============================================
 
   /**
-   * Inicializa el ID de usuario anónimo usando el device ID o genera uno único
+   * Inicializa el ID del dispositivo (userID persistente)
+   * 🔥 GARANTIZA: El mismo dispositivo siempre usa el mismo userID
+   * - Prioridad 1: Device ID del dispositivo (único por dispositivo)
+   * - Prioridad 2: anonymousUserId guardado en localStorage (persiste entre sesiones)
+   * - Prioridad 3: Generar uno nuevo y guardarlo
    */
   private async initializeAnonymousUser() {
     try {
-      // Intentar obtener el ID del dispositivo
+      // 1. Intentar obtener de localStorage primero (persiste entre sesiones)
+      if (typeof localStorage !== 'undefined') {
+        const storedUserId = localStorage.getItem('anonymousUserId');
+        if (storedUserId) {
+          this.anonymousUserId = storedUserId;
+          console.log('📱 ID de dispositivo recuperado de localStorage:', this.anonymousUserId);
+          return; // Usar el ID almacenado (garantiza consistencia)
+        }
+      }
+
+      // 2. Intentar obtener el ID del dispositivo (único por dispositivo físico)
       const deviceInfo = await Device.getId();
-      this.anonymousUserId = deviceInfo.identifier || this.generateUniqueId();
-      console.log('📱 ID de usuario anónimo:', this.anonymousUserId);
+      if (deviceInfo?.identifier) {
+        this.anonymousUserId = deviceInfo.identifier;
+        console.log('📱 ID de dispositivo obtenido del hardware:', this.anonymousUserId);
+      } else {
+        // 3. Generar uno nuevo solo si no se pudo obtener
+        this.anonymousUserId = this.generateUniqueId();
+        console.log('📱 Nuevo ID de dispositivo generado:', this.anonymousUserId);
+      }
       
-      // Guardar en localStorage para persistencia
+      // Guardar en localStorage para persistencia (siempre)
       if (typeof localStorage !== 'undefined' && this.anonymousUserId) {
         localStorage.setItem('anonymousUserId', this.anonymousUserId);
+        console.log('💾 ID de dispositivo guardado en localStorage');
       }
     } catch (error) {
-      console.warn('⚠️ No se pudo obtener device ID, generando ID único:', error);
-      // Si falla, intentar recuperar del localStorage o generar uno nuevo
+      console.warn('⚠️ Error obteniendo device ID, usando localStorage:', error);
+      // Si falla, intentar recuperar del localStorage
       if (typeof localStorage !== 'undefined') {
         this.anonymousUserId = localStorage.getItem('anonymousUserId') || this.generateUniqueId();
         if (this.anonymousUserId) {
           localStorage.setItem('anonymousUserId', this.anonymousUserId);
+          console.log('💾 ID de dispositivo recuperado/guardado desde localStorage:', this.anonymousUserId);
         }
       } else {
+        // Último recurso: generar uno nuevo
         this.anonymousUserId = this.generateUniqueId();
+        console.log('📱 Nuevo ID de dispositivo generado (sin localStorage):', this.anonymousUserId);
       }
     }
   }
@@ -319,16 +343,40 @@ export class LocationService {
   }
 
   /**
-   * Obtiene el ID de usuario (registrado o anónimo)
+   * Obtiene el ID de usuario para actualizar ubicación
+   * 🔥 IMPORTANTE: Siempre usa el mismo ID del dispositivo
+   * - Si hay usuario autenticado: usa el ID del usuario (para vincular ubicación a cuenta)
+   * - Si no hay usuario: usa el anonymousUserId (ID persistente del dispositivo)
+   * 
+   * Esto garantiza que:
+   * - El mismo dispositivo siempre actualiza el mismo registro en UserLocation
+   * - Cuando el usuario hace login, se vincula su ubicación a su cuenta
+   * - Cuando el usuario hace logout, sigue usando el mismo dispositivo pero como anónimo
    */
   public getUserId(authService?: any): string {
-    // Si hay un usuario autenticado, usar su ID
+    // Si hay un usuario autenticado, usar su ID de cuenta (vincula ubicación a cuenta)
     if (authService && authService.isAuthenticated()) {
       const user = authService.getCurrentUser();
-      return user?.id || this.anonymousUserId || this.generateUniqueId();
+      if (user?.id) {
+        return user.id; // Usar ID del usuario autenticado
+      }
     }
-    // Si no hay usuario autenticado, usar el ID anónimo
-    return this.anonymousUserId || this.generateUniqueId();
+    
+    // Si no hay usuario autenticado, usar el ID persistente del dispositivo
+    // Este ID se mantiene entre sesiones gracias a localStorage
+    if (!this.anonymousUserId) {
+      // Si no se inicializó, intentar obtener de localStorage
+      if (typeof localStorage !== 'undefined') {
+        this.anonymousUserId = localStorage.getItem('anonymousUserId') || this.generateUniqueId();
+        if (this.anonymousUserId && !localStorage.getItem('anonymousUserId')) {
+          localStorage.setItem('anonymousUserId', this.anonymousUserId);
+        }
+      } else {
+        this.anonymousUserId = this.generateUniqueId();
+      }
+    }
+    
+    return this.anonymousUserId;
   }
 
   /**

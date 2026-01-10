@@ -178,16 +178,13 @@
           <ion-icon [name]="expandedSections.location ? 'chevron-up' : 'chevron-down'" class="expand-icon"></ion-icon>
         </ion-card-header>
         <ion-card-content *ngIf="expandedSections.location" class="expandable-content">
-          <div class="settings-item location-item">
-            <div class="location-map-container">
-              <app-map-address
-                [initialAddress]="initialAddressData"
-                [height]="'200px'"
-                (addressSelected)="onAddressSelected($event)"
-                (addressChanged)="onAddressChanged($event)">
-              </app-map-address>
-            </div>
-          </div>
+          <app-map-address
+            [initialAddress]="initialAddressData"
+            [height]="'250px'"
+            [hideHeader]="true"
+            (addressSelected)="onAddressSelected($event)"
+            (addressChanged)="onAddressChanged($event)">
+          </app-map-address>
         </ion-card-content>
       </ion-card>
 
@@ -380,93 +377,106 @@
           <ion-icon [name]="expandedSections.images ? 'chevron-up' : 'chevron-down'" class="expand-icon"></ion-icon>
         </ion-card-header>
         <ion-card-content *ngIf="expandedSections.images" class="expandable-content">
-          <!-- Logo actual -->
-          <div *ngIf="provider?.logo" class="current-logo-section">
-            <div class="settings-item">
-              <div class="item-icon">
-                <ion-icon name="image"></ion-icon>
-              </div>
-              <div class="item-content">
-                <div class="item-label">Logo Actual</div>
-                <div class="current-logo">
-                  <img [src]="provider.logo" [alt]="provider.name + ' logo'" class="current-logo-image">
-                  <ion-button fill="clear" color="danger" size="small" (click)="deleteLogo()">
-                    <ion-icon name="trash"></ion-icon>
-                    Eliminar logo
-                  </ion-button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Imágenes actuales -->
-          <div *ngIf="provider?.images && provider.images.length > 0" class="current-images-section">
-            <div class="settings-item">
-              <div class="item-icon">
-                <ion-icon name="images"></ion-icon>
-              </div>
-              <div class="item-content">
-                <div class="item-label">Imágenes Actuales</div>
-                <div class="current-images">
-                  <div *ngFor="let image of provider.images; let i = index" class="image-item">
-                    <img [src]="image" [alt]="provider.name" class="current-image">
-                    <ion-button fill="clear" color="danger" size="small" (click)="deleteImage(image, i)">
-                      <ion-icon name="trash"></ion-icon>
-                    </ion-button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Subir nuevas imágenes -->
-          <div class="new-images-section">
-            <!-- Botón de logo - solo visible cuando no hay logo o se eliminó -->
-            <div *ngIf="showLogoButton" class="settings-item">
-              <div class="item-icon">
-                <ion-icon name="camera"></ion-icon>
-              </div>
-              <div class="item-content">
-                <div class="item-label">Logo del servicio</div>
-                <ion-button fill="outline" (click)="selectLogo()">
-                  <ion-icon name="camera" slot="start"></ion-icon>
-                  {{ selectedLogo ? 'Cambiar logo' : 'Seleccionar logo' }}
+          <!-- Logo del servicio -->
+          <div class="image-upload-section">
+            <ion-label class="section-label">Logo del servicio</ion-label>
+            
+            <div class="image-preview-container">
+              <!-- Logo existente del proveedor -->
+              <div class="image-preview" *ngIf="provider?.logo && !selectedLogo">
+                <img [src]="provider.logo" alt="Logo preview" class="preview-image">
+                <ion-button 
+                  fill="clear" 
+                  color="danger" 
+                  size="small" 
+                  class="remove-image-btn"
+                  (click)="deleteLogo()">
+                  <ion-icon name="trash"></ion-icon>
                 </ion-button>
-                <p *ngIf="!selectedLogo" class="no-file-selected">Ningún archivo seleccionado</p>
-                <p *ngIf="selectedLogo" class="file-selected">
-                  <ion-icon name="checkmark-circle" color="success"></ion-icon>
-                  {{ selectedLogo.name }}
-                </p>
               </div>
-            </div>
-
-            <!-- Botón de imágenes - solo visible cuando no hay imágenes o se eliminaron todas -->
-            <div *ngIf="showImagesButton" class="settings-item">
-              <div class="item-icon">
-                <ion-icon name="images"></ion-icon>
-              </div>
-              <div class="item-content">
-                <div class="item-label">Imágenes del servicio</div>
-                <ion-button fill="outline" (click)="selectImages()">
-                  <ion-icon name="images" slot="start"></ion-icon>
-                  {{ selectedImages.length > 0 ? 'Agregar más imágenes' : 'Seleccionar imágenes' }}
+              
+              <!-- Logo nuevo seleccionado -->
+              <div class="image-preview" *ngIf="selectedLogo">
+                <img [src]="logoPreview" alt="Logo preview" class="preview-image">
+                <ion-button 
+                  fill="clear" 
+                  color="danger" 
+                  size="small" 
+                  class="remove-image-btn"
+                  (click)="removeLogo()">
+                  <ion-icon name="trash"></ion-icon>
                 </ion-button>
-                <p *ngIf="selectedImages.length === 0" class="no-file-selected">Ningún archivo seleccionado</p>
-                <div *ngIf="selectedImages.length > 0" class="selected-files">
-                  <p class="file-selected">
-                    <ion-icon name="checkmark-circle" color="success"></ion-icon>
-                    {{ selectedImages.length }} imagen(es) seleccionada(s)
-                  </p>
-                </div>
+              </div>
+              
+              <!-- Área para seleccionar logo -->
+              <div class="upload-area" *ngIf="!provider?.logo && !selectedLogo" (click)="triggerLogoUpload()">
+                <ion-icon name="add-circle-outline" size="large" color="medium"></ion-icon>
+                <p>Seleccionar logo</p>
               </div>
             </div>
-
-            <ion-note color="medium">
-              <p>• Formatos recomendados: JPG, PNG</p>
-              <p>• Tamaño máximo: 5MB por imagen</p>
-              <p>• Las nuevas imágenes se agregarán a las existentes</p>
-            </ion-note>
+            
+            <input 
+              #logoInput
+              type="file" 
+              accept="image/*" 
+              (change)="onLogoSelected($event)"
+              style="display: none;">
           </div>
+
+          <!-- Imágenes del servicio -->
+          <div class="image-upload-section">
+            <ion-label class="section-label">Imágenes del servicio *</ion-label>
+            
+            <div class="images-grid">
+              <!-- Imágenes existentes del proveedor -->
+              <div class="image-preview" *ngFor="let image of provider?.images; let i = index" 
+                   [class.marked-for-deletion]="imagesToDelete.includes('image_' + i)">
+                <img [src]="image" alt="Image preview" class="preview-image">
+                <ion-button 
+                  fill="clear" 
+                  color="danger" 
+                  size="small" 
+                  class="remove-image-btn"
+                  (click)="deleteImage(image, i)">
+                  <ion-icon name="trash"></ion-icon>
+                </ion-button>
+              </div>
+              
+              <!-- Imágenes nuevas seleccionadas -->
+              <div class="image-preview" *ngFor="let preview of selectedImagesPreviews; let i = index">
+                <img [src]="preview" alt="Image preview" class="preview-image">
+                <ion-button 
+                  fill="clear" 
+                  color="danger" 
+                  size="small" 
+                  class="remove-image-btn"
+                  (click)="removeSelectedImage(i)">
+                  <ion-icon name="trash"></ion-icon>
+                </ion-button>
+              </div>
+              
+              <!-- Área para agregar más imágenes -->
+              <div class="upload-area" *ngIf="getTotalImagesCount() < 3" (click)="selectImages()">
+                <ion-icon name="add-circle-outline" size="large" color="medium"></ion-icon>
+                <p>Agregar imagen</p>
+              </div>
+            </div>
+            
+            <input 
+              #imagesInput
+              type="file" 
+              accept="image/*" 
+              multiple
+              (change)="onImagesSelected($event)"
+              style="display: none;">
+          </div>
+
+          <ion-note color="medium">
+            <p>• Selecciona al menos una imagen del servicio</p>
+            <p>• Formatos recomendados: JPG, PNG</p>
+            <p>• Tamaño máximo: 5MB por imagen</p>
+            <p>• Máximo 3 imágenes</p>
+          </ion-note>
         </ion-card-content>
       </ion-card>
 
@@ -490,44 +500,14 @@
             </ion-button>
           </div>
 
-          <div class="promotion-stats-grid">
-            <div class="promotion-stat-card">
+          <div class="geofence-stats-container">
+            <div class="promotion-stat-card stat-card-full">
               <div class="stat-icon">
                 <ion-icon name="people-outline" color="success"></ion-icon>
               </div>
               <div class="stat-info">
-                <div class="stat-value">{{ geofenceStats.audience?.activeUsers4h || 0 }}</div>
-                <div class="stat-label">Usuarios Activos (4h)</div>
-              </div>
-            </div>
-
-            <div class="promotion-stat-card">
-              <div class="stat-icon">
-                <ion-icon name="trending-up-outline" color="success"></ion-icon>
-              </div>
-              <div class="stat-info">
-                <div class="stat-value">{{ geofenceStats.performance?.totalEntries || 0 }}</div>
-                <div class="stat-label">Entradas Totales</div>
-              </div>
-            </div>
-
-            <div class="promotion-stat-card">
-              <div class="stat-icon">
-                <ion-icon name="megaphone-outline" color="success"></ion-icon>
-              </div>
-              <div class="stat-info">
-                <div class="stat-value">{{ geofenceStats.audience?.estimatedReach || 0 }}</div>
-                <div class="stat-label">Alcance Estimado</div>
-              </div>
-            </div>
-
-            <div class="promotion-stat-card">
-              <div class="stat-icon">
-                <ion-icon name="calendar-outline" color="success"></ion-icon>
-              </div>
-              <div class="stat-info">
-                <div class="stat-value">{{ geofenceStats.performance?.avgUsersPerDay || 0 }}</div>
-                <div class="stat-label">Promedio Diario</div>
+                <div class="stat-value">{{ geofenceStats.audience.uniqueUsersTotal || 0 }}</div>
+                <div class="stat-label">Usuarios Totales</div>
               </div>
             </div>
           </div>
@@ -811,6 +791,10 @@
 
               <div class="settings-divider"></div>
 
+              <!-- 🔥 COMENTADO: Sección de notificaciones desactivada temporalmente -->
+              <!-- Las notificaciones automáticas de geocerca están desactivadas en el backend -->
+              <!-- Se mantienen valores por defecto: onEntry=true, onExit=false, cooldownMinutes=30 -->
+              <!--
               <h3 class="settings-subtitle">Notificaciones</h3>
 
               <ion-item>
@@ -842,6 +826,7 @@
                   placeholder="30"></ion-input>
                 <ion-note slot="helper">Mínimo 5 min, Máximo 24 horas</ion-note>
               </ion-item>
+              -->
             </ion-card-content>
           </ion-card>
 
@@ -899,7 +884,7 @@
                   rows="3"
                   maxlength="200"
                   placeholder="Ej: ¡20% de descuento en todos los productos! Válido hoy."></ion-textarea>
-                <ion-note slot="helper">{{ promotionConfig.promotion_text?.length || 0 }}/200 caracteres</ion-note>
+                <ion-note slot="helper">{{ promotionConfig.promotion_text.length || 0 }}/200 caracteres</ion-note>
               </ion-item>
 
               <ion-item>

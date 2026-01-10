@@ -48,7 +48,7 @@ export interface UserSubscription {
   userID: string;
   planID: Plan;
   planCode: string;
-  status: 'active' | 'expired' | 'cancelled' | 'pending';
+  status: 'active' | 'expired' | 'cancelled' | 'pending' | 'verifying';
   startDate: Date;
   endDate: Date;
   cancelledAt?: Date;

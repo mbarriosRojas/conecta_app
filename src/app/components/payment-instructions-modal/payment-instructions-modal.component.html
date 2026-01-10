@@ -50,44 +50,92 @@
     <ion-card class="payment-details-card" *ngIf="paymentData">
       <ion-card-content>
         
-        <!-- Banco -->
-        <div class="payment-detail-item">
-          <div class="detail-icon">
-            <ion-icon name="business-outline" color="primary"></ion-icon>
+        <!-- Pago Móvil / Transferencia Bancaria -->
+        <ng-container *ngIf="paymentData.type === 'pago_movil' || (!paymentData.type && paymentData.bank)">
+          
+          <!-- Banco -->
+          <div class="payment-detail-item" *ngIf="paymentData.bank">
+            <div class="detail-icon">
+              <ion-icon name="business-outline" color="primary"></ion-icon>
+            </div>
+            <div class="detail-content">
+              <div class="detail-label">Banco</div>
+              <div class="detail-value">{{ paymentData.bank }}</div>
+            </div>
           </div>
-          <div class="detail-content">
-            <div class="detail-label">Banco</div>
-            <div class="detail-value">{{ paymentData.bank }}</div>
-          </div>
-        </div>
 
-        <!-- Separador -->
-        <div class="separator"></div>
+          <!-- Separador -->
+          <div class="separator" *ngIf="paymentData.bank && paymentData.phoneNumber"></div>
 
-        <!-- Teléfono -->
-        <div class="payment-detail-item">
-          <div class="detail-icon">
-            <ion-icon name="call-outline" color="primary"></ion-icon>
+          <!-- Teléfono -->
+          <div class="payment-detail-item" *ngIf="paymentData.phoneNumber">
+            <div class="detail-icon">
+              <ion-icon name="call-outline" color="primary"></ion-icon>
+            </div>
+            <div class="detail-content">
+              <div class="detail-label">Teléfono</div>
+              <div class="detail-value">{{ paymentData.phoneNumber }}</div>
+            </div>
           </div>
-          <div class="detail-content">
-            <div class="detail-label">Teléfono</div>
-            <div class="detail-value">{{ paymentData.phoneNumber }}</div>
-          </div>
-        </div>
 
-        <!-- Separador -->
-        <div class="separator"></div>
+          <!-- Separador -->
+          <div class="separator" *ngIf="paymentData.phoneNumber && paymentData.identificationNumber"></div>
 
-        <!-- Documento -->
-        <div class="payment-detail-item">
-          <div class="detail-icon">
-            <ion-icon name="card-outline" color="primary"></ion-icon>
+          <!-- Documento -->
+          <div class="payment-detail-item" *ngIf="paymentData.identificationNumber">
+            <div class="detail-icon">
+              <ion-icon name="card-outline" color="primary"></ion-icon>
+            </div>
+            <div class="detail-content">
+              <div class="detail-label">Documento</div>
+              <div class="detail-value">{{ paymentData.identificationNumber }}</div>
+            </div>
           </div>
-          <div class="detail-content">
-            <div class="detail-label">Documento</div>
-            <div class="detail-value">{{ paymentData.identificationNumber }}</div>
+
+        </ng-container>
+
+        <!-- Binance Pay -->
+        <ng-container *ngIf="paymentData.type === 'binance' || paymentData.email">
+          
+          <!-- Correo -->
+          <div class="payment-detail-item" *ngIf="paymentData.email">
+            <div class="detail-icon">
+              <ion-icon name="mail-outline" color="primary"></ion-icon>
+            </div>
+            <div class="detail-content">
+              <div class="detail-label">Correo</div>
+              <div class="detail-value">{{ paymentData.email }}</div>
+            </div>
           </div>
-        </div>
+
+          <!-- Separador -->
+          <div class="separator" *ngIf="paymentData.email && paymentData.binanceId"></div>
+
+          <!-- ID Binance -->
+          <div class="payment-detail-item" *ngIf="paymentData.binanceId">
+            <div class="detail-icon">
+              <ion-icon name="wallet-outline" color="primary"></ion-icon>
+            </div>
+            <div class="detail-content">
+              <div class="detail-label">ID Binance</div>
+              <div class="detail-value">{{ paymentData.binanceId }}</div>
+            </div>
+          </div>
+
+        </ng-container>
+
+        <!-- Otros métodos -->
+        <ng-container *ngIf="paymentData.type === 'other'">
+          <div class="payment-detail-item" *ngFor="let key of getOtherDataKeys(paymentData)">
+            <div class="detail-icon">
+              <ion-icon name="information-circle-outline" color="primary"></ion-icon>
+            </div>
+            <div class="detail-content">
+              <div class="detail-label">{{ getLabelForKey(key) }}</div>
+              <div class="detail-value">{{ paymentData[key] }}</div>
+            </div>
+          </div>
+        </ng-container>
 
       </ion-card-content>
     </ion-card>

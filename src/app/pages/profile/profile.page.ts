@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { AuthService } from '../../services/auth.service';
 import { Router } from '@angular/router';
 import { LoadingController, ToastController, AlertController, ModalController } from '@ionic/angular';
-import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
+import { CameraService } from '../../services/camera.service';
 import { ChangePasswordModalComponent } from '../../components/change-password-modal/change-password-modal.component';
 import { PlanComparisonModalComponent } from '../../components/plan-comparison-modal/plan-comparison-modal.component';
 import { PaymentReportModalComponent } from '../../components/payment-report-modal/payment-report-modal.component';
@@ -49,7 +49,8 @@ export class ProfilePage implements OnInit {
     private alertController: AlertController,
     private modalController: ModalController,
     private subscriptionService: SubscriptionService,
-    private notificationSettingsService: NotificationSettingsService
+    private notificationSettingsService: NotificationSettingsService,
+    private cameraService: CameraService
   ) {}
 
   ngOnInit() {
@@ -190,11 +191,11 @@ export class ProfilePage implements OnInit {
         },
         {
           text: 'Tomar foto',
-          handler: () => this.takePicture(CameraSource.Camera)
+          handler: () => this.takePicture('camera')
         },
         {
           text: 'Galería',
-          handler: () => this.takePicture(CameraSource.Photos)
+          handler: () => this.takePicture('gallery')
         }
       ]
     });
@@ -202,21 +203,28 @@ export class ProfilePage implements OnInit {
     await alert.present();
   }
 
-  async takePicture(source: CameraSource) {
+  async takePicture(source: 'camera' | 'gallery') {
     try {
-      const image = await Camera.getPhoto({
-        quality: 90,
-        allowEditing: true,
-        resultType: CameraResultType.DataUrl,
-        source: source
-      });
+      let image;
+      
+      if (source === 'camera') {
+        image = await this.cameraService.takePhoto(90);
+      } else {
+        image = await this.cameraService.selectPhoto(90);
+      }
+
+      if (!image) {
+        // Usuario canceló, no es un error
+        return;
+      }
 
       if (image.dataUrl) {
         await this.uploadProfilePicture(image.dataUrl);
       }
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error tomando foto:', error);
+      this.showErrorToast(error.message || 'Error al tomar/seleccionar la foto');
       this.showErrorToast('Error tomando foto');
     }
   }
@@ -910,13 +918,26 @@ export class ProfilePage implements OnInit {
 
     await modal.present();
 
-    const { data } = await modal.onDidDismiss();
+                const { data } = await modal.onDidDismiss();
 
-    if (data?.success) {
-      // Recargar suscripción para actualizar el estado
-      await this.loadSubscription();
-      this.showSuccessToast('Pago reportado exitosamente. Tu pago será verificado y el plan se activará pronto.');
-    }
+                if (data?.success) {
+                  console.log('✅ Payment report modal dismissed with success');
+                  console.log('✅ Subscription from modal:', data?.subscription);
+                  
+                  // 🔥 IMPORTANTE: Si viene la suscripción actualizada del modal, usarla temporalmente
+                  if (data?.subscription) {
+                    console.log('✅ Using subscription from modal response:', data.subscription.status);
+                    this.currentSubscription = data.subscription;
+                  }
+                  
+                  // 🔥 IMPORTANTE: Recargar suscripción para asegurar que tenemos el estado más reciente
+                  await this.loadSubscription();
+                  
+                  // Verificar el estado después de recargar
+                  console.log('✅ Subscription after reload:', this.currentSubscription?.status);
+                  
+                  this.showSuccessToast('Pago reportado exitosamente. Tu pago está en verificación y el plan se activará pronto.');
+                }
   }
 
   getLimitDisplay(limit: number): string {

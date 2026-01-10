@@ -126,12 +126,13 @@ export class EditServicePage implements OnInit {
   };
 
   selectedImages: File[] = [];
+  selectedImagesPreviews: string[] = []; // Previsualizaciones de imágenes seleccionadas
   selectedLogo: File | null = null;
+  logoPreview: string | null = null; // Previsualización del logo seleccionado
   currentLocation: { lat: number; lng: number } | null = null;
   imagesToDelete: string[] = [];
   
   // Variables para controlar la visibilidad de botones
-  showLogoButton = false;
   showImagesButton = false;
 
   // Geofencing y Analytics
@@ -291,33 +292,60 @@ export class EditServicePage implements OnInit {
   }
 
   initializeButtonVisibility() {
-    // Mostrar botón de logo solo si no hay logo existente
-    this.showLogoButton = !this.provider?.logo;
-    
-    // Mostrar botón de imágenes solo si no hay imágenes existentes
-    this.showImagesButton = !this.provider?.images || this.provider.images.length === 0;
+    // Mostrar botón de imágenes si hay menos de 3 imágenes (existentes + nuevas)
+    // Contar solo las imágenes existentes que NO están marcadas para eliminar
+    const imagesNotDeleted = this.provider?.images?.filter((img: string, idx: number) => 
+      !this.imagesToDelete.includes(`image_${idx}`)
+    ).length || 0;
+    const totalImages = imagesNotDeleted + this.selectedImages.length;
+    this.showImagesButton = totalImages < 3;
   }
 
   deleteLogo() {
     if (this.provider?.logo) {
       this.imagesToDelete.push('logo');
       this.provider.logo = '';
-      this.showLogoButton = true; // Mostrar botón para seleccionar nuevo logo
       this.showSuccessToast('Logo marcado para eliminar');
     }
   }
 
   deleteImage(imageUrl: string, index: number) {
     if (this.provider?.images) {
-      this.imagesToDelete.push(imageUrl);
-      this.provider.images.splice(index, 1);
+      // El backend espera el formato "image_${index}" donde index es el índice original
+      // NO eliminamos del array local para mantener los índices correctos
+      const imageRef = `image_${index}`;
       
-      // Si no quedan imágenes, mostrar botón para seleccionar
-      if (this.provider.images.length === 0) {
-        this.showImagesButton = true;
+      // Solo agregar si no está ya en la lista
+      if (!this.imagesToDelete.includes(imageRef)) {
+        this.imagesToDelete.push(imageRef);
       }
       
+      // Actualizar visibilidad del botón basado en el límite de 3 imágenes
+      // Contamos solo las imágenes que NO están marcadas para eliminar
+      const imagesNotDeleted = this.provider.images.filter((img: string, idx: number) => 
+        !this.imagesToDelete.includes(`image_${idx}`)
+      ).length;
+      const totalImages = imagesNotDeleted + this.selectedImages.length;
+      this.showImagesButton = totalImages < 3;
+      
       this.showSuccessToast('Imagen marcada para eliminar');
+    }
+  }
+
+  removeSelectedImage(index: number) {
+    if (index >= 0 && index < this.selectedImages.length) {
+      this.selectedImages.splice(index, 1);
+      this.selectedImagesPreviews.splice(index, 1);
+      
+      // Actualizar visibilidad del botón basado en el límite de 3 imágenes
+      // Contar solo las imágenes que NO están marcadas para eliminar
+      const imagesNotDeleted = this.provider?.images?.filter((img: string, idx: number) => 
+        !this.imagesToDelete.includes(`image_${idx}`)
+      ).length || 0;
+      const totalImages = imagesNotDeleted + this.selectedImages.length;
+      this.showImagesButton = totalImages < 3;
+      
+      this.showSuccessToast('Imagen eliminada');
     }
   }
 
@@ -405,32 +433,11 @@ export class EditServicePage implements OnInit {
     }
   }
 
-  async selectLogo() {
-    const actionSheet = await this.actionSheetController.create({
-      header: 'Seleccionar logo del servicio',
-      buttons: [
-        {
-          text: 'Tomar foto',
-          icon: 'camera',
-          handler: () => {
-            this.takePhoto('logo');
-          }
-        },
-        {
-          text: 'Elegir de galería',
-          icon: 'images',
-          handler: () => {
-            this.selectFromGallery('logo');
-          }
-        },
-        {
-          text: 'Cancelar',
-          icon: 'close',
-          role: 'cancel'
-        }
-      ]
-    });
-    await actionSheet.present();
+  triggerLogoUpload() {
+    const logoInput = document.querySelector('input[type="file"]:not([multiple])') as HTMLInputElement;
+    if (logoInput) {
+      logoInput.click();
+    }
   }
 
   async selectImages() {
@@ -477,10 +484,36 @@ export class EditServicePage implements OnInit {
         
         if (type === 'logo') {
           this.selectedLogo = file;
-          this.showLogoButton = false; // Ocultar botón después de seleccionar
+          // Crear previsualización del logo
+          const reader = new FileReader();
+          reader.onload = (e: any) => {
+            this.logoPreview = e.target.result;
+          };
+          reader.readAsDataURL(file);
         } else {
+          // Validar límite de 3 imágenes (existentes + nuevas)
+          const existingImagesCount = this.provider?.images?.length || 0;
+          const totalAfterAdd = existingImagesCount + this.selectedImages.length + 1;
+          
+          if (totalAfterAdd > 3) {
+            this.showErrorToast(`Máximo 3 imágenes permitidas. Ya tienes ${existingImagesCount} existentes y ${this.selectedImages.length} nuevas.`);
+            return;
+          }
+          
+          // Validar tamaño (5MB)
+          if (file.size > 5 * 1024 * 1024) {
+            this.showErrorToast('La imagen excede el tamaño máximo de 5MB');
+            return;
+          }
+          
           this.selectedImages.push(file);
-          this.showImagesButton = false; // Ocultar botón después de seleccionar
+          
+          // Crear previsualización
+          const reader = new FileReader();
+          reader.onload = (e: any) => {
+            this.selectedImagesPreviews.push(e.target.result);
+          };
+          reader.readAsDataURL(file);
         }
         
         this.showSuccessToast('Foto tomada correctamente');
@@ -507,10 +540,36 @@ export class EditServicePage implements OnInit {
         
         if (type === 'logo') {
           this.selectedLogo = file;
-          this.showLogoButton = false; // Ocultar botón después de seleccionar
+          // Crear previsualización del logo
+          const reader = new FileReader();
+          reader.onload = (e: any) => {
+            this.logoPreview = e.target.result;
+          };
+          reader.readAsDataURL(file);
         } else {
+          // Validar límite de 3 imágenes (existentes + nuevas)
+          const existingImagesCount = this.provider?.images?.length || 0;
+          const totalAfterAdd = existingImagesCount + this.selectedImages.length + 1;
+          
+          if (totalAfterAdd > 3) {
+            this.showErrorToast(`Máximo 3 imágenes permitidas. Ya tienes ${existingImagesCount} existentes y ${this.selectedImages.length} nuevas.`);
+            return;
+          }
+          
+          // Validar tamaño (5MB)
+          if (file.size > 5 * 1024 * 1024) {
+            this.showErrorToast('La imagen excede el tamaño máximo de 5MB');
+            return;
+          }
+          
           this.selectedImages.push(file);
-          this.showImagesButton = false; // Ocultar botón después de seleccionar
+          
+          // Crear previsualización
+          const reader = new FileReader();
+          reader.onload = (e: any) => {
+            this.selectedImagesPreviews.push(e.target.result);
+          };
+          reader.readAsDataURL(file);
         }
         
         this.showSuccessToast('Imagen seleccionada correctamente');
@@ -598,12 +657,70 @@ export class EditServicePage implements OnInit {
     const file = event.target.files[0];
     if (file) {
       this.selectedLogo = file;
+      // Crear previsualización
+      const reader = new FileReader();
+      reader.onload = (e: any) => {
+        this.logoPreview = e.target.result;
+      };
+      reader.readAsDataURL(file);
     }
   }
 
   onImagesSelected(event: any) {
     const files = Array.from(event.target.files) as File[];
-    this.selectedImages = files;
+    
+    // Validar límite de 3 imágenes (existentes + nuevas)
+    const existingImagesCount = this.provider?.images?.length || 0;
+    const totalAfterAdd = existingImagesCount + this.selectedImages.length + files.length;
+    
+    if (totalAfterAdd > 3) {
+      this.showErrorToast(`Máximo 3 imágenes permitidas. Ya tienes ${existingImagesCount} existentes y ${this.selectedImages.length} nuevas, puedes agregar ${3 - existingImagesCount - this.selectedImages.length} más.`);
+      // Resetear el input
+      event.target.value = '';
+      return;
+    }
+    
+    // Agregar nuevas imágenes a las existentes (no reemplazar)
+    files.forEach(file => {
+      // Validar tamaño (5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        this.showErrorToast(`La imagen ${file.name} excede el tamaño máximo de 5MB`);
+        return;
+      }
+      
+      this.selectedImages.push(file);
+      
+      // Crear previsualización
+      const reader = new FileReader();
+      reader.onload = (e: any) => {
+        this.selectedImagesPreviews.push(e.target.result);
+      };
+      reader.readAsDataURL(file);
+    });
+    
+    // Resetear el input para permitir seleccionar más imágenes
+    event.target.value = '';
+  }
+
+  getTotalImagesCount(): number {
+    // Contar solo las imágenes existentes que NO están marcadas para eliminar
+    const existingCount = this.provider?.images?.filter((img: string, idx: number) => 
+      !this.imagesToDelete.includes(`image_${idx}`)
+    ).length || 0;
+    return existingCount + this.selectedImages.length;
+  }
+
+  removeLogo() {
+    this.selectedLogo = null;
+    this.logoPreview = null;
+  }
+
+  triggerImagesUpload() {
+    // Buscar el input de imágenes específicamente
+    const imagesInput = document.querySelector('input[type="file"][multiple]') as HTMLInputElement;
+    if (imagesInput) {
+      imagesInput.click();
+    }
   }
 
   addQuestion() {

@@ -30,6 +30,7 @@ export interface GeofenceStats {
     activeUsers4h: number;
     activeUsers24h: number;
     activeUsers7d: number;
+    uniqueUsersTotal?: number; // 🔥 NUEVO: Total histórico sin límite de tiempo
     estimatedReach: number;
     hourlyDistribution: Array<{
       _id: number;

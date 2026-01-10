@@ -105,84 +105,108 @@
   margin-bottom: 16px;
 }
 
+// Contenedor para estadísticas de geocerca (una sola tarjeta)
+.geofence-stats-container {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 16px;
+  
+  .stat-card-full {
+    width: 100%;
+    max-width: 300px; // Limitar ancho máximo para mejor distribución
+  }
+}
+
 .promotion-stat-card {
   background: white;
   border-radius: 12px;
-  padding: 16px;
+  padding: 20px;
   border: 2px solid var(--ion-color-success, #2a8473); // Borde verde de la plataforma
   box-shadow: 0 2px 8px rgba(42, 132, 115, 0.1); // Sombra sutil verde
+  display: flex;
+  align-items: center;
+  gap: 16px;
   
   .stat-icon {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 40px;
-    height: 40px;
+    width: 48px;
+    height: 48px;
     border-radius: 50%;
     background: rgba(42, 132, 115, 0.1); // Fondo verde claro
-    margin-bottom: 12px;
+    flex-shrink: 0;
     
     ion-icon {
-      font-size: 24px;
+      font-size: 28px;
       color: var(--ion-color-success, #2a8473); // Verde de la plataforma
     }
   }
   
   .stat-info {
-    text-align: center;
+    flex: 1;
     
     .stat-value {
-      font-size: 28px;
+      font-size: 32px;
       font-weight: bold;
-      color: var(--ion-color-dark, #2a8473); // Color oscuro de la plataforma
+      color: #1f2937; // Color oscuro neutro (WhatsApp style)
       margin-bottom: 4px;
+      line-height: 1.2;
     }
     
     .stat-label {
-      font-size: 12px;
-      color: var(--ion-color-medium, #666); // Color medio
+      font-size: 14px;
+      color: #6b7280; // Gris neutro (WhatsApp style)
       font-weight: 500;
     }
+  }
+  
+  // Estilo para tarjeta full width
+  &.stat-card-full {
+    max-width: none;
+    width: 100%;
   }
 }
 
 // Estilos para secciones desplegables
 .expandable-card {
-  margin: 12px 8px; // Más anchos - menos margen
-  border-radius: 12px;
+  margin: 0; // Sin margen (WhatsApp style)
+  border-radius: 0; // Sin bordes redondeados (WhatsApp style)
   box-shadow: none; // Sin sombra
-  background: transparent; // Sin fondo
-  border: 1px solid #e0e0e0; // Borde sutil
+  background: white; // Fondo blanco (WhatsApp style)
+  border: none; // Sin borde
+  border-bottom: 1px solid #e5e7eb; // Solo borde inferior (WhatsApp style)
   overflow: hidden;
   
   .expandable-header {
     cursor: pointer;
     display: flex;
-    align-items: center;
-    justify-content: center; /* center title, icon will be absolute */
-    padding: 16px;
-    background: transparent; // Sin fondo
-    border-radius: 12px 12px 0 0;
-    transition: all 0.3s ease;
-    border-bottom: none; /* remove inner bottom border to rely on outer card border */
+    //align-items: center;
+    justify-content: flex-start; // Texto pegado a la izquierda
+    padding: 16px 20px; // Padding consistente (WhatsApp style)
+    background: white; // Fondo blanco
+    border-radius: 0;
+    transition: background-color 0.2s ease;
+    border-bottom: none;
     position: relative;
     
     &:hover {
-      background: rgba(42, 132, 115, 0.05); // Hover sutil con color de la plataforma
+      background: #f9fafb; // Hover sutil gris (WhatsApp style)
     }
     
     ion-card-title {
       display: flex;
       align-items: center;
       margin: 0;
-      color: var(--ion-color-dark, #2a8473); // Color oscuro de la plataforma
-      font-weight: 600;
+      color: #1f2937; // Color oscuro neutro (WhatsApp style)
+      font-weight: 500;
       font-size: 16px;
+      flex: 1; // Ocupa el espacio disponible
 
       ion-icon {
-        margin-right: 8px;
-        font-size: 18px;
-        color: var(--ion-color-success, #2a8473); // Iconos en color de la plataforma
+        margin-right: 12px;
+        font-size: 20px;
+        color: #6b7280; // Gris neutro para todos los iconos (WhatsApp style)
       }
     }
 
@@ -192,16 +216,22 @@
       right: 16px;
       top: 50%;
       transform: translateY(-50%);
-      color: var(--ion-color-success, #2a8473);
+      color: #6b7280; // Gris neutro (WhatsApp style)
       transition: transform 0.3s ease;
-      font-size: 18px;
+      font-size: 20px;
     }
   }
   
   .expandable-content {
-    padding: 16px;
+    padding: 16px 20px; // Padding adecuado (WhatsApp style)
     background: white;
-    border-radius: 0 0 12px 12px;
+    border-radius: 0;
+    
+    // Ajuste específico para la sección de ubicación
+    app-map-address {
+      display: block;
+      width: 100%;
+    }
   }
 }
 
@@ -209,7 +239,7 @@
 .whatsapp-container {
   background: #f5f5f5;
   min-height: 100vh;
-  padding: 16px;
+  padding: 1px;
 }
 .add-new{
   margin-top: 0.8rem;
@@ -246,13 +276,14 @@
   font-weight: 500;
 }
 
-// Items de configuración
+// Items de configuración (WhatsApp style)
 .settings-item {
   display: flex;
   align-items: flex-start;
   padding: 12px 20px;
-  border-bottom: 1px solid #f3f4f6;
+  border-bottom: 1px solid #e5e7eb; // Borde más sutil (WhatsApp style)
   transition: background-color 0.2s ease;
+  background: white;
 }
 
 .settings-item:last-child {
@@ -260,15 +291,15 @@
 }
 
 .settings-item:hover {
-  background-color: #f9fafb;
+  background-color: #f9fafb; // Hover gris claro (WhatsApp style)
 }
 
-// Iconos de los items
+// Iconos de los items (WhatsApp style - minimalista)
 .item-icon {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: #f3f4f6;
+  background: transparent; // Sin fondo (WhatsApp style)
   display: flex;
   align-items: center;
   justify-content: center;
@@ -278,8 +309,8 @@
 }
 
 .item-icon ion-icon {
-  font-size: 20px;
-  color: #6b7280;
+  font-size: 22px;
+  color: #6b7280; // Gris neutro para todos los iconos (WhatsApp style)
   background: transparent !important;
   border: none !important;
 }
@@ -587,10 +618,112 @@
   height: 32px;
 }
 
-// Estilos para imágenes
+// Estilos para previsualización de imágenes (igual que create-service)
+.image-upload-section {
+  margin-bottom: 24px;
+  
+  .section-label {
+    display: block;
+    margin-bottom: 12px;
+    font-weight: 600;
+    color: #1a1a1a;
+    font-size: 14px;
+  }
+  
+  .image-preview-container {
+    margin-bottom: 16px;
+  }
+  
+  .image-preview.marked-for-deletion {
+  opacity: 0.5;
+  position: relative;
+  
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 0, 0, 0.2);
+    border: 2px dashed #ff0000;
+    border-radius: 8px;
+  }
+}
+
+.image-preview {
+    position: relative;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    aspect-ratio: 1;
+    
+    .preview-image {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 8px;
+    }
+    
+    .remove-image-btn {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      --padding-start: 6px;
+      --padding-end: 6px;
+      --border-radius: 50%;
+      width: 28px;
+      height: 28px;
+      --background: rgba(220, 38, 38, 0.9);
+      --color: white;
+      
+      ion-icon {
+        font-size: 16px;
+      }
+    }
+  }
+  
+  .upload-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    aspect-ratio: 1;
+    border: 2px dashed #d1d5db;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: #f9fafb;
+    
+    &:hover {
+      border-color: var(--ion-color-primary);
+      background: #f8f9ff;
+    }
+    
+    ion-icon {
+      margin-bottom: 8px;
+      color: #6b7280;
+    }
+    
+    p {
+      margin: 0;
+      font-size: 12px;
+      color: #6b7280;
+      text-align: center;
+    }
+  }
+  
+  .images-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+}
+
+// Estilos para imágenes (mantener compatibilidad)
 .current-images {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  grid-template-columns: repeat(3, 1fr);
   gap: 8px;
   margin-top: 8px;
 }
@@ -1163,5 +1296,67 @@ ion-checkbox {
   // Small tweaks for better contrast
   .settings-divider {
     background: rgba(255,255,255,0.03) !important;
+  }
+}
+
+
+// Estilos para imágenes seleccionadas (nuevas)
+.selected-images-preview {
+  margin-top: 16px;
+  
+  .selected-images-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  
+  .selected-image-item {
+    position: relative;
+    border-radius: 8px;
+    overflow: hidden;
+    aspect-ratio: 1;
+    border: 2px solid #10b981;
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2);
+  }
+  
+  .selected-image-preview {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  
+  .remove-selected-image-btn {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    --padding-start: 4px;
+    --padding-end: 4px;
+    --padding-top: 4px;
+    --padding-bottom: 4px;
+    z-index: 10;
+    --background: rgba(239, 68, 68, 0.9);
+    --color: white;
+    border-radius: 50%;
+    width: 28px;
+    height: 28px;
+    
+    ion-icon {
+      font-size: 16px;
+    }
+  }
+  
+  .file-selected {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #10b981;
+    font-size: 14px;
+    font-weight: 500;
+    margin-top: 8px;
+    
+    ion-icon {
+      font-size: 18px;
+    }
   }
 }

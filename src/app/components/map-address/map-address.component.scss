@@ -4,6 +4,38 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
+// Versión sin card (cuando se usa dentro de acordeón)
+.map-address-content {
+  margin: 0;
+  padding: 10px;
+  width: 100%;
+  
+  // Asegurar que los márgenes internos sean consistentes
+  .search-container {
+    margin-bottom: 16px;
+  }
+  
+  .map-instructions {
+    margin-bottom: 16px;
+  }
+  
+  .map-container {
+    margin: 16px 0;
+  }
+  
+  .address-info {
+    margin: 16px 0;
+  }
+  
+  .address-fields {
+    margin: 16px 0;
+  }
+  
+  .action-buttons {
+    margin: 16px 0 0 0;
+  }
+}
+
 // Header del card
 ion-card-header {
   padding-bottom: 8px;
@@ -13,11 +45,12 @@ ion-card-header {
     align-items: center;
     font-size: 18px;
     font-weight: 600;
-    color: var(--ion-color-primary);
+    color: #1a1a1a; // 🔥 Negro para mejor legibilidad
     
     ion-icon {
       margin-right: 8px;
       font-size: 20px;
+      color: var(--ion-color-primary); // 🔥 Color del icono
     }
   }
 }
@@ -38,6 +71,7 @@ ion-card-header {
     ion-input {
       --padding-top: 12px;
       --padding-bottom: 12px;
+      --color: #1a1a1a; // 🔥 Color del texto de entrada
       font-size: 16px;
     }
     
@@ -86,13 +120,13 @@ ion-card-header {
         font-size: 14px;
         font-weight: 500;
         margin: 0 0 2px 0;
-        color: var(--ion-color-dark);
+        color: #1a1a1a; // 🔥 Negro para mejor legibilidad
       }
       
       p {
         font-size: 12px;
         margin: 0;
-        color: var(--ion-color-medium);
+        color: #4b5563; // 🔥 Gris oscuro para legibilidad
       }
     }
   }
@@ -105,6 +139,11 @@ ion-card-header {
   border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  
+  // Cuando se usa dentro de acordeón (hideHeader), ajustar márgenes
+  .map-address-content & {
+    margin: 16px 0;
+  }
   
   .address-map {
     width: 100%;
@@ -179,7 +218,7 @@ ion-card-header {
     
     ion-label[position="stacked"] {
       font-weight: 500;
-      color: var(--ion-color-dark);
+      color: #1a1a1a; // 🔥 Negro para mejor legibilidad
       margin-bottom: 8px;
     }
     
@@ -190,10 +229,11 @@ ion-card-header {
       --border-radius: 8px;
       --padding-start: 12px;
       --padding-end: 12px;
+      --color: #1a1a1a; // 🔥 Color del texto de entrada
       font-size: 14px;
       
       &[readonly] {
-        --color: var(--ion-color-medium);
+        --color: #4b5563; // 🔥 Gris oscuro para campos readonly
         opacity: 0.8;
       }
     }
@@ -217,9 +257,10 @@ ion-card-header {
   }
   
   .confirm-button {
-    height: 48px;
+    height: 44px; // 🔥 Más pequeño que el botón principal
     --border-radius: 24px;
-    font-weight: 600;
+    font-weight: 500; // 🔥 Menos prominente
+    margin-top: 8px;
     
     ion-icon {
       margin-right: 8px;
@@ -229,52 +270,70 @@ ion-card-header {
       --opacity: 0.5;
     }
   }
+  
+  // 🔥 NUEVO: Nota informativa sobre auto-confirmación
+  .auto-confirm-note {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 12px;
+    padding: 8px 12px;
+    font-size: 12px;
+    text-align: center;
+    line-height: 1.4;
+    
+    ion-icon {
+      margin-right: 6px;
+      font-size: 16px;
+    }
+  }
 }
 
 // Instrucciones interactivas del mapa
 .map-instructions {
-  display: flex;
-  gap: 12px;
   margin-bottom: 16px;
+  padding: 12px 16px;
+  background: #f3f4f6;
+  border-radius: 8px;
+  border-left: 4px solid #6b7280;
   
   .instruction-card {
-    flex: 1;
     display: flex;
-    align-items: center;
-    padding: 12px;
-    background: linear-gradient(135deg, #f8f9ff 0%, #e8f4fd 100%);
-    border-radius: 12px;
-    border: 1px solid var(--ion-color-primary-tint);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-    transition: all 0.3s ease;
+    align-items: flex-start;
+    padding: 0;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    cursor: default; // No parecer clickeable
     
+    // Quitar cualquier efecto hover
     &:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      transform: none;
+      box-shadow: none;
+      background: transparent;
     }
     
     ion-icon {
-      margin-right: 10px;
+      margin-right: 12px;
+      margin-top: 2px;
       font-size: 20px;
       flex-shrink: 0;
+      color: #6b7280;
     }
     
     .instruction-content {
       flex: 1;
       
-      h4 {
-        margin: 0 0 4px 0;
-        font-size: 13px;
-        font-weight: 600;
-        color: var(--ion-color-primary);
-        line-height: 1.2;
-      }
-      
       p {
         margin: 0;
-        font-size: 11px;
-        color: var(--ion-color-medium);
-        line-height: 1.3;
+        font-size: 13px;
+        color: #4b5563;
+        line-height: 1.5;
+        
+        strong {
+          color: #1f2937;
+          font-weight: 600;
+        }
       }
     }
   }
