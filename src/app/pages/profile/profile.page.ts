@@ -20,6 +20,7 @@ export class ProfilePage implements OnInit {
   user: any = null;
   isLoading = false;
   isEditing = false;
+  isLoggingOut = false; // Prevenir múltiples ejecuciones de logout
 
   // Datos editables del usuario
   editData = {
@@ -404,6 +405,11 @@ export class ProfilePage implements OnInit {
   }
 
   async logout() {
+    // Prevenir múltiples ejecuciones
+    if (this.isLoggingOut) {
+      return;
+    }
+
     const alert = await this.alertController.create({
       header: 'Cerrar sesión',
       message: '¿Estás seguro de que quieres cerrar sesión?',
@@ -415,14 +421,43 @@ export class ProfilePage implements OnInit {
         {
           text: 'Cerrar sesión',
           handler: async () => {
-            await this.authService.logout();
-            this.router.navigate(['/tabs/home'], { replaceUrl: true });
+            // Prevenir múltiples ejecuciones
+            if (this.isLoggingOut) {
+              return false;
+            }
+            this.isLoggingOut = true;
+
+            try {
+              await this.authService.logout();
+              this.router.navigate(['/tabs/home'], { replaceUrl: true });
+              return true;
+            } catch (error) {
+              console.error('Error al cerrar sesión:', error);
+              this.isLoggingOut = false;
+              // Mostrar error si ocurre algo
+              setTimeout(async () => {
+                const errorAlert = await this.alertController.create({
+                  header: 'Error',
+                  message: 'Ocurrió un error al cerrar sesión. Por favor intenta de nuevo.',
+                  buttons: ['OK']
+                });
+                await errorAlert.present();
+              }, 100);
+              return false; // Mantener el alert abierto si hay error
+            }
           }
         }
       ]
     });
 
     await alert.present();
+    
+    // Resetear la bandera si el usuario cancela
+    alert.onDidDismiss().then((data) => {
+      if (data.role === 'cancel') {
+        this.isLoggingOut = false;
+      }
+    });
   }
 
   private validateForm(): boolean {
