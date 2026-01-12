@@ -964,7 +964,7 @@ export class HomePage implements OnInit, AfterViewInit {
     const toast = await this.toastController.create({
       message,
       duration: 3000,
-      position: 'bottom',
+      position: 'top',
       color: 'danger'
     });
     await toast.present();
@@ -1336,7 +1336,7 @@ export class HomePage implements OnInit, AfterViewInit {
       message,
       duration: 2000,
       color: 'success',
-      position: 'bottom'
+      position: 'top'
     });
     await toast.present();
   }

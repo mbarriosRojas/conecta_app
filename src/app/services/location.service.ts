@@ -1,8 +1,8 @@
 import { Injectable } from '@angular/core';
 import { Geolocation } from '@capacitor/geolocation';
 import { Device } from '@capacitor/device';
-import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, Observable, of, interval } from 'rxjs';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { BehaviorSubject, Observable, of, interval, firstValueFrom } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 import { BackgroundGeolocationPlugin } from '@capacitor-community/background-geolocation';
@@ -35,6 +35,7 @@ export class LocationService {
   private backgroundUpdateInterval = 5 * 60 * 1000; // 5 minutos (app abierta/minimizada)
   private backgroundUpdateSubscription: any = null;
   private anonymousUserId: string | null = null;
+  private deviceId: string | null = null; // ID único del dispositivo físico
   private isBackgroundUpdateEnabled = false;
   private backgroundGeolocationWatcherId: string | null = null;
 
@@ -48,19 +49,14 @@ export class LocationService {
       // Intentar obtener la ubicación al inicializar el servicio
       await this.getCurrentPosition();
     } catch (error) {
-      console.log('No se pudo obtener la ubicación inicial:', error);
+      // Error silencioso
     }
   }
 
   async getCurrentPosition(): Promise<LocationData> {
     try {
-      console.log('📍 LocationService: Obteniendo ubicación actual...');
-      console.log('📍 LocationService: Window disponible:', typeof window !== 'undefined');
-      console.log('📍 LocationService: Geolocation disponible:', typeof window !== 'undefined' && 'geolocation' in navigator);
-      
       // En web, usar la API nativa del navegador
       if (typeof window !== 'undefined' && 'geolocation' in navigator) {
-        console.log('📍 LocationService: Usando API web de geolocalización');
         return new Promise((resolve, reject) => {
           navigator.geolocation.getCurrentPosition(
             (position) => {
@@ -70,12 +66,11 @@ export class LocationService {
                 accuracy: position.coords.accuracy,
                 timestamp: position.timestamp
               };
-              console.log('📍 LocationService: Ubicación obtenida (web):', location);
               this.currentLocationSubject.next(location);
               resolve(location);
             },
             (error) => {
-              console.error('❌ LocationService: Error obteniendo ubicación (web):', error);
+              console.error('❌ LocationService: Error obteniendo ubicación:', error);
               reject(new Error('No se pudo obtener la ubicación actual'));
             },
             { enableHighAccuracy: true, timeout: 10000, maximumAge: 300000 }
@@ -84,11 +79,10 @@ export class LocationService {
       }
 
       // En dispositivos móviles, usar Capacitor
-      console.log('📍 LocationService: Usando Capacitor Geolocation');
       const coordinates = await Geolocation.getCurrentPosition({
         enableHighAccuracy: true,
         timeout: 10000,
-        maximumAge: 300000 // 5 minutes
+        maximumAge: 300000
       });
 
       const location: LocationData = {
@@ -98,7 +92,6 @@ export class LocationService {
         timestamp: coordinates.timestamp
       };
 
-      console.log('📍 LocationService: Ubicación obtenida (Capacitor):', location);
       this.currentLocationSubject.next(location);
       return location;
     } catch (error) {
@@ -284,55 +277,94 @@ export class LocationService {
   // 🔥 ============================================
 
   /**
-   * Inicializa el ID del dispositivo (userID persistente)
-   * 🔥 GARANTIZA: El mismo dispositivo siempre usa el mismo userID
-   * - Prioridad 1: Device ID del dispositivo (único por dispositivo)
-   * - Prioridad 2: anonymousUserId guardado en localStorage (persiste entre sesiones)
-   * - Prioridad 3: Generar uno nuevo y guardarlo
+   * Inicializa el ID del dispositivo (userID persistente) y deviceId
+   * 🔥 GARANTIZA: El mismo dispositivo siempre usa el mismo userID y deviceId
    */
   private async initializeAnonymousUser() {
     try {
-      // 1. Intentar obtener de localStorage primero (persiste entre sesiones)
+      // 1. Inicializar deviceId primero (ID único del dispositivo físico)
+      await this.initializeDeviceId();
+
+      // 2. Inicializar anonymousUserId (ID persistente para ubicación)
       if (typeof localStorage !== 'undefined') {
         const storedUserId = localStorage.getItem('anonymousUserId');
         if (storedUserId) {
           this.anonymousUserId = storedUserId;
-          console.log('📱 ID de dispositivo recuperado de localStorage:', this.anonymousUserId);
-          return; // Usar el ID almacenado (garantiza consistencia)
+          return;
         }
       }
 
-      // 2. Intentar obtener el ID del dispositivo (único por dispositivo físico)
-      const deviceInfo = await Device.getId();
-      if (deviceInfo?.identifier) {
-        this.anonymousUserId = deviceInfo.identifier;
-        console.log('📱 ID de dispositivo obtenido del hardware:', this.anonymousUserId);
+      // 3. Usar deviceId como anonymousUserId si está disponible
+      if (this.deviceId) {
+        this.anonymousUserId = this.deviceId;
       } else {
-        // 3. Generar uno nuevo solo si no se pudo obtener
         this.anonymousUserId = this.generateUniqueId();
-        console.log('📱 Nuevo ID de dispositivo generado:', this.anonymousUserId);
       }
       
-      // Guardar en localStorage para persistencia (siempre)
+      // Guardar en localStorage para persistencia
       if (typeof localStorage !== 'undefined' && this.anonymousUserId) {
         localStorage.setItem('anonymousUserId', this.anonymousUserId);
-        console.log('💾 ID de dispositivo guardado en localStorage');
       }
     } catch (error) {
-      console.warn('⚠️ Error obteniendo device ID, usando localStorage:', error);
-      // Si falla, intentar recuperar del localStorage
+      console.warn('⚠️ Error inicializando usuario anónimo:', error);
       if (typeof localStorage !== 'undefined') {
         this.anonymousUserId = localStorage.getItem('anonymousUserId') || this.generateUniqueId();
         if (this.anonymousUserId) {
           localStorage.setItem('anonymousUserId', this.anonymousUserId);
-          console.log('💾 ID de dispositivo recuperado/guardado desde localStorage:', this.anonymousUserId);
         }
       } else {
-        // Último recurso: generar uno nuevo
         this.anonymousUserId = this.generateUniqueId();
-        console.log('📱 Nuevo ID de dispositivo generado (sin localStorage):', this.anonymousUserId);
       }
     }
+  }
+
+  /**
+   * Inicializa el deviceId único del dispositivo físico
+   * Prioridad: localStorage → Device.getId() → Generar nuevo
+   */
+  private async initializeDeviceId(): Promise<void> {
+    try {
+      // 1. Intentar obtener de localStorage (persiste entre sesiones)
+      if (typeof localStorage !== 'undefined') {
+        const storedDeviceId = localStorage.getItem('deviceId');
+        if (storedDeviceId) {
+          this.deviceId = storedDeviceId;
+          return;
+        }
+      }
+
+      // 2. Intentar obtener el ID del dispositivo físico
+      const { Device } = await import('@capacitor/device');
+      const deviceInfo = await Device.getId();
+      if (deviceInfo?.identifier) {
+        this.deviceId = deviceInfo.identifier;
+      } else {
+        // 3. Generar uno nuevo si no se pudo obtener
+        this.deviceId = this.generateDeviceId();
+      }
+      
+      // Guardar en localStorage para persistencia
+      if (typeof localStorage !== 'undefined' && this.deviceId) {
+        localStorage.setItem('deviceId', this.deviceId);
+      }
+    } catch (error) {
+      console.warn('⚠️ Error obteniendo device ID:', error);
+      if (typeof localStorage !== 'undefined') {
+        this.deviceId = localStorage.getItem('deviceId') || this.generateDeviceId();
+        if (this.deviceId) {
+          localStorage.setItem('deviceId', this.deviceId);
+        }
+      } else {
+        this.deviceId = this.generateDeviceId();
+      }
+    }
+  }
+
+  /**
+   * Genera un deviceId único que persiste entre sesiones
+   */
+  private generateDeviceId(): string {
+    return 'device_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
   }
 
   /**
@@ -340,6 +372,25 @@ export class LocationService {
    */
   private generateUniqueId(): string {
     return 'anon_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+  }
+
+  /**
+   * Obtiene el deviceId único del dispositivo físico
+   * Método público para usar en otros servicios
+   */
+  public getDeviceId(): string {
+    if (!this.deviceId) {
+      if (typeof localStorage !== 'undefined') {
+        this.deviceId = localStorage.getItem('deviceId');
+      }
+      if (!this.deviceId) {
+        this.deviceId = this.generateDeviceId();
+        if (typeof localStorage !== 'undefined') {
+          localStorage.setItem('deviceId', this.deviceId);
+        }
+      }
+    }
+    return this.deviceId;
   }
 
   /**
@@ -386,11 +437,9 @@ export class LocationService {
    */
   public async startBackgroundLocationUpdates(authService?: any) {
     if (this.isBackgroundUpdateEnabled) {
-      console.log('🔄 Actualización de ubicación ya está activa');
       return;
     }
 
-    console.log('🚀 [LOCATION] Iniciando actualización periódica de ubicación (foreground only)...');
     this.isBackgroundUpdateEnabled = true;
 
     // 1️⃣ Actualizar inmediatamente
@@ -407,7 +456,6 @@ export class LocationService {
       }
     });
 
-    console.log('✅ [LOCATION] Actualización de ubicación iniciada (foreground: cada 5 minutos)');
   }
 
   /**
@@ -419,7 +467,6 @@ export class LocationService {
     // DESACTIVADO: No usamos background tracking nativo para evitar errores en iOS
     // El error "Invalid parameter not satisfying: !stayUp || CLClientIsBa..." 
     // ocurre cuando se intenta habilitar allowsBackgroundLocationUpdates sin permiso "Always"
-    console.log('⚠️ [LOCATION] Background tracking nativo desactivado para evitar errores en iOS');
     return;
     
     /* Código original comentado - solo para referencia
@@ -443,7 +490,6 @@ export class LocationService {
     if (this.backgroundUpdateSubscription) {
       this.backgroundUpdateSubscription.unsubscribe();
       this.backgroundUpdateSubscription = null;
-      console.log('⏹️ [LOCATION] Timer de actualización detenido');
     }
 
     // Detener tracking nativo background (si existe, aunque está desactivado)
@@ -451,18 +497,17 @@ export class LocationService {
       try {
         await BackgroundGeolocation.removeWatcher({ id: this.backgroundGeolocationWatcherId });
         this.backgroundGeolocationWatcherId = null;
-        console.log('⏹️ [LOCATION] Background tracking nativo detenido');
       } catch (error) {
         console.error('❌ [LOCATION] Error deteniendo background tracking:', error);
       }
     }
 
     this.isBackgroundUpdateEnabled = false;
-    console.log('⏹️ [LOCATION] Actualización de ubicación detenida');
   }
 
   /**
    * Actualiza la ubicación del usuario en el backend
+   * 🔥 MEJORADO: Ahora también actualiza la ubicación en DeviceToken
    */
   private async updateLocationToBackend(authService?: any): Promise<void> {
     try {
@@ -492,12 +537,12 @@ export class LocationService {
         isAnonymous: !authService || !authService.isAuthenticated()
       };
 
-      console.log('📍 Enviando ubicación al backend:', payload);
-
-      // Enviar ubicación al backend
+      // Enviar ubicación al backend (UserLocation)
       this.http.post(`${environment.apiUrl}/api/location/update`, payload).subscribe({
-        next: (response: any) => {
-          console.log('✅ Ubicación actualizada en el backend:', response);
+        next: async (response: any) => {
+          console.log('✅ [LOCATION] Ubicación actualizada en UserLocation');
+          // 🔥 NUEVO: También actualizar ubicación en DeviceToken
+          await this.updateTokenLocation(userId, location.latitude, location.longitude);
         },
         error: (error) => {
           console.error('❌ Error al actualizar ubicación en el backend:', error);
@@ -505,6 +550,56 @@ export class LocationService {
       });
     } catch (error) {
       console.error('❌ Error obteniendo ubicación para actualizar backend:', error);
+    }
+  }
+
+  /**
+   * 🔥 NUEVO: Actualiza la ubicación en DeviceToken
+   * Se llama automáticamente cuando se actualiza la ubicación en UserLocation
+   */
+  private async updateTokenLocation(userID: string, lat: number, lng: number): Promise<void> {
+    try {
+      // Obtener el token FCM desde localStorage directamente (más eficiente)
+      // El token se guarda en 'fcm_token' por PushNotificationService
+      let fcmToken: string | null = null;
+      try {
+        if (typeof window !== 'undefined' && window.localStorage) {
+          fcmToken = localStorage.getItem('fcm_token');
+        }
+      } catch (error) {
+        console.warn('⚠️ [LOCATION] No se pudo acceder a localStorage:', error);
+      }
+
+      if (!fcmToken) {
+        console.log('⚠️ [LOCATION] No hay token FCM para actualizar ubicación en DeviceToken');
+        return;
+      }
+
+      console.log('🔄 [LOCATION] Actualizando ubicación en DeviceToken...');
+      console.log(`   - userID: ${userID}`);
+      console.log(`   - lat: ${lat}, lng: ${lng}`);
+
+      const headers = new HttpHeaders({
+        'Content-Type': 'application/json'
+      });
+
+      const response = await firstValueFrom(
+        this.http.post(`${environment.apiUrl}/api/notifications/update-token-location`, {
+          userID,
+          token: fcmToken,
+          lat,
+          lng
+        }, { headers })
+      );
+
+      if ((response as any).status === 'success') {
+        console.log('✅ [LOCATION] Ubicación actualizada en DeviceToken');
+      } else {
+        console.warn('⚠️ [LOCATION] Respuesta del backend no exitosa al actualizar token:', response);
+      }
+    } catch (error: any) {
+      // No es crítico si falla, solo loguear
+      console.warn('⚠️ [LOCATION] Error actualizando ubicación en DeviceToken (no crítico):', error?.message || error);
     }
   }
 
@@ -528,7 +623,6 @@ export class LocationService {
    */
   public async updateUserIdOnLogin(authenticatedUserId: string, authService?: any): Promise<void> {
     try {
-      console.log(`📍 [LOCATION] Actualizando userID: ${this.anonymousUserId} → ${authenticatedUserId}`);
       
       // Actualizar el anonymousUserId local
       const oldUserId = this.anonymousUserId;
@@ -542,7 +636,6 @@ export class LocationService {
       // Actualizar ubicación inmediatamente con el nuevo userID
       await this.updateLocationToBackend(authService);
       
-      console.log(`✅ [LOCATION] UserID actualizado y ubicación sincronizada`);
       
     } catch (error) {
       console.error('❌ [LOCATION] Error actualizando userID:', error);

@@ -7,7 +7,7 @@
     </ion-buttons>
     <ion-title>{{ isEditMode ? 'Editar' : 'Crear' }} Promoción</ion-title>
     <ion-buttons slot="end">
-      <ion-button (click)="savePromotion()" [disabled]="!promotionData.promotion_text">
+      <ion-button (click)="savePromotion()" [disabled]="!promotionData.promotion_text || (!isEditMode && !canCreatePromotion)">
         <ion-icon name="checkmark"></ion-icon>
       </ion-button>
     </ion-buttons>
@@ -165,7 +165,7 @@
         expand="block"
         size="large"
         (click)="savePromotion()"
-        [disabled]="!promotionData.promotion_text"
+        [disabled]="!promotionData.promotion_text || (!isEditMode && !canCreatePromotion)"
         color="primary">
         <ion-icon slot="start" name="save-outline"></ion-icon>
         {{ isEditMode ? 'Actualizar Promoción' : 'Crear Promoción' }}

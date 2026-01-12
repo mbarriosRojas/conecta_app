@@ -275,7 +275,7 @@
 
     <!-- Botones de acción -->
     <div class="action-buttons">
-      <ion-button expand="block" fill="solid" color="primary" type="submit" [disabled]="isLoading">
+      <ion-button expand="block" fill="solid" color="primary" type="submit" [disabled]="isLoading || !canCreateService">
         <ion-icon name="checkmark" slot="start" *ngIf="!isLoading"></ion-icon>
         <ion-spinner name="crescent" *ngIf="isLoading"></ion-spinner>
         {{ isLoading ? 'Creando...' : 'Crear Servicio' }}
@@ -285,6 +285,16 @@
         Cancelar
       </ion-button>
     </div>
+
+    <!-- 🔥 NUEVO: Mensaje si no puede crear -->
+    <ion-card *ngIf="!canCreateService" color="warning">
+      <ion-card-content>
+        <ion-text color="warning">
+          <p><strong>⚠️ Límite alcanzado</strong></p>
+          <p>Has alcanzado el límite de servicios de tu plan actual. Por favor actualiza tu plan para crear más servicios.</p>
+        </ion-text>
+      </ion-card-content>
+    </ion-card>
 
   </form>
 </ion-content>

@@ -7,6 +7,7 @@ import { IonicModule } from '@ionic/angular';
 import { ApiService } from '../../services/api.service';
 import { CacheService } from '../../services/cache.service';
 import { AuthService } from '../../services/auth.service';
+import { SubscriptionService } from '../../services/subscription.service';
 import { Category, Provider, Question } from '../../models/provider.model';
 import { MapAddressComponent, AddressData } from '../../components/map-address/map-address.component';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
@@ -71,6 +72,7 @@ export class EditServicePage implements OnInit {
   editingProduct: any = null;
   isLoadingProduct = false;
   productTagsInput = '';
+  canCreateProduct = true; // 🔥 NUEVO: Controla si el usuario puede crear productos
   
   // Formulario de producto
   productFormData = {
@@ -181,6 +183,7 @@ export class EditServicePage implements OnInit {
     private apiService: ApiService,
     private cacheService: CacheService,
     private authService: AuthService,
+    private subscriptionService: SubscriptionService,
     private loadingController: LoadingController,
     private toastController: ToastController,
     private alertController: AlertController,
@@ -861,7 +864,7 @@ export class EditServicePage implements OnInit {
       message,
       duration: 3000,
       color: 'danger',
-      position: 'bottom'
+      position: 'top'
     });
     await toast.present();
   }
@@ -871,7 +874,7 @@ export class EditServicePage implements OnInit {
       message,
       duration: 2000,
       color: 'success',
-      position: 'bottom'
+      position: 'top'
     });
     await toast.present();
   }
@@ -912,6 +915,58 @@ export class EditServicePage implements OnInit {
     this.isProductModalOpen = true;
   }
 
+  // 🔥 NUEVO: Verificar límites antes de abrir modal de creación
+  async checkProductLimit() {
+    try {
+      const limitCheck = await this.subscriptionService.checkLimitBeforeCreate('product', this.providerId);
+      
+      if (!limitCheck.allowed) {
+        this.canCreateProduct = false;
+        
+        // Mostrar alerta
+        const alert = await this.alertController.create({
+          header: '🚀 ¡Actualiza tu Plan!',
+          message: limitCheck.message || 'Has alcanzado el límite de productos para este servicio. 💎 Actualiza tu plan para crear más productos y expandir tu catálogo.',
+          buttons: [
+            {
+              text: '✨ Ver Planes',
+              handler: () => {
+                this.router.navigate(['/tabs/tab3']);
+              }
+            },
+            {
+              text: 'Entendido',
+              role: 'cancel'
+            }
+          ],
+          backdropDismiss: false
+        });
+        
+        await alert.present();
+        return;
+      }
+      
+      this.canCreateProduct = true;
+    } catch (error: any) {
+      console.error('Error verificando límites de productos:', error);
+      
+      // Si es 404, permitir continuar (el backend validará)
+      if (error.status === 404) {
+        this.canCreateProduct = true;
+        return;
+      }
+      
+      // Si es 401, redirigir a login
+      if (error.status === 401) {
+        this.router.navigate(['/login']);
+        return;
+      }
+      
+      // Otros errores: permitir continuar (el backend validará)
+      this.canCreateProduct = true;
+    }
+  }
+
   closeProductModal() {
     this.isProductModalOpen = false;
     this.editingProduct = null;
@@ -936,6 +991,61 @@ export class EditServicePage implements OnInit {
   async saveProduct() {
     if (!this.validateProductForm()) {
       return;
+    }
+
+    // 🔥 NUEVO: Validar límites del plan ANTES de crear el producto (solo si es creación)
+    if (!this.editingProduct && this.providerId) {
+      const loadingCheck = await this.loadingController.create({
+        message: 'Verificando límites del plan...',
+        spinner: 'crescent',
+        backdropDismiss: false
+      });
+      await loadingCheck.present();
+
+      try {
+        const limitCheck = await this.subscriptionService.checkLimitBeforeCreate('product', this.providerId);
+        
+        if (!limitCheck.allowed) {
+          await loadingCheck.dismiss();
+          
+          // Mostrar alerta con opción de cambiar plan
+          const alert = await this.alertController.create({
+            header: '🚀 ¡Actualiza tu Plan!',
+            message: limitCheck.message || 'Has alcanzado el límite de productos para este servicio. 💎 Actualiza tu plan para crear más productos y expandir tu catálogo.',
+            buttons: [
+              {
+                text: '✨ Ver Planes',
+                handler: () => {
+                  this.router.navigate(['/tabs/tab3']);
+                }
+              },
+              {
+                text: 'Cancelar',
+                role: 'cancel'
+              }
+            ]
+          });
+          await alert.present();
+          return;
+        }
+      } catch (error: any) {
+        console.error('Error verificando límites:', error);
+        await loadingCheck.dismiss();
+        
+        // Si hay error pero no es crítico, continuar (el backend también validará)
+        if (error.status === 401) {
+          await this.showErrorToast('Debes estar logueado para crear un producto');
+          return;
+        }
+        
+        // Si es 404, el endpoint no está disponible, continuar (backend validará)
+        if (error.status === 404) {
+          console.warn('⚠️ Endpoint de verificación de límites no disponible, continuando...');
+          // Continuar con la creación, el backend validará
+        }
+      } finally {
+        await loadingCheck.dismiss();
+      }
     }
 
     this.isLoadingProduct = true;

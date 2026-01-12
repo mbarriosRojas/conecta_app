@@ -9,6 +9,7 @@ import { firstValueFrom } from 'rxjs';
 import { timeout } from 'rxjs/operators';
 import { CacheService } from '../../services/cache.service';
 import { AuthService } from '../../services/auth.service';
+import { SubscriptionService } from '../../services/subscription.service';
 import { Category, Question } from '../../models/provider.model';
 import { MapAddressComponent, AddressData } from '../../components/map-address/map-address.component';
 
@@ -22,6 +23,7 @@ import { MapAddressComponent, AddressData } from '../../components/map-address/m
 export class CreateServicePage implements OnInit {
   categories: Category[] = [];
   isLoading = false;
+  canCreateService = true; // 🔥 NUEVO: Controla si el usuario puede crear el servicio
   
   // Control de secciones desplegables
   expandedSections = {
@@ -92,14 +94,71 @@ export class CreateServicePage implements OnInit {
     private apiService: ApiService,
     private cacheService: CacheService,
     private authService: AuthService,
+    private subscriptionService: SubscriptionService,
     private loadingController: LoadingController,
     private toastController: ToastController,
     private alertController: AlertController
   ) {}
 
-  ngOnInit() {
+  async ngOnInit() {
+    // 🔥 NUEVO: Validar límites ANTES de cargar el formulario
+    await this.checkServiceLimit();
     this.loadCategories();
     // Inicializar con ubicación por defecto (Bogotá)
+  }
+
+  // 🔥 NUEVO: Verificar límites al inicio
+  async checkServiceLimit() {
+    try {
+      const limitCheck = await this.subscriptionService.checkLimitBeforeCreate('service');
+      
+      if (!limitCheck.allowed) {
+        this.canCreateService = false;
+        
+        // Mostrar alerta y redirigir
+        const alert = await this.alertController.create({
+          header: '🚀 ¡Actualiza tu Plan!',
+          message: limitCheck.message || 'Has alcanzado el límite de servicios de tu plan actual. 💎 Actualiza tu plan para crear más servicios y hacer crecer tu negocio.',
+          buttons: [
+            {
+              text: '✨ Ver Planes',
+              handler: () => {
+                this.router.navigate(['/tabs/tab3']);
+              }
+            },
+            {
+              text: 'Volver',
+              handler: () => {
+                this.router.navigate(['/tabs/services']);
+              }
+            }
+          ],
+          backdropDismiss: false // No permitir cerrar sin seleccionar una opción
+        });
+        
+        await alert.present();
+        return;
+      }
+      
+      this.canCreateService = true;
+    } catch (error: any) {
+      console.error('Error verificando límites al inicio:', error);
+      
+      // Si es 404, permitir continuar (el backend validará)
+      if (error.status === 404) {
+        this.canCreateService = true;
+        return;
+      }
+      
+      // Si es 401, redirigir a login
+      if (error.status === 401) {
+        this.router.navigate(['/login']);
+        return;
+      }
+      
+      // Otros errores: permitir continuar (el backend validará)
+      this.canCreateService = true;
+    }
   }
 
   // Método para controlar secciones desplegables
@@ -246,6 +305,59 @@ export class CreateServicePage implements OnInit {
     if (!this.validateForm()) {
       return;
     }
+
+    // 🔥 NUEVO: Validar límites del plan ANTES de crear el servicio
+    const loadingCheck = await this.loadingController.create({
+      message: 'Verificando límites del plan...',
+      spinner: 'crescent',
+      backdropDismiss: false
+    });
+    await loadingCheck.present();
+
+    try {
+      const limitCheck = await this.subscriptionService.checkLimitBeforeCreate('service');
+      
+      if (!limitCheck.allowed) {
+        await loadingCheck.dismiss();
+        
+        // Mostrar alerta con opción de cambiar plan
+        const alert = await this.alertController.create({
+          header: '🚀 ¡Actualiza tu Plan!',
+          message: limitCheck.message || 'Has alcanzado el límite de servicios de tu plan actual. 💎 Actualiza tu plan para crear más servicios y hacer crecer tu negocio.',
+          buttons: [
+            {
+              text: '✨ Ver Planes',
+              handler: () => {
+                this.router.navigate(['/tabs/tab3']);
+              }
+            },
+            {
+              text: 'Cancelar',
+              role: 'cancel'
+            }
+          ]
+        });
+        await alert.present();
+        return;
+      }
+      } catch (error: any) {
+        console.error('Error verificando límites:', error);
+        await loadingCheck.dismiss();
+        
+        // Si hay error pero no es crítico, continuar (el backend también validará)
+        if (error.status === 401) {
+          await this.showErrorToast('Debes estar logueado para crear un servicio');
+          return;
+        }
+        
+        // Si es 404, el endpoint no está disponible, continuar (backend validará)
+        if (error.status === 404) {
+          console.warn('⚠️ Endpoint de verificación de límites no disponible, continuando...');
+          // Continuar con la creación, el backend validará
+        }
+      } finally {
+        await loadingCheck.dismiss();
+      }
 
     // 🔥 MEJORADO: Crear loading antes de validaciones adicionales
     const loading = await this.loadingController.create({
@@ -425,7 +537,7 @@ export class CreateServicePage implements OnInit {
       message,
       duration: 3000,
       color: 'danger',
-      position: 'bottom'
+      position: 'top'
     });
     await toast.present();
   }
@@ -435,7 +547,7 @@ export class CreateServicePage implements OnInit {
       message,
       duration: 2000,
       color: 'success',
-      position: 'bottom'
+      position: 'top'
     });
     await toast.present();
   }
@@ -443,13 +555,13 @@ export class CreateServicePage implements OnInit {
   // 🔥 NUEVO: Mostrar alerta cuando hay error de suscripción
   async showSubscriptionErrorAlert(errorCode: string, message: string) {
     const alert = await this.alertController.create({
-      header: 'Plan No Activo',
-      message: message,
+      header: '🚀 ¡Activa tu Plan!',
+      message: message || 'Necesitas un plan activo para crear servicios. 💎 Actualiza tu plan y comienza a hacer crecer tu negocio.',
       buttons: [
         {
-          text: 'Ver Mi Plan',
+          text: '✨ Ver Mi Plan',
           handler: () => {
-            this.router.navigate(['/tabs/profile']);
+            this.router.navigate(['/tabs/tab3']);
           }
         },
         {
@@ -464,13 +576,13 @@ export class CreateServicePage implements OnInit {
   // 🔥 NUEVO: Mostrar alerta cuando se alcanzó el límite
   async showLimitExceededAlert(message: string) {
     const alert = await this.alertController.create({
-      header: 'Límite Alcanzado',
-      message: message,
+      header: '🚀 ¡Actualiza tu Plan!',
+      message: message || 'Has alcanzado el límite de tu plan actual. 💎 Actualiza tu plan para crear más servicios y hacer crecer tu negocio.',
       buttons: [
         {
           text: 'Cambiar Plan',
           handler: () => {
-            this.router.navigate(['/tabs/profile']);
+            this.router.navigate(['/tabs/tab3']);
           }
         },
         {

@@ -18,7 +18,6 @@ export class AuthGuard implements CanActivate {
   ): Promise<boolean> {
     
     try {
-      console.log('🔐 AuthGuard: Verificando autenticación para:', state.url);
       
       // Esperar a que la inicialización termine con timeout más largo
       await this.authService.waitForInitialization();

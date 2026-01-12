@@ -313,6 +313,63 @@ export class SubscriptionService {
   }
 
   /**
+   * Verifica límites antes de crear un recurso
+   */
+  async checkLimitBeforeCreate(
+    resourceType: 'service' | 'promotion' | 'product',
+    serviceID?: string
+  ): Promise<{ allowed: boolean; message?: string; remaining?: number; errorCode?: string; subscriptionStatus?: string }> {
+    try {
+      const headers = await this.getAuthHeaders();
+      let url = `${this.apiUrl}/check-limit?resourceType=${resourceType}`;
+      
+      if (serviceID) {
+        url += `&serviceID=${serviceID}`;
+      }
+      
+      const response = await firstValueFrom(
+        this.http.get<{ status: string; data: { allowed: boolean; message?: string; remaining?: number; errorCode?: string; subscriptionStatus?: string } }>(
+          url,
+          { headers }
+        )
+      );
+      
+      return response.data;
+    } catch (error: any) {
+      console.error('Error checking limit before create:', error);
+      
+      // Si es un error 404, el endpoint no está disponible (backend no actualizado)
+      // Permitir continuar, el backend validará al crear el recurso
+      if (error.status === 404) {
+        console.warn('⚠️ Endpoint de verificación de límites no disponible (404). Continuando...');
+        return {
+          allowed: true, // Permitir continuar, el backend validará
+          remaining: -1, // Ilimitado temporalmente
+          message: undefined
+        };
+      }
+      
+      // Si es un error 403, devolver el mensaje del backend
+      if (error.status === 403 && error.error?.data) {
+        return error.error.data;
+      }
+      
+      // Si es un error 400, devolver el mensaje del backend
+      if (error.status === 400 && error.error?.data) {
+        return error.error.data;
+      }
+      
+      // Error genérico - permitir continuar, el backend validará
+      console.warn('⚠️ Error verificando límites. Continuando, el backend validará al crear el recurso.');
+      return {
+        allowed: true, // Permitir continuar, el backend validará
+        remaining: -1, // Ilimitado temporalmente
+        message: undefined
+      };
+    }
+  }
+
+  /**
    * Obtiene headers de autenticación
    */
   private async getAuthHeaders(): Promise<HttpHeaders> {

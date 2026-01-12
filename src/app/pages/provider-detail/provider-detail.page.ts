@@ -735,7 +735,7 @@ export class ProviderDetailPage implements OnInit, AfterViewInit, OnDestroy {
       message,
       duration: 3000,
       color: 'danger',
-      position: 'bottom'
+      position: 'top'
     });
     await toast.present();
   }
@@ -745,7 +745,7 @@ export class ProviderDetailPage implements OnInit, AfterViewInit, OnDestroy {
       message,
       duration: 3000,
       color: 'primary',
-      position: 'bottom'
+      position: 'top'
     });
     await toast.present();
   }
@@ -755,7 +755,7 @@ export class ProviderDetailPage implements OnInit, AfterViewInit, OnDestroy {
       message,
       duration: 2000,
       color: 'success',
-      position: 'bottom'
+      position: 'top'
     });
     await toast.present();
   }
@@ -1038,7 +1038,7 @@ export class ProviderDetailPage implements OnInit, AfterViewInit, OnDestroy {
         const toast = await this.toastController.create({
           message: 'Error al cargar promociones',
           duration: 3000,
-          position: 'bottom',
+          position: 'top',
           color: 'danger'
         });
         await toast.present();
@@ -1056,7 +1056,7 @@ export class ProviderDetailPage implements OnInit, AfterViewInit, OnDestroy {
       const toast = await this.toastController.create({
         message: `Código "${code}" copiado al portapapeles`,
         duration: 2000,
-        position: 'bottom',
+        position: 'top',
         color: 'success'
       });
       await toast.present();
@@ -1066,7 +1066,7 @@ export class ProviderDetailPage implements OnInit, AfterViewInit, OnDestroy {
       const toast = await this.toastController.create({
         message: 'Error al copiar código',
         duration: 3000,
-        position: 'bottom',
+        position: 'top',
         color: 'danger'
       });
       await toast.present();

@@ -26,33 +26,16 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   async ngOnInit() {
-    console.log('🚀 AppComponent: Iniciando aplicación AKI...');
-    
     try {
-      // Esperar a que la plataforma esté lista
       await this.platform.ready();
-      console.log('✅ AppComponent: Plataforma lista');
-      
-      // 🔥 FORZAR MODO CLARO - Desactivar modo oscuro del sistema
       this.forceLightMode();
-      
-      // Inicializar StatusBar
       await this.initializeStatusBar();
-      console.log('✅ AppComponent: StatusBar inicializado');
-      
-      // 🔥 Iniciar actualizaciones automáticas de ubicación
       await this.initializeLocationTracking();
-      
-      // 🔔 Inicializar notificaciones push
       await this.initializePushNotifications();
       
-      // 🔄 Reintentar inicialización de push notifications después de 3 segundos
       setTimeout(async () => {
-        console.log('🔄 AppComponent: Reintentando inicialización de push notifications...');
         await this.initializePushNotifications();
       }, 3000);
-      
-      console.log('🎉 AppComponent: Aplicación AKI iniciada correctamente');
       
     } catch (error) {
       console.error('❌ AppComponent: Error en inicialización:', error);
@@ -79,14 +62,11 @@ export class AppComponent implements OnInit, OnDestroy {
         // Iniciar actualizaciones en segundo plano
         // Funciona tanto para usuarios registrados como anónimos
         this.locationService.startBackgroundLocationUpdates(this.authService);
-        console.log('✅ Seguimiento de ubicación iniciado correctamente');
       } else {
         console.warn('⚠️ No se otorgaron permisos de ubicación');
-        console.log('ℹ️ La app funcionará con ubicación limitada');
       }
     } catch (error) {
       console.error('❌ Error iniciando seguimiento de ubicación:', error);
-      console.log('ℹ️ Continuando sin seguimiento de ubicación');
     }
   }
 
@@ -95,27 +75,13 @@ export class AppComponent implements OnInit, OnDestroy {
    */
   private async initializePushNotifications() {
     try {
-      console.log('🔔 AppComponent: Iniciando inicialización de push notifications...');
-      
-      // Verificar que el servicio esté disponible
       if (!this.pushNotificationService) {
-        console.error('❌ AppComponent: PushNotificationService no está disponible');
         return;
       }
       
-      console.log('🔔 AppComponent: Llamando a pushNotificationService.initialize()...');
-      const initialized = await this.pushNotificationService.initialize();
-      
-      if (initialized) {
-        console.log('✅ AppComponent: Notificaciones push inicializadas correctamente');
-      } else {
-        console.warn('⚠️ AppComponent: No se pudieron inicializar notificaciones push');
-        console.log('ℹ️ AppComponent: La app funcionará sin notificaciones push');
-      }
+      await this.pushNotificationService.initialize();
     } catch (error) {
-      console.error('❌ AppComponent: Error inicializando notificaciones push:', error);
-      console.error('❌ AppComponent: Error details:', error);
-      console.log('ℹ️ AppComponent: Continuando sin notificaciones push');
+      console.error('❌ Error inicializando push notifications:', error);
     }
   }
 

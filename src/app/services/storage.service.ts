@@ -21,7 +21,6 @@ export class StorageService {
       const storage = await this.storage.create();
       this._storage = storage;
       await this.loadFilters();
-      console.log('StorageService - Initialized successfully');
     } catch (error) {
       console.error('StorageService - Initialization error:', error);
     }

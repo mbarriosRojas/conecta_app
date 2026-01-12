@@ -81,7 +81,6 @@ export class AuthService {
       const token = await this.storageService.get('auth_token');
       const userData = await this.storageService.get('user_data');
       
-      console.log('AuthService - Initializing auth:', { token: !!token, userData: !!userData });
       
       if (token && userData) {
         // Verificar si el token sigue siendo válido
@@ -193,33 +192,26 @@ export class AuthService {
   }
 
   async getToken(): Promise<string | null> {
-    console.log('AuthService - getToken called');
-    
     // Esperar a que la inicialización termine antes de obtener el token (con timeout)
     if (this.initializationPromise) {
-      console.log('AuthService - getToken: waiting for initialization...');
       try {
         await Promise.race([
           this.initializationPromise,
           new Promise((_, reject) => setTimeout(() => reject(new Error('Initialization timeout')), 3000))
         ]);
-        console.log('AuthService - getToken: initialization completed');
       } catch (error) {
-        console.warn('AuthService - getToken: initialization timeout or error, continuing anyway:', error);
+        // Error silencioso
       }
     }
     
     const token = await this.storageService.get('auth_token');
-    console.log('AuthService - getToken: token from storage, length:', token ? token.length : 0);
     
     // Verificar también en localStorage como respaldo
     try {
       const localStorageToken = localStorage.getItem('auth_token');
-      console.log('AuthService - getToken: token from localStorage, length:', localStorageToken ? localStorageToken.length : 0);
       
       // Si no hay token en storage pero sí en localStorage, usar localStorage
       if (!token && localStorageToken) {
-        console.log('AuthService - getToken: using localStorage token as fallback');
         return localStorageToken;
       }
     } catch (error) {
@@ -233,10 +225,7 @@ export class AuthService {
   async validateToken(): Promise<boolean> {
     try {
       const token = await this.getToken();
-      console.log('AuthService - validateToken called, token present:', !!token);
-      
       if (!token) {
-        console.log('AuthService - No token found');
         return false;
       }
 
@@ -245,19 +234,11 @@ export class AuthService {
         const payload = JSON.parse(atob(token.split('.')[1]));
         const currentTime = Math.floor(Date.now() / 1000);
         
-        console.log('AuthService - Token payload:', { 
-          exp: payload.exp, 
-          currentTime, 
-          expired: payload.exp && payload.exp < currentTime 
-        });
-        
         if (payload.exp && payload.exp < currentTime) {
-          console.log('AuthService - Token expirado localmente');
           await this.logout();
           return false;
         }
         
-        console.log('AuthService - Token válido');
         return true;
       } catch (parseError) {
         console.error('AuthService - Error parsing token:', parseError);

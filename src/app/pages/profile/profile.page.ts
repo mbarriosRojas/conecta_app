@@ -350,7 +350,6 @@ export class ProfilePage implements OnInit {
 
     try {
       const response: any = await this.authService.updatePassword(currentPassword, newPassword);
-      console.log('✅ Contraseña cambiada:', response);
 
       await loading.dismiss();
       
@@ -465,22 +464,11 @@ export class ProfilePage implements OnInit {
     this.availablePlans = [];
     
     try {
-      console.log('🔄 Cargando planes disponibles...');
-      console.log('🔗 SubscriptionService apiUrl:', this.subscriptionService['apiUrl'] || 'no disponible');
-      
-      // 🔥 MEJORADO: Cargar planes primero (no requiere suscripción)
       const plans = await this.subscriptionService.getPlans();
-      console.log('✅ Respuesta de getPlans():', plans);
-      console.log('✅ Tipo de respuesta:', typeof plans);
-      console.log('✅ Es array?:', Array.isArray(plans));
       
-      // Asegurar que sea un array
       if (Array.isArray(plans)) {
         this.availablePlans = plans;
-        console.log('✅ Planes disponibles:', this.availablePlans.length);
-        console.log('✅ Planes:', this.availablePlans);
       } else {
-        console.warn('⚠️ La respuesta no es un array:', plans);
         this.availablePlans = [];
       }
       
@@ -507,35 +495,20 @@ export class ProfilePage implements OnInit {
 
     // 🔥 NUEVO: Cargar métodos de pago disponibles
     try {
-      console.log('🔄 Cargando métodos de pago...');
       const paymentData = await this.subscriptionService.getPaymentMethods();
       this.paymentMethods = paymentData.paymentMethods || [];
       this.userCountry = paymentData.country || 'VE';
-      console.log('✅ Métodos de pago cargados:', this.paymentMethods);
-      console.log('✅ País del usuario:', this.userCountry);
-      // 🔥 DEBUG: Verificar si los métodos tienen paymentData
-      this.paymentMethods.forEach(method => {
-        if (method.paymentData) {
-          console.log(`✅ Método ${method.code} tiene paymentData:`, method.paymentData);
-        } else if (method.requiresManualVerification) {
-          console.log(`⚠️ Método ${method.code} requiere verificación manual pero NO tiene paymentData`);
-        }
-      });
     } catch (error: any) {
       console.error('❌ Error cargando métodos de pago:', error);
       this.paymentMethods = [];
     }
 
     try {
-      console.log('🔄 Cargando suscripción actual...');
-      // 🔥 MEJORADO: Intentar cargar suscripción (puede no existir)
       this.currentSubscription = await this.subscriptionService.getCurrentSubscription();
-      console.log('✅ Suscripción cargada:', this.currentSubscription);
     } catch (error: any) {
-      // 🔥 MEJORADO: Manejar 404 como caso normal (usuario sin plan)
+      // Manejar 404 como caso normal (usuario sin plan)
       if (error.status === 404 || error.status === 400) {
-        console.log('ℹ️ Usuario no tiene suscripción activa (esto es normal)');
-        this.currentSubscription = null; // Asegurar que sea null
+        this.currentSubscription = null;
       } else {
         console.error('❌ Error cargando suscripción:', error);
         // Solo mostrar error si no es un 404 (usuario sin plan es normal)
@@ -590,7 +563,6 @@ export class ProfilePage implements OnInit {
         
         // Si paymentData tiene un error, ignorarlo y buscar en los métodos
         if (paymentData && (paymentData.error || paymentData.requiresSupport)) {
-          console.warn('⚠️ Payment data from response has error, searching in payment methods:', paymentData);
           paymentData = null;
         }
         
@@ -616,26 +588,13 @@ export class ProfilePage implements OnInit {
             }
           }
           
-          console.log('🔍 Searching payment data in methods:', {
-            subscriptionPaymentMethod: data.subscription?.paymentMethod,
-            selectedMethod: selectedPaymentMethod,
-            hasPaymentData: !!selectedPaymentMethod?.paymentData,
-            allMethods: this.paymentMethods.map(m => ({ 
-              code: m.code, 
-              hasPaymentData: !!m.paymentData,
-              paymentData: m.paymentData 
-            }))
-          });
-          
           if (selectedPaymentMethod?.paymentData) {
             paymentData = selectedPaymentMethod.paymentData;
-            console.log('✅ Payment data found in payment method:', paymentData);
           } else {
             // Si aún no hay datos, intentar con el primer método que tenga paymentData
             const methodWithData = this.paymentMethods.find(m => m.paymentData);
             if (methodWithData?.paymentData) {
               paymentData = methodWithData.paymentData;
-              console.log('✅ Using payment data from first available method:', paymentData);
             }
           }
         }
@@ -833,9 +792,7 @@ export class ProfilePage implements OnInit {
       return;
     }
 
-    console.log('✅ Showing payment instructions:', { planName, paymentData });
-
-    // 🔥 NUEVO: Usar modal personalizado en lugar de alert
+    // Usar modal personalizado en lugar de alert
     const modal = await this.modalController.create({
       component: PaymentInstructionsModalComponent,
       componentProps: {
@@ -921,21 +878,11 @@ export class ProfilePage implements OnInit {
                 const { data } = await modal.onDidDismiss();
 
                 if (data?.success) {
-                  console.log('✅ Payment report modal dismissed with success');
-                  console.log('✅ Subscription from modal:', data?.subscription);
-                  
-                  // 🔥 IMPORTANTE: Si viene la suscripción actualizada del modal, usarla temporalmente
                   if (data?.subscription) {
-                    console.log('✅ Using subscription from modal response:', data.subscription.status);
                     this.currentSubscription = data.subscription;
                   }
                   
-                  // 🔥 IMPORTANTE: Recargar suscripción para asegurar que tenemos el estado más reciente
                   await this.loadSubscription();
-                  
-                  // Verificar el estado después de recargar
-                  console.log('✅ Subscription after reload:', this.currentSubscription?.status);
-                  
                   this.showSuccessToast('Pago reportado exitosamente. Tu pago está en verificación y el plan se activará pronto.');
                 }
   }
@@ -959,9 +906,8 @@ export class ProfilePage implements OnInit {
   async loadNotificationSettings() {
     try {
       this.notificationSettings = await this.notificationSettingsService.getSettings();
-      console.log('✅ Preferencias de notificaciones cargadas:', this.notificationSettings);
     } catch (error) {
-      console.error('Error cargando preferencias de notificaciones:', error);
+      console.error('❌ Error cargando preferencias de notificaciones:', error);
     }
   }
 
@@ -984,7 +930,6 @@ export class ProfilePage implements OnInit {
       // Actualizar con la respuesta del servidor
       this.notificationSettings = updated;
       
-      console.log('✅ Notificaciones actualizadas:', updated);
       this.showSuccessToast(newValue ? 'Notificaciones activadas' : 'Notificaciones desactivadas');
     } catch (error) {
       console.error('❌ Error actualizando notificaciones:', error);

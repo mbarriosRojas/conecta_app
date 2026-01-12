@@ -153,7 +153,7 @@ export class ServicesPage implements OnInit {
       message,
       duration: 3000,
       color: 'danger',
-      position: 'bottom'
+      position: 'top'
     });
     await toast.present();
   }
@@ -163,7 +163,7 @@ export class ServicesPage implements OnInit {
       message,
       duration: 2000,
       color: 'success',
-      position: 'bottom'
+      position: 'top'
     });
     await toast.present();
   }

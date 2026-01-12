@@ -157,7 +157,7 @@ export class PermissionService {
       message,
       duration: 3000,
       color,
-      position: 'bottom'
+      position: 'top'
     });
     await toast.present();
   }

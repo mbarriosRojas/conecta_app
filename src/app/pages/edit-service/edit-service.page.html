@@ -231,46 +231,51 @@
               </ion-searchbar>
             </div>
 
-            <!-- Scroll de fotos de productos -->
-            <div class="products-photos-scroll">
-              <div class="products-photos-container">
-                <div *ngFor="let product of filteredProducts; let i = index" 
-                     class="product-photo-item" 
-                     (click)="selectProduct(product)"
-                     [class.selected]="selectedProduct?.id === product.id">
-                  <div class="product-photo">
-                    <img *ngIf="product.images && product.images.length > 0" 
-                         [src]="product.images[0]" 
-                         [alt]="product.name"
-                         (error)="onImageError($event)">
-                    <div *ngIf="!product.images || product.images.length === 0" class="no-image">
-                      <ion-icon name="cube-outline"></ion-icon>
+            <!-- Lista de productos (estilo WhatsApp) -->
+            <div class="products-list whatsapp-style">
+              <div *ngFor="let product of filteredProducts; let i = index" class="product-item-whatsapp">
+                <!-- Avatar/Imagen del producto -->
+                <div class="product-avatar">
+                  <div class="avatar-container" *ngIf="product.images && product.images.length > 0">
+                    <img [src]="product.images[0]" [alt]="product.name" (error)="onImageError($event)">
+                    <div class="featured-badge" *ngIf="product.featured">
+                      <ion-icon name="star"></ion-icon>
                     </div>
                   </div>
-                  <div class="product-photo-name">{{ product.name }}</div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Lista de productos -->
-            <div class="products-list">
-              <div *ngFor="let product of filteredProducts; let i = index" class="product-item">
-                <div class="product-info">
-                  <div class="product-name">{{ product.name }}</div>
-                  <div class="product-description">{{ product.description }}</div>
-                  <div class="product-details">
-                    <span class="product-category">{{ product.category }}</span>
-                    <span *ngIf="product.price" class="product-price">${{ product.price | number }}</span>
-                    <span *ngIf="!product.price" class="product-price-consult">Consultar precio</span>
-                    <span *ngIf="product.featured" class="product-featured">⭐ Destacado</span>
+                  <div class="avatar-container default" *ngIf="!product.images || product.images.length === 0">
+                    <ion-icon name="cube-outline"></ion-icon>
                   </div>
                 </div>
-                <div class="product-actions">
-                  <ion-button fill="clear" (click)="editProduct(product)">
-                    <ion-icon name="create"></ion-icon>
+                
+                <!-- Información del producto -->
+                <div class="product-content-whatsapp" (click)="editProduct(product)">
+                  <div class="product-header-whatsapp">
+                    <h3 class="product-name-whatsapp">{{ product.name }}</h3>
+                    <span class="product-time" *ngIf="product.price">${{ product.price | number:'1.0-0' }}</span>
+                    <span class="product-time no-price" *ngIf="!product.price">Consultar</span>
+                  </div>
+                  
+                  <div class="product-preview-whatsapp">
+                    <p class="product-description-whatsapp" *ngIf="product.description">{{ product.description }}</p>
+                    <p class="product-description-whatsapp empty" *ngIf="!product.description">Sin descripción</p>
+                  </div>
+                  
+                  <div class="product-meta-whatsapp">
+                    <span class="product-category-badge">{{ product.category }}</span>
+                    <span class="product-featured-badge" *ngIf="product.featured">
+                      <ion-icon name="star"></ion-icon>
+                      Destacado
+                    </span>
+                  </div>
+                </div>
+                
+                <!-- Acciones (menú de opciones) -->
+                <div class="product-actions-whatsapp">
+                  <ion-button fill="clear" size="small" (click)="editProduct(product); $event.stopPropagation()">
+                    <ion-icon name="create-outline" slot="icon-only"></ion-icon>
                   </ion-button>
-                  <ion-button fill="clear" color="danger" (click)="deleteProduct(product._id, i)">
-                    <ion-icon name="trash"></ion-icon>
+                  <ion-button fill="clear" size="small" color="danger" (click)="deleteProduct(product._id, i); $event.stopPropagation()">
+                    <ion-icon name="trash-outline" slot="icon-only"></ion-icon>
                   </ion-button>
                 </div>
               </div>

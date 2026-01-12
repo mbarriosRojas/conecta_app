@@ -6,6 +6,8 @@ import { IonicModule, LoadingController, ToastController } from '@ionic/angular'
 import { ApiService } from '../../services/api.service';
 import { GeofencingAnalyticsService } from '../../services/geofencing-analytics.service';
 import { CacheService } from '../../services/cache.service';
+import { SubscriptionService } from '../../services/subscription.service';
+import { AlertController } from '@ionic/angular';
 import { firstValueFrom } from 'rxjs';
 
 @Component({
@@ -20,6 +22,7 @@ export class EditPromotionPage implements OnInit {
   businessName: string = '';
   promotionID: string | null = null;
   isEditMode = false;
+  canCreatePromotion = true; // 🔥 NUEVO: Controla si el usuario puede crear la promoción
 
   promotionData = {
     businessName: '',
@@ -50,8 +53,10 @@ export class EditPromotionPage implements OnInit {
     private apiService: ApiService,
     private geofencingService: GeofencingAnalyticsService,
     private cacheService: CacheService,
+    private subscriptionService: SubscriptionService,
     private loadingController: LoadingController,
-    private toastController: ToastController
+    private toastController: ToastController,
+    private alertController: AlertController
   ) {}
 
   async ngOnInit() {
@@ -68,6 +73,11 @@ export class EditPromotionPage implements OnInit {
     this.promotionData.businessName = this.businessName;
     this.isEditMode = !!this.promotionID;
 
+    // 🔥 NUEVO: Validar límites solo si es creación (no edición)
+    if (!this.isEditMode) {
+      await this.checkPromotionLimit();
+    }
+
     if (this.isEditMode && this.promotionID) {
       await this.loadPromotion();
     } else {
@@ -75,6 +85,60 @@ export class EditPromotionPage implements OnInit {
     }
 
     await this.calculateReach();
+  }
+
+  // 🔥 NUEVO: Verificar límites al inicio (solo para creación)
+  async checkPromotionLimit() {
+    try {
+      const limitCheck = await this.subscriptionService.checkLimitBeforeCreate('promotion', this.businessID);
+      
+      if (!limitCheck.allowed) {
+        this.canCreatePromotion = false;
+        
+        // Mostrar alerta y redirigir
+        const alert = await this.alertController.create({
+          header: '🚀 ¡Actualiza tu Plan!',
+          message: limitCheck.message || 'Has alcanzado el límite de promociones para este servicio. 💎 Actualiza tu plan para crear más promociones y llegar a más clientes.',
+          buttons: [
+            {
+              text: '✨ Ver Planes',
+              handler: () => {
+                this.router.navigate(['/tabs/tab3']);
+              }
+            },
+            {
+              text: 'Volver',
+              handler: () => {
+                this.goBack();
+              }
+            }
+          ],
+          backdropDismiss: false
+        });
+        
+        await alert.present();
+        return;
+      }
+      
+      this.canCreatePromotion = true;
+    } catch (error: any) {
+      console.error('Error verificando límites al inicio:', error);
+      
+      // Si es 404, permitir continuar (el backend validará)
+      if (error.status === 404) {
+        this.canCreatePromotion = true;
+        return;
+      }
+      
+      // Si es 401, redirigir a login
+      if (error.status === 401) {
+        this.router.navigate(['/login']);
+        return;
+      }
+      
+      // Otros errores: permitir continuar (el backend validará)
+      this.canCreatePromotion = true;
+    }
   }
 
   /**
@@ -180,6 +244,67 @@ export class EditPromotionPage implements OnInit {
       return;
     }
 
+    // 🔥 NUEVO: Validar límites del plan ANTES de crear la promoción (solo si es creación)
+    if (!this.isEditMode && this.businessID) {
+      const loadingCheck = await this.loadingController.create({
+        message: 'Verificando límites del plan...',
+        spinner: 'crescent',
+        backdropDismiss: false
+      });
+      await loadingCheck.present();
+
+      try {
+        const limitCheck = await this.subscriptionService.checkLimitBeforeCreate('promotion', this.businessID);
+        
+        if (!limitCheck.allowed) {
+          await loadingCheck.dismiss();
+          
+          // Mostrar alerta con opción de cambiar plan
+          const alert = await this.alertController.create({
+            header: '🚀 ¡Actualiza tu Plan!',
+            message: limitCheck.message || 'Has alcanzado el límite de promociones para este servicio. 💎 Actualiza tu plan para crear más promociones y llegar a más clientes.',
+            buttons: [
+              {
+                text: '✨ Ver Planes',
+                handler: () => {
+                  this.router.navigate(['/tabs/tab3']);
+                }
+              },
+              {
+                text: 'Cancelar',
+                role: 'cancel'
+              }
+            ]
+          });
+          await alert.present();
+          return;
+        }
+      } catch (error: any) {
+        console.error('Error verificando límites:', error);
+        await loadingCheck.dismiss();
+        
+        // Si hay error pero no es crítico, continuar (el backend también validará)
+        if (error.status === 401) {
+          const toast = await this.toastController.create({
+            message: 'Debes estar logueado para crear una promoción',
+            duration: 3000,
+            color: 'danger',
+            position: 'top'
+          });
+          await toast.present();
+          return;
+        }
+        
+        // Si es 404, el endpoint no está disponible, continuar (backend validará)
+        if (error.status === 404) {
+          console.warn('⚠️ Endpoint de verificación de límites no disponible, continuando...');
+          // Continuar con la creación, el backend validará
+        }
+      } finally {
+        await loadingCheck.dismiss();
+      }
+    }
+
     const loading = await this.loadingController.create({
       message: this.isEditMode ? 'Actualizando promoción...' : 'Creando promoción...',
       spinner: 'crescent'
@@ -264,7 +389,7 @@ export class EditPromotionPage implements OnInit {
       message,
       duration: 2000,
       color: 'success',
-      position: 'bottom'
+      position: 'top'
     });
     await toast.present();
   }
@@ -277,7 +402,7 @@ export class EditPromotionPage implements OnInit {
       message,
       duration: 3000,
       color: 'danger',
-      position: 'bottom'
+      position: 'top'
     });
     await toast.present();
   }

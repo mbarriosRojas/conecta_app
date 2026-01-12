@@ -503,7 +503,7 @@ export class PromotionsNearbyPage implements OnInit {
     const toast = await this.toastController.create({
       message: message,
       duration: 2000,
-      position: 'bottom',
+      position: 'top',
       color: 'success',
       buttons: [
         {
@@ -522,7 +522,7 @@ export class PromotionsNearbyPage implements OnInit {
     const toast = await this.toastController.create({
       message: message,
       duration: 3000,
-      position: 'bottom',
+      position: 'top',
       color: 'warning',
       buttons: [
         {
