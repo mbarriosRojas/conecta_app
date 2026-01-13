@@ -608,25 +608,49 @@ export class PushNotificationService {
 
   /**
    * Maneja cuando el usuario toca una notificación (nativa)
+   * 🔥 MEJORADO: Soporte mejorado para navegación con promotionId
    */
   private async handleNotificationTapped(notification: ActionPerformed): Promise<void> {
-    const data = notification.notification.data;
+    try {
+      const data = notification.notification.data;
+      console.log('👆 [NOTIFICATION] Notificación tocada, datos:', data);
 
-    if (data?.type === 'promotion' && data?.businessID) {
-      // Registrar tracking
-      try {
-        const userID = await this.getUserID();
-        await this.trackPromotionOpened(data.businessID, userID);
-      } catch (error) {
-        // No bloquear navegación por error de tracking
+      if (data?.type === 'promotion' && data?.businessID) {
+        const businessID = data.businessID;
+        const promotionId = data.promotionId; // 🔥 NUEVO: Obtener promotionId si está disponible
+
+        console.log('📱 [NOTIFICATION] Navegando a promoción:', {
+          businessID,
+          promotionId,
+          businessName: data.businessName
+        });
+
+        // Registrar tracking
+        try {
+          const userID = await this.getUserID();
+          await this.trackPromotionOpened(businessID, userID);
+        } catch (error) {
+          console.warn('⚠️ [NOTIFICATION] Error en tracking (no crítico):', error);
+          // No bloquear navegación por error de tracking
+        }
+        
+        // 🔥 MEJORADO: Preparar queryParams con promotionId si está disponible
+        const queryParams: any = { tab: 'promo' };
+        if (promotionId) {
+          queryParams.promotionId = promotionId;
+        }
+
+        // Navegar al detalle del proveedor con tab de promociones
+        this.router.navigate(['/provider-detail', businessID], {
+          queryParams
+        }).catch(err => {
+          console.error('❌ [NOTIFICATION] Error navegando:', err);
+        });
+      } else {
+        console.log('ℹ️ [NOTIFICATION] Tipo de notificación no reconocido o falta businessID');
       }
-      
-      // Navegar
-      this.router.navigate(['/provider-detail', data.businessID], {
-        queryParams: { tab: 'promo' }
-      }).catch(err => {
-        console.error('❌ Error navegando:', err);
-      });
+    } catch (error) {
+      console.error('❌ [NOTIFICATION] Error manejando notificación tocada:', error);
     }
   }
 
@@ -646,16 +670,44 @@ export class PushNotificationService {
 
   /**
    * Maneja notificación recibida en web
+   * 🔥 MEJORADO: Soporte para clics en notificaciones web
    */
   private handleWebNotification(payload: any): void {
     if (payload.notification) {
-      new Notification(payload.notification.title, {
+      // 🔥 MEJORADO: Usar imageUrl como icon si está disponible (la API de Notifications no soporta imágenes grandes directamente)
+      const icon = payload.notification.imageUrl || payload.notification.icon || '/assets/icon/icon.png';
+      
+      const notification = new Notification(payload.notification.title, {
         body: payload.notification.body,
-        icon: payload.notification.icon || '/assets/icon/icon.png',
+        icon: icon,
         badge: '/assets/icon/badge.png',
         tag: 'conecta-notification',
         requireInteraction: false
       });
+
+      // 🔥 NUEVO: Almacenar datos para navegación (las opciones de Notification no soportan data directamente)
+      const notificationData = payload.data || {};
+
+      // 🔥 NUEVO: Manejar clic en notificación web
+      notification.onclick = (event) => {
+        event.preventDefault();
+        window.focus();
+
+        if (notificationData.type === 'promotion' && notificationData.businessID) {
+          const queryParams: any = { tab: 'promo' };
+          if (notificationData.promotionId) {
+            queryParams.promotionId = notificationData.promotionId;
+          }
+
+          this.router.navigate(['/provider-detail', notificationData.businessID], {
+            queryParams
+          }).catch(err => {
+            console.error('❌ [NOTIFICATION] Error navegando desde web:', err);
+          });
+        }
+
+        notification.close();
+      };
     }
   }
 

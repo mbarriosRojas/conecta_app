@@ -94,26 +94,41 @@ export class AppComponent implements OnInit, OnDestroy {
       if (this.platform.is('capacitor')) {
         console.log('🔗 Configurando deep linking para OAuth...');
         
-        CapacitorApp.addListener('appUrlOpen', (event: URLOpenListenerEvent) => {
+        CapacitorApp.addListener('appUrlOpen', async (event: URLOpenListenerEvent) => {
           console.log('🔗 Deep Link capturado:', event.url);
           
           // Analizar la URL para extraer parámetros
-          const url = new URL(event.url);
-          const path = url.pathname;
-          const params = url.searchParams;
-          
-          console.log('🔗 Path:', path);
-          console.log('🔗 Params:', params.toString());
-          
-          // Si viene de Firebase OAuth redirect
-          if (path.includes('__/auth/handler') || params.has('code')) {
-            console.log('🔗 OAuth redirect detectado, navegando a login para procesarlo...');
-            // Navegar a la página de login para que procese el redirect
+          try {
+            const url = new URL(event.url);
+            const path = url.pathname;
+            const params = url.searchParams;
+            
+            console.log('🔗 Path:', path);
+            console.log('🔗 Params:', params.toString());
+            
+            // Si viene de Firebase OAuth redirect (Google Sign-In)
+            // Verificar si es un redirect de OAuth por hostname, path, params o protocol (URL scheme)
+            const isOAuthRedirect = 
+              url.hostname === 'localhost' || 
+              path.includes('__/auth/handler') || 
+              params.has('code') || 
+              url.protocol?.startsWith('com.googleusercontent.apps') ||
+              event.url.startsWith('com.googleusercontent.apps');
+            
+            if (isOAuthRedirect) {
+              console.log('🔗 OAuth redirect detectado, navegando a login para procesarlo...');
+              // Navegar a la página de login para que procese el redirect
+              // La página de login llamará a checkRedirectResult() en ngOnInit
+              this.router.navigate(['/login'], { replaceUrl: true });
+            } else {
+              // Navegar a la ruta interna de la app
+              console.log('🔗 Navegando a:', path);
+              this.router.navigateByUrl(path);
+            }
+          } catch (error) {
+            console.error('❌ Error procesando deep link:', error);
+            // Si hay error, intentar navegar a login de todas formas
             this.router.navigate(['/login'], { replaceUrl: true });
-          } else {
-            // Navegar a la ruta interna de la app
-            console.log('🔗 Navegando a:', path);
-            this.router.navigateByUrl(path);
           }
         });
         
