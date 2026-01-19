@@ -1,9 +1,12 @@
 import { Component, Input, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { IonicModule, ModalController } from '@ionic/angular';
+import { IonicModule, ModalController, AlertController, LoadingController } from '@ionic/angular';
 import { Plan } from '../../services/subscription.service';
 import { SubscriptionService } from '../../services/subscription.service';
+import { ApiService } from '../../services/api.service';
+import { Provider } from '../../models/provider.model';
+import { firstValueFrom } from 'rxjs';
 
 @Component({
   selector: 'app-plan-comparison-modal',
@@ -20,10 +23,19 @@ export class PlanComparisonModalComponent implements OnInit {
   selectedPaymentMethod: any = null;
   showPaymentMethods = false;
   isLoading = false;
+  
+  // Variables para gestión de servicios
+  userProviders: Provider[] = [];
+  showServicesManagement = false;
+  servicesToDelete: string[] = []; // IDs de servicios seleccionados para eliminar
+  requiredDeletions = 0; // Cantidad de servicios que se deben eliminar
 
   constructor(
     private modalController: ModalController,
-    private subscriptionService: SubscriptionService
+    private subscriptionService: SubscriptionService,
+    private apiService: ApiService,
+    private alertController: AlertController,
+    private loadingController: LoadingController
   ) {}
 
   ngOnInit() {
@@ -43,8 +55,16 @@ export class PlanComparisonModalComponent implements OnInit {
     return this.currentPlanCode === planCode;
   }
 
-  continueToPayment() {
+  async continueToPayment() {
     if (!this.selectedPlan) {
+      return;
+    }
+
+    // Validar límite de servicios antes de continuar
+    const servicesValidation = await this.validateServicesLimit();
+    if (!servicesValidation.canContinue) {
+      // Mostrar interfaz para eliminar servicios
+      this.showServicesManagement = true;
       return;
     }
 
@@ -72,6 +92,130 @@ export class PlanComparisonModalComponent implements OnInit {
 
     // Mostrar selección de métodos de pago
     this.showPaymentMethods = true;
+  }
+
+  /**
+   * Validar si el nuevo plan tiene suficiente límite de servicios
+   */
+  async validateServicesLimit(): Promise<{ canContinue: boolean; requiredDeletions: number }> {
+    try {
+      // Obtener servicios del usuario
+      if (this.userProviders.length === 0) {
+        const response = await this.apiService.getUserProviders();
+        this.userProviders = response.data || [];
+      }
+
+      const currentServicesCount = this.userProviders.length;
+      const newPlanLimit = this.selectedPlan?.limits?.services || 0;
+
+      // Si el límite es -1, es ilimitado
+      if (newPlanLimit === -1) {
+        return { canContinue: true, requiredDeletions: 0 };
+      }
+
+      // Si el usuario tiene menos o igual servicios que el límite, puede continuar
+      if (currentServicesCount <= newPlanLimit) {
+        return { canContinue: true, requiredDeletions: 0 };
+      }
+
+      // Calcular cuántos servicios se deben eliminar
+      const requiredDeletions = currentServicesCount - newPlanLimit;
+      this.requiredDeletions = requiredDeletions;
+
+      return { canContinue: false, requiredDeletions };
+    } catch (error) {
+      console.error('Error validating services limit:', error);
+      // En caso de error, permitir continuar (para no bloquear al usuario)
+      return { canContinue: true, requiredDeletions: 0 };
+    }
+  }
+
+  /**
+   * Alternar selección de servicio para eliminar
+   */
+  toggleServiceSelection(providerId: string) {
+    const index = this.servicesToDelete.indexOf(providerId);
+    if (index > -1) {
+      this.servicesToDelete.splice(index, 1);
+    } else {
+      // Solo permitir seleccionar si no excede el límite necesario
+      if (this.servicesToDelete.length < this.requiredDeletions) {
+        this.servicesToDelete.push(providerId);
+      }
+    }
+  }
+
+  /**
+   * Verificar si un servicio está seleccionado para eliminar
+   */
+  isServiceSelectedForDeletion(providerId: string): boolean {
+    return this.servicesToDelete.includes(providerId);
+  }
+
+  /**
+   * Verificar si se pueden eliminar más servicios
+   */
+  canSelectMoreServices(): boolean {
+    return this.servicesToDelete.length < this.requiredDeletions;
+  }
+
+  /**
+   * Eliminar servicios seleccionados y continuar
+   */
+  async deleteServicesAndContinue() {
+    if (this.servicesToDelete.length !== this.requiredDeletions) {
+      const alert = await this.alertController.create({
+        header: 'Error',
+        message: `Debes eliminar exactamente ${this.requiredDeletions} servicio(s) para continuar con este plan.`,
+        buttons: ['OK']
+      });
+      await alert.present();
+      return;
+    }
+
+    const loading = await this.loadingController.create({
+      message: 'Eliminando servicios...',
+      spinner: 'crescent'
+    });
+    await loading.present();
+
+    try {
+      // Eliminar cada servicio seleccionado
+      for (const providerId of this.servicesToDelete) {
+        await firstValueFrom(this.apiService.deleteUserProvider(providerId));
+      }
+
+      // Remover servicios eliminados de la lista local
+      this.userProviders = this.userProviders.filter(
+        provider => !this.servicesToDelete.includes(provider._id)
+      );
+      this.servicesToDelete = [];
+      this.showServicesManagement = false;
+
+      await loading.dismiss();
+
+      // Continuar con el proceso de cambio de plan
+      await this.continueToPayment();
+    } catch (error) {
+      console.error('Error deleting services:', error);
+      await loading.dismiss();
+      
+      const alert = await this.alertController.create({
+        header: 'Error',
+        message: 'Hubo un error al eliminar los servicios. Por favor, intenta nuevamente.',
+        buttons: ['OK']
+      });
+      await alert.present();
+    }
+  }
+
+  /**
+   * Volver a la selección de planes
+   */
+  goBackToPlansFromServices() {
+    this.showServicesManagement = false;
+    this.servicesToDelete = [];
+    this.requiredDeletions = 0;
   }
 
   selectPaymentMethod(method: any) {

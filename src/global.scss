@@ -233,6 +233,26 @@ ion-header {
   }
 }
 
+// 🔥 FIX: Headers dentro de modales NO deben tener padding-top adicional en iOS
+// Los modales ya manejan el safe area automáticamente
+ion-modal {
+  ion-header {
+    // Remover padding-top adicional para evitar doble safe area en iOS
+    padding-top: 0 !important;
+    
+    ion-toolbar {
+      // El toolbar dentro del modal ya maneja el safe area correctamente
+      --min-height: 56px !important;
+      padding-top: 0 !important;
+      
+      // En iOS, asegurar que no se agregue padding del safe area dos veces
+      @supports (padding: env(safe-area-inset-top)) {
+        padding-top: 0 !important;
+      }
+    }
+  }
+}
+
 // Ajuste específico para categorías sticky
 .categories-section {
   // Mantener el top en 0 para que funcione el sticky

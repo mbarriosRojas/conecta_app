@@ -12,8 +12,58 @@
 <ion-content class="plan-selection-content">
   <div class="plans-list-container">
     
+    <!-- Gestión de servicios (cuando el nuevo plan tiene menos límite) -->
+    <div class="services-management-section" *ngIf="showServicesManagement">
+      <div class="section-header">
+        <h2>Ajustar Servicios</h2>
+        <p>
+          El plan <strong>{{ selectedPlan?.name }}</strong> permite máximo 
+          <strong>{{ getLimitDisplay(selectedPlan?.limits?.services || 0) }}</strong> servicio(s).
+          Actualmente tienes <strong>{{ userProviders.length }}</strong> servicio(s).
+        </p>
+        <p class="warning-text">
+          <ion-icon name="warning-outline"></ion-icon>
+          Debes eliminar <strong>{{ requiredDeletions }}</strong> servicio(s) para continuar con este plan.
+        </p>
+      </div>
+
+      <div class="services-list">
+        <div 
+          *ngFor="let provider of userProviders"
+          class="service-card"
+          [class.selected]="isServiceSelectedForDeletion(provider._id)"
+          [class.disabled]="!isServiceSelectedForDeletion(provider._id) && !canSelectMoreServices()"
+          (click)="toggleServiceSelection(provider._id)"
+        >
+          <div class="service-check" *ngIf="isServiceSelectedForDeletion(provider._id)">
+            <ion-icon name="checkmark-circle" color="danger"></ion-icon>
+          </div>
+          <div class="service-content">
+            <div class="service-logo">
+              <img [src]="provider.logo || '/assets/images/default-business.png'" [alt]="provider.name" 
+                   (error)="$any($event.target).src='/assets/images/default-business.png'">
+            </div>
+            <div class="service-info">
+              <h3>{{ provider.name }}</h3>
+              <p *ngIf="provider.description">{{ provider.description }}</p>
+              <ion-badge *ngIf="isServiceSelectedForDeletion(provider._id)" color="danger">
+                Se eliminará
+              </ion-badge>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="services-selection-info">
+        <ion-note>
+          <ion-icon name="information-circle-outline"></ion-icon>
+          Seleccionados: <strong>{{ servicesToDelete.length }}</strong> de <strong>{{ requiredDeletions }}</strong> servicios
+        </ion-note>
+      </div>
+    </div>
+
     <!-- Lista de planes -->
-    <div class="plans-list" *ngIf="!showPaymentMethods">
+    <div class="plans-list" *ngIf="!showPaymentMethods && !showServicesManagement">
       <div 
         *ngFor="let plan of availablePlans" 
         class="plan-card"
@@ -163,9 +213,37 @@
 
     <!-- Botones de acción -->
     <div class="action-section">
+      <!-- Botones para gestión de servicios -->
+      <div *ngIf="showServicesManagement" class="services-actions">
+        <ion-button 
+          expand="block" 
+          fill="outline"
+          color="medium"
+          (click)="goBackToPlansFromServices()"
+          class="back-button"
+        >
+          <ion-icon name="arrow-back" slot="start"></ion-icon>
+          Volver
+        </ion-button>
+        
+        <ion-button 
+          expand="block" 
+          size="large"
+          color="danger"
+          [disabled]="servicesToDelete.length !== requiredDeletions || isLoading"
+          (click)="deleteServicesAndContinue()"
+          class="delete-services-button"
+        >
+          <ion-spinner *ngIf="isLoading" name="crescent"></ion-spinner>
+          <span *ngIf="!isLoading">
+            Eliminar {{ requiredDeletions }} servicio(s) y continuar
+          </span>
+        </ion-button>
+      </div>
+
       <!-- Botón para continuar con el plan -->
       <ion-button 
-        *ngIf="!showPaymentMethods"
+        *ngIf="!showPaymentMethods && !showServicesManagement"
         expand="block" 
         size="large"
         color="primary"

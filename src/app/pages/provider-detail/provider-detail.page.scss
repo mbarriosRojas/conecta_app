@@ -268,6 +268,7 @@
 .contact-card,
 .schedule-card,
 .location-card,
+.reviews-card,
 .share-card,
 .business-summary {
   margin-bottom: 16px;
@@ -301,6 +302,28 @@
 
   &:last-child {
     margin-bottom: 0;
+  }
+}
+
+// Contenedor de botones de acción (Contacto y Calificar)
+.action-buttons-container {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+  
+  .action-button {
+    flex: 1;
+    --border-radius: 12px;
+    margin: 0;
+    height: 48px;
+    
+    &.contact-button {
+      --border-radius: 12px;
+    }
+    
+    &.rating-button {
+      --border-radius: 12px;
+    }
   }
 }
 // Horarios
@@ -399,6 +422,161 @@
       .rating-value,
       .rating-count {
         color: #e6e6e6 !important;
+      }
+    }
+  }
+}
+
+// ==================== CALIFICACIONES Y RESEÑAS ====================
+
+.rating-card {
+  margin: 16px 0;
+  
+  ion-card-content {
+    padding: 16px;
+  }
+  
+  ion-button {
+    --border-radius: 12px;
+    margin: 0;
+  }
+}
+
+.reviews-card {
+  // Estilos del título ya están en la clase compartida arriba
+  
+  .reviews-count {
+    font-size: 0.9rem;
+    font-weight: normal;
+    color: var(--ion-color-medium);
+    margin-left: 8px;
+  }
+  
+  .loading-reviews,
+  .no-reviews {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    text-align: center;
+    
+    ion-spinner {
+      margin-bottom: 16px;
+    }
+    
+    ion-icon {
+      font-size: 3rem;
+      color: var(--ion-color-medium);
+      margin-bottom: 16px;
+    }
+    
+    p {
+      margin: 8px 0;
+      color: var(--ion-color-medium);
+      
+      &.subtitle {
+        font-size: 0.9rem;
+        color: var(--ion-color-medium-shade);
+      }
+    }
+  }
+  
+  .reviews-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  
+  .review-item {
+    padding: 16px;
+    border-bottom: 1px solid var(--ion-color-light);
+    
+    &:last-child {
+      border-bottom: none;
+    }
+    
+    .review-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 12px;
+      
+      .review-author {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex: 1;
+        
+        ion-avatar {
+          width: 40px;
+          height: 40px;
+          
+          ion-icon {
+            font-size: 1.5rem;
+            color: var(--ion-color-medium);
+          }
+          
+          img {
+            object-fit: cover;
+          }
+        }
+        
+        .review-info {
+          flex: 1;
+          
+          h3 {
+            margin: 0;
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--ion-color-dark);
+          }
+          
+          .review-date {
+            margin: 4px 0 0 0;
+            font-size: 0.85rem;
+            color: var(--ion-color-medium);
+          }
+        }
+      }
+      
+      .review-rating {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        
+        ion-icon {
+          font-size: 1.2rem;
+        }
+        
+        .rating-number {
+          font-weight: 600;
+          color: var(--ion-color-dark);
+          margin-left: 4px;
+        }
+      }
+    }
+    
+    .review-content {
+      margin-top: 12px;
+      
+      p {
+        margin: 0;
+        color: var(--ion-color-dark);
+        line-height: 1.5;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+      }
+    }
+    
+    .review-image {
+      margin-top: 12px;
+      
+      img {
+        width: 100%;
+        max-width: 300px;
+        border-radius: 8px;
+        object-fit: cover;
       }
     }
   }
@@ -823,73 +1001,93 @@
 }
 
 // Modal de galería de imágenes - Estilo Tinder
-.gallery-header {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 10;
-  background: transparent;
+.gallery-close-button {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 10000;
+  --background: rgba(0, 0, 0, 0.6);
+  --color: white;
+  border-radius: 50%;
+  width: 48px;
+  height: 48px;
+  margin: 0;
+  backdrop-filter: blur(8px);
+  --padding-start: 0;
+  --padding-end: 0;
   
-  ion-toolbar {
-    --background: transparent;
-    --color: white;
+  ion-icon {
+    font-size: 32px !important;
+    width: 32px;
+    height: 32px;
   }
   
-  .close-button {
-    --background: rgba(0, 0, 0, 0.3);
-    --color: white;
-    border-radius: 50%;
-    width: 44px;
-    height: 44px;
-    margin: 8px;
-    
-    ion-icon {
-      font-size: 24px;
-    }
-    
-    &:hover {
-      --background: rgba(0, 0, 0, 0.5);
-    }
+  &:hover {
+    --background: rgba(0, 0, 0, 0.8);
   }
 }
 
 .gallery-container {
   height: 100vh;
-  width: 100%;
-  position: relative;
+  height: 100dvh; // Usar dynamic viewport height para móviles
+  width: 100vw;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   overflow: hidden;
+  background: #000;
+  z-index: 99999;
+  margin: 0;
+  padding: 0;
 }
 
 .gallery-swiper {
   height: 100vh;
+  height: 100dvh; // Usar dynamic viewport height para móviles
   width: 100%;
   position: absolute;
   top: 0;
   left: 0;
+}
+
+// Contenedor de zoom del Swiper
+.gallery-swiper {
+  .swiper-zoom-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100vh;
+    height: 100dvh; // Usar dynamic viewport height para móviles
+    background: #000;
+    position: relative;
+    cursor: grab;
+    
+    &:active {
+      cursor: grabbing;
+    }
+  }
 }
 
 .gallery-image-container {
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 100vh;
   width: 100%;
-  background: #000;
+  height: 100%;
   position: relative;
 }
 
 .gallery-image {
   width: 100%;
   height: 100%;
-  object-fit: cover;
-  cursor: grab;
+  object-fit: contain; // Cambiar de cover a contain para ver toda la imagen
   user-select: none;
   -webkit-user-drag: none;
-  
-  &:active {
-    cursor: grabbing;
-  }
+  touch-action: pan-x pan-y pinch-zoom; // Habilitar pinch-to-zoom
+  -webkit-touch-callout: none;
 }
 
 // Estilos para los botones de navegación del swiper de galería - Estilo Tinder
@@ -1726,5 +1924,41 @@
   .no-promotions-card,
   .loading-card {
     margin: 12px;
+  }
+}
+
+// Ocultar header cuando el modal de galería está abierto
+::ng-deep {
+  body:has(ion-modal .gallery-container) {
+    ion-header {
+      display: none !important;
+    }
+  }
+  
+  // Fallback para navegadores que no soportan :has()
+  ion-modal .gallery-container ~ ion-header {
+    display: none !important;
+  }
+  
+  // Ocultar header de la página cuando el modal está abierto
+  app-provider-detail ion-header {
+    transition: opacity 0.3s ease;
+  }
+  
+  // Estilos adicionales para asegurar que el modal ocupe toda la pantalla
+  ion-modal:has(.gallery-container) {
+    --width: 100%;
+    --height: 100%;
+    --max-width: 100%;
+    --max-height: 100%;
+    
+    .modal-wrapper {
+      width: 100vw !important;
+      height: 100vh !important;
+      height: 100dvh !important;
+      max-width: 100vw !important;
+      max-height: 100vh !important;
+      max-height: 100dvh !important;
+    }
   }
 }

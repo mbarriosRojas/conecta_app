@@ -108,42 +108,12 @@ export class GoogleAuthService {
       let result: UserCredential;
 
       if (this.platform.is('capacitor')) {
-        // En dispositivos móviles, preferir plugin nativo para evitar issues con redirect/popup
-        console.log('📱 Plataforma móvil: intentando usar plugin nativo de Google Sign-In');
-        try {
-          // Cargar plugin dinámicamente (evita falla si no está instalado en web)
-          const mod: any = await import('@codetrix-studio/capacitor-google-auth');
-          const GoogleAuth = mod.GoogleAuth;
-
-          const nativeRes: any = await GoogleAuth.signIn();
-          console.log('🔐 Google native sign-in result:', nativeRes);
-
-          // nativeRes puede contener idToken o authentication.idToken
-          const idToken = nativeRes?.idToken || nativeRes?.authentication?.idToken || nativeRes?.serverAuthCode;
-
-          if (!idToken) {
-            console.warn('⚠️ Google native sign-in no retornó idToken, fallback a redirect');
-            result = await this.signInWithRedirect();
-          } else {
-            // Usar el idToken para autenticarse con Firebase y obtener usuario Firebase
-            const credential = GoogleAuthProvider.credential(idToken);
-            const signInResult = await signInWithCredential(this.auth, credential);
-            result = signInResult as UserCredential;
-          }
-        } catch (nativeErr: any) {
-          console.warn('⚠️ Error usando plugin nativo de Google Sign-In, fallback a redirect:', nativeErr);
-
-          // En iOS, si el plugin falla y no está configurado, sugerir setup
-          if (this.platform.is('ios')) {
-            return { iosRequiresNativeSetup: true };
-          }
-
-          // Fallback: usar redirect (puede provocar issues si pruebas desde localhost)
-          result = await this.signInWithRedirect();
-        }
+        // En dispositivos móviles usar redirect (Firebase Auth nativo)
+        console.log('📱 Plataforma móvil: usando Firebase Auth con redirect');
+        result = await this.signInWithRedirect();
       } else {
-        // En web usar popup
-        console.log('🌐 Plataforma web: usando popup');
+        // En web usar popup (Firebase Auth nativo)
+        console.log('🌐 Plataforma web: usando Firebase Auth con popup');
         result = await this.signInWithPopup();
       }
 
@@ -246,12 +216,38 @@ export class GoogleAuthService {
   async signOut(): Promise<void> {
     try {
       console.log('🚪 Cerrando sesión...');
-      await signOut(this.auth);
+      
+      // Verificar que auth esté inicializado
+      if (!this.auth) {
+        console.warn('⚠️ Firebase auth no está inicializado, omitiendo signOut de Firebase');
+        this.currentUser = null;
+        return;
+      }
+      
+      // Intentar cerrar sesión en Firebase con timeout para evitar que se cuelgue
+      const signOutPromise = signOut(this.auth);
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('SignOut timeout after 5 seconds')), 5000)
+      );
+      
+      try {
+        await Promise.race([signOutPromise, timeoutPromise]);
+        console.log('✅ Sesión de Firebase cerrada correctamente');
+      } catch (signOutError: any) {
+        // Si es timeout o cualquier otro error, solo loguear pero no fallar
+        if (signOutError?.message?.includes('timeout')) {
+          console.warn('⚠️ Timeout al cerrar sesión en Firebase (continuando de todas formas)');
+        } else {
+          console.warn('⚠️ Error al cerrar sesión en Firebase (continuando de todas formas):', signOutError);
+        }
+      }
+      
       this.currentUser = null;
       console.log('✅ Sesión cerrada correctamente');
     } catch (error) {
-      console.error('❌ Error cerrando sesión:', error);
-      throw error;
+      console.error('❌ Error inesperado cerrando sesión:', error);
+      // No lanzar el error, solo loguearlo para que el logout continúe
+      this.currentUser = null;
     }
   }
 

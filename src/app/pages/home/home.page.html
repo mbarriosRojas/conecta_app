@@ -51,7 +51,7 @@
         <div class="swiper-slide" *ngFor="let banner of banners">
           <!-- Usar variable CSS para background-image para evitar que reglas globales con !important
                sobreescriban el background-image inline en modo oscuro -->
-          <div class="banner-slide" [style.--banner-image]="'url(' + banner.image + ')'" (click)="banner.link && openBannerLink(banner.link)">
+          <div class="banner-slide" [style.--banner-image]="'url(' + banner.image + ')'" (click)="onBannerClick(banner)">
             <div class="banner-overlay">
               <div class="banner-content" *ngIf="banner.title || banner.description">
                 <h2 class="banner-title" *ngIf="banner.title">{{ banner.title }}</h2>

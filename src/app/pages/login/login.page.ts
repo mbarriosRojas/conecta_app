@@ -313,26 +313,6 @@ Consulta: Docs/CONFIGURAR-GOOGLE-LOGIN-PASOS.md`,
         return;
       }
 
-      // Manejar caso especial iOS nativo que requiere configuración específica
-      if (result && result.iosRequiresNativeSetup) {
-        await loading.dismiss();
-        this.isLoading = false;
-        const alert = await this.alertController.create({
-          header: 'iOS: configuración requerida',
-          subHeader: 'Google Sign-In en iOS requiere configuración nativa',
-          message: `Para que Google Sign-In funcione en iOS debes:
-• Agregar GoogleService-Info.plist al proyecto iOS
-• Añadir el URL type con el REVERSED_CLIENT_ID en Info.plist
-• Registrar el paquete y SHA-1 (para Android) y el Bundle ID en Firebase
-• Considerar usar un plugin nativo (ej. capacitor-community/google-sign-in) para iOS
-
-Si quieres, puedo documentarte los pasos o aplicar los cambios básicos en el proyecto iOS.`,
-          buttons: ['OK']
-        });
-        await alert.present();
-        return;
-      }
-      
       console.log('🔥 Resultado de Google Auth:', result);
       
       // 🔥 NUEVO: Manejar caso de redirect iniciado (móvil)

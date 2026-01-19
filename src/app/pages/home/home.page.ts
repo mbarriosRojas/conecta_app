@@ -481,16 +481,64 @@ export class HomePage implements OnInit, AfterViewInit {
   async loadBanners() {
     console.log('Home - loadBanners started');
     try {
-      // Usar estrategia Cache-First
+      // Obtener ubicación actual para filtrar banners
+      let lat: number | undefined;
+      let lng: number | undefined;
+      
+      if (this.currentLocation) {
+        lat = this.currentLocation.latitude;
+        lng = this.currentLocation.longitude;
+        console.log(`📍 [BANNERS] Usando ubicación del usuario: lat=${lat}, lng=${lng}`);
+      } else {
+        console.log('⚠️ [BANNERS] No hay ubicación disponible, cargando banners globales (sin filtro geográfico)');
+      }
+      
+      // Usar estrategia Cache-First con ubicación
+      // El cache key incluye ubicación para cachear por ciudad/zona
+      const cacheKey = lat && lng 
+        ? `banners_${Math.round(lat * 100)}_${Math.round(lng * 100)}` 
+        : 'banners_global';
+      
+      console.log(`📦 [BANNERS] Cache key: ${cacheKey}`);
+      
       this.banners = await this.cacheService.cacheFirst(
-        'banners',
+        cacheKey,
         'banners',
         async () => {
-          return await firstValueFrom(this.apiService.getBanners()) || [];
+          console.log(`🌐 [BANNERS] Solicitando banners al backend con ubicación: lat=${lat}, lng=${lng}`);
+          const banners = await firstValueFrom(this.apiService.getBanners(lat, lng)) || [];
+          console.log(`✅ [BANNERS] Backend retornó ${banners.length} banners`);
+          return banners;
         }
       );
       
-      console.log('Home - Banners loaded:', this.banners.length);
+      console.log(`📊 [BANNERS] Banners cargados: ${this.banners.length}`);
+      
+      // Log detallado de los banners recibidos
+      if (this.banners.length > 0) {
+        this.banners.forEach((banner, index) => {
+          // Convertir providerId a string para logging
+          let providerIdStr = 'N/A';
+          if (banner.providerId) {
+            if (typeof banner.providerId === 'object' && banner.providerId.toString) {
+              providerIdStr = banner.providerId.toString();
+            } else {
+              providerIdStr = String(banner.providerId);
+            }
+          }
+          
+          console.log(`  🎯 Banner ${index + 1}:`, {
+            id: banner._id,
+            providerId: providerIdStr,
+            businessName: banner.businessName || 'N/A',
+            location: banner.location?.coordinates,
+            radius: banner.coverageRadius ? `${banner.coverageRadius}m (${(banner.coverageRadius / 1000).toFixed(1)}km)` : 'N/A',
+            city: banner.city || 'N/A'
+          });
+        });
+      } else {
+        console.log('ℹ️ [BANNERS] No hay banners disponibles para esta ubicación');
+      }
       
       // Actualizar el fondo del banner con la primera imagen
       if (this.banners.length > 0) {
@@ -1305,6 +1353,66 @@ export class HomePage implements OnInit, AfterViewInit {
     }
   }
 
+  /**
+   * Manejar click en banner
+   * Prioridad: providerId > link
+   */
+  async onBannerClick(banner: any) {
+    console.log('🎯 Banner clicked:', banner);
+    console.log('🔍 Banner providerId:', banner.providerId, 'Type:', typeof banner.providerId);
+    
+    // Convertir providerId a string si es necesario (puede venir como ObjectId)
+    let providerId: string | null = null;
+    if (banner.providerId) {
+      if (typeof banner.providerId === 'object' && banner.providerId.toString) {
+        providerId = banner.providerId.toString();
+      } else if (typeof banner.providerId === 'string') {
+        providerId = banner.providerId;
+      } else {
+        providerId = String(banner.providerId);
+      }
+    }
+    
+    // Si tiene providerId, navegar al detalle del negocio
+    if (providerId && providerId.trim() !== '') {
+      console.log('🏪 Navegando al detalle del negocio. ProviderId:', providerId);
+      console.log('📍 Ruta completa: /provider-detail/' + providerId);
+      
+      // Registrar click del banner en el backend (en background, no bloquea navegación)
+      if (banner._id) {
+        const bannerId = typeof banner._id === 'object' ? banner._id.toString() : banner._id;
+        this.apiService.registerBannerClick(bannerId).subscribe({
+          next: () => console.log('✅ Click de banner registrado'),
+          error: (error) => console.error('Error registrando click del banner:', error)
+        });
+      }
+      
+      // Navegar al detalle del proveedor
+      console.log('🚀 Ejecutando router.navigate con:', ['/provider-detail', providerId]);
+      this.router.navigate(['/provider-detail', providerId]).then(
+        (success) => {
+          console.log('✅ Navegación exitosa a /provider-detail/' + providerId, success);
+        },
+        (error) => {
+          console.error('❌ Error navegando al detalle:', error);
+        }
+      );
+      return;
+    }
+    
+    // Si no tiene providerId pero tiene link, abrir link externo
+    if (banner.link) {
+      console.log('🔗 Abriendo link externo:', banner.link);
+      window.open(banner.link, '_blank');
+      return;
+    }
+    
+    console.log('⚠️ Banner sin providerId ni link, no se puede navegar');
+  }
+  
+  /**
+   * @deprecated Usar onBannerClick en su lugar
+   */
   openBannerLink(link: string) {
     if (link) {
       window.open(link, '_blank');

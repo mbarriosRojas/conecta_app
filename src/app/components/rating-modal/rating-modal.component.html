@@ -1,0 +1,70 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>Calificar establecimiento</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="cancel()">
+        <ion-icon name="close"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="rating-modal-content">
+  <div class="rating-container">
+    <h2 *ngIf="providerName">{{ providerName }}</h2>
+    
+    <div class="stars-container">
+      <p class="rating-label">Selecciona tu calificación:</p>
+      <div class="stars-wrapper">
+        <ion-icon
+          *ngFor="let star of [1,2,3,4,5]; let i = index"
+          [name]="getStarIcon(i + 1)"
+          [color]="(hoverRating || selectedRating) >= (i + 1) ? 'warning' : 'medium'"
+          size="large"
+          (click)="setRating(i + 1)"
+          (mouseenter)="setHoverRating(i + 1)"
+          (mouseleave)="clearHover()"
+          class="star-icon">
+        </ion-icon>
+      </div>
+      <p class="rating-value" *ngIf="selectedRating > 0">
+        {{ selectedRating }} de {{ maxRating }} estrellas
+      </p>
+    </div>
+
+    <div class="comment-container">
+      <ion-item>
+        <ion-label position="stacked">Comentario (opcional)</ion-label>
+        <ion-textarea
+          [(ngModel)]="comment"
+          placeholder="Comparte tu experiencia..."
+          rows="4"
+          maxlength="500"
+          counter="true">
+        </ion-textarea>
+      </ion-item>
+    </div>
+
+    <div class="buttons-container">
+      <ion-button
+        expand="block"
+        fill="solid"
+        color="warning"
+        [disabled]="selectedRating === 0"
+        (click)="submitRating()">
+        Enviar calificación
+      </ion-button>
+      <ion-button
+        expand="block"
+        fill="clear"
+        color="medium"
+        (click)="cancel()">
+        Cancelar
+      </ion-button>
+    </div>
+  </div>
+</ion-content>
+
+
+
+

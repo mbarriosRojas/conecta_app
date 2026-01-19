@@ -89,6 +89,72 @@ export class CreateServicePage implements OnInit {
   selectedLogo: File | null = null;
   currentLocation: { lat: number; lng: number } | null = null;
 
+  /**
+   * Mapeo de países a códigos de país para teléfonos
+   */
+  private getCountryCode(countryName: string): string {
+    const countryMap: { [key: string]: string } = {
+      'Venezuela': '+58',
+      'Colombia': '+57',
+      'México': '+52',
+      'Argentina': '+54',
+      'Perú': '+51',
+      'Chile': '+56',
+      'Ecuador': '+593',
+      'Bolivia': '+591',
+      'Paraguay': '+595',
+      'Uruguay': '+598',
+      'Brasil': '+55',
+      'Estados Unidos': '+1',
+      'España': '+34',
+      'Italia': '+39',
+      'Francia': '+33',
+      'Alemania': '+49',
+      'Reino Unido': '+44',
+      'Canadá': '+1'
+    };
+    
+    return countryMap[countryName] || '+58'; // Por defecto Venezuela
+  }
+
+  /**
+   * Formatear número de teléfono con código de país
+   */
+  private formatPhoneWithCountryCode(phone: string, countryName?: string): string {
+    if (!phone || !phone.trim()) {
+      return '';
+    }
+
+    // Limpiar el número: quitar espacios, paréntesis, guiones y + si existen
+    let cleanedPhone = phone.replace(/[^0-9]/g, '');
+    
+    // Si ya tiene código de país (empieza con código conocido), retornarlo tal cual
+    if (cleanedPhone.startsWith('58') || cleanedPhone.startsWith('57') || 
+        cleanedPhone.startsWith('52') || cleanedPhone.startsWith('54') ||
+        cleanedPhone.startsWith('51') || cleanedPhone.startsWith('56') ||
+        cleanedPhone.startsWith('593') || cleanedPhone.startsWith('591') ||
+        cleanedPhone.startsWith('595') || cleanedPhone.startsWith('598') ||
+        cleanedPhone.startsWith('55') || cleanedPhone.startsWith('1') ||
+        cleanedPhone.startsWith('34') || cleanedPhone.startsWith('39') ||
+        cleanedPhone.startsWith('33') || cleanedPhone.startsWith('49') ||
+        cleanedPhone.startsWith('44')) {
+      // Si ya tiene código de país pero no tiene el +, agregarlo
+      if (!phone.startsWith('+')) {
+        return '+' + cleanedPhone;
+      }
+      return phone.startsWith('+') ? phone : '+' + cleanedPhone;
+    }
+    
+    // Si no tiene código de país, agregarlo según el país del negocio
+    if (countryName) {
+      const countryCode = this.getCountryCode(countryName);
+      return countryCode + cleanedPhone;
+    }
+    
+    // Si no hay país, usar código por defecto de Venezuela
+    return '+58' + cleanedPhone;
+  }
+
   constructor(
     public router: Router,
     private apiService: ApiService,
@@ -390,8 +456,21 @@ export class CreateServicePage implements OnInit {
       formData.append('name', this.formData.name.trim());
       formData.append('description', this.formData.description.trim());
       formData.append('category', this.formData.categoryId);
-      formData.append('phone_contact', this.formData.phone_contact.trim());
-      formData.append('phone_number', this.formData.phone_number.trim() || '');
+      
+      // 🔥 Agregar código de país a los números de teléfono
+      const formattedPhoneContact = this.formatPhoneWithCountryCode(
+        this.formData.phone_contact.trim(),
+        this.formData.address.country
+      );
+      const formattedPhoneNumber = this.formData.phone_number.trim() 
+        ? this.formatPhoneWithCountryCode(
+            this.formData.phone_number.trim(),
+            this.formData.address.country
+          )
+        : '';
+      
+      formData.append('phone_contact', formattedPhoneContact);
+      formData.append('phone_number', formattedPhoneNumber);
       formData.append('email', this.formData.email.trim() || '');
       formData.append('site_web', this.formData.site_web.trim() || '');
       formData.append('isHighlighted', this.formData.isHighlighted.toString());

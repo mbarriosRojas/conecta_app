@@ -21,6 +21,7 @@ export class ProfilePage implements OnInit {
   isLoading = false;
   isEditing = false;
   isLoggingOut = false; // Prevenir múltiples ejecuciones de logout
+  isLoadingSubscription = false; // 🔥 Estado de carga de suscripción
 
   // Datos editables del usuario
   editData = {
@@ -407,6 +408,7 @@ export class ProfilePage implements OnInit {
   async logout() {
     // Prevenir múltiples ejecuciones
     if (this.isLoggingOut) {
+      console.log('⚠️ Logout ya en progreso, ignorando...');
       return;
     }
 
@@ -423,27 +425,56 @@ export class ProfilePage implements OnInit {
           handler: async () => {
             // Prevenir múltiples ejecuciones
             if (this.isLoggingOut) {
+              console.log('⚠️ Logout ya en progreso en handler, ignorando...');
               return false;
             }
             this.isLoggingOut = true;
 
             try {
-              await this.authService.logout();
-              this.router.navigate(['/tabs/home'], { replaceUrl: true });
+              console.log('🚪 ProfilePage.logout: Iniciando logout...');
+              
+              // Ejecutar logout con timeout para evitar que se cuelgue
+              const logoutPromise = this.authService.logout();
+              const timeoutPromise = new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('Logout timeout after 10 seconds')), 10000)
+              );
+              
+              try {
+                await Promise.race([logoutPromise, timeoutPromise]);
+                console.log('✅ ProfilePage.logout: Logout completado exitosamente');
+              } catch (timeoutError: any) {
+                if (timeoutError?.message?.includes('timeout')) {
+                  console.warn('⚠️ ProfilePage.logout: Timeout en logout (continuando de todas formas)');
+                } else {
+                  console.warn('⚠️ ProfilePage.logout: Error en logout (continuando de todas formas):', timeoutError);
+                }
+              }
+              
+              // Siempre navegar al home, incluso si hubo errores
+              console.log('🏠 ProfilePage.logout: Navegando al home...');
+            this.router.navigate(['/tabs/home'], { replaceUrl: true });
+              
+              // Resetear la bandera después de un breve delay
+              setTimeout(() => {
+                this.isLoggingOut = false;
+              }, 1000);
+              
               return true;
             } catch (error) {
-              console.error('Error al cerrar sesión:', error);
+              console.error('❌ ProfilePage.logout: Error inesperado:', error);
+              
+              // Aun así, intentar navegar al home
+              try {
+                this.router.navigate(['/tabs/home'], { replaceUrl: true });
+              } catch (navError) {
+                console.error('❌ ProfilePage.logout: Error navegando al home:', navError);
+              }
+              
+              // Resetear la bandera
               this.isLoggingOut = false;
-              // Mostrar error si ocurre algo
-              setTimeout(async () => {
-                const errorAlert = await this.alertController.create({
-                  header: 'Error',
-                  message: 'Ocurrió un error al cerrar sesión. Por favor intenta de nuevo.',
-                  buttons: ['OK']
-                });
-                await errorAlert.present();
-              }, 100);
-              return false; // Mantener el alert abierto si hay error
+              
+              // No mostrar error al usuario, solo navegar
+              return true; // Cerrar el alert de todas formas
             }
           }
         }
@@ -455,6 +486,7 @@ export class ProfilePage implements OnInit {
     // Resetear la bandera si el usuario cancela
     alert.onDidDismiss().then((data) => {
       if (data.role === 'cancel') {
+        console.log('🚪 ProfilePage.logout: Usuario canceló el logout');
         this.isLoggingOut = false;
       }
     });
@@ -495,6 +527,9 @@ export class ProfilePage implements OnInit {
   // 💳 MÉTODOS DE SUSCRIPCIÓN Y PLANES
 
   async loadSubscription() {
+    // 🔥 NUEVO: Mostrar loading mientras se carga la suscripción
+    this.isLoadingSubscription = true;
+    
     // 🔥 IMPORTANTE: Inicializar availablePlans como array vacío por defecto
     this.availablePlans = [];
     
@@ -550,6 +585,9 @@ export class ProfilePage implements OnInit {
         this.showErrorToast('Error cargando información del plan. Por favor, intenta de nuevo.');
         this.currentSubscription = null; // Asegurar que sea null en caso de error
       }
+    } finally {
+      // 🔥 NUEVO: Ocultar loading cuando termine de cargar
+      this.isLoadingSubscription = false;
     }
   }
 
@@ -586,11 +624,19 @@ export class ProfilePage implements OnInit {
         plan: data.plan
       });
 
-      // Si fue exitoso, recargar suscripción primero
-      await this.loadSubscription();
-      
-      // Si el plan está en estado pending, SIEMPRE mostrar instrucciones de pago
-      if (data.subscription?.status === 'pending') {
+      // 🔥 NUEVO: Mostrar loading durante el proceso
+      const loading = await this.loadingController.create({
+        message: 'Procesando solicitud...',
+        spinner: 'crescent'
+      });
+      await loading.present();
+
+      try {
+        // Si fue exitoso, recargar suscripción primero
+        await this.loadSubscription();
+        
+        // Si el plan está en estado pending, SIEMPRE mostrar instrucciones de pago
+        if (data.subscription?.status === 'pending') {
         console.log('🔥 Subscription is pending, showing payment instructions');
         
         // 🔥 MEJORADO: Buscar datos de pago en el método seleccionado (ya vienen en paymentMethods)
@@ -634,15 +680,23 @@ export class ProfilePage implements OnInit {
           }
         }
         
-        if (paymentData && !paymentData.error && !paymentData.requiresSupport) {
-          await this.showPaymentInstructions(paymentData, data.plan);
+          if (paymentData && !paymentData.error && !paymentData.requiresSupport) {
+            await loading.dismiss();
+            await this.showPaymentInstructions(paymentData, data.plan);
+          } else {
+            await loading.dismiss();
+            console.error('❌ No payment data available:', paymentData);
+            this.showErrorToast('No se pudieron obtener los datos de pago. Por favor contacta soporte.');
+          }
         } else {
-          console.error('❌ No payment data available:', paymentData);
-          this.showErrorToast('No se pudieron obtener los datos de pago. Por favor contacta soporte.');
+          // Plan activado directamente
+          await loading.dismiss();
+          this.showSuccessToast(`Plan ${data.plan.name} activado exitosamente`);
         }
-      } else {
-        // Plan activado directamente
-        this.showSuccessToast(`Plan ${data.plan.name} activado exitosamente`);
+      } catch (error) {
+        await loading.dismiss();
+        console.error('Error processing plan request:', error);
+        this.showErrorToast('Error procesando la solicitud del plan');
       }
       return;
     }
@@ -855,71 +909,88 @@ export class ProfilePage implements OnInit {
 
 
   async reportPayment() {
-    // Validar que haya una suscripción pendiente
-    let pendingSubscription: UserSubscription | null = null;
+    // 🔥 NUEVO: Mostrar loading mientras se valida la suscripción
+    const loading = await this.loadingController.create({
+      message: 'Preparando formulario de pago...',
+      spinner: 'crescent'
+    });
+    await loading.present();
+
     try {
-      pendingSubscription = await this.subscriptionService.getCurrentSubscription();
+      // Validar que haya una suscripción pendiente
+      let pendingSubscription: UserSubscription | null = null;
+      try {
+        pendingSubscription = await this.subscriptionService.getCurrentSubscription();
+        
+        // Verificar que la suscripción esté pendiente
+        if (!pendingSubscription || pendingSubscription.status !== 'pending') {
+          await loading.dismiss();
+          this.showErrorToast('No tienes una solicitud de plan pendiente de pago');
+          return;
+        }
+      } catch (error: any) {
+        if (error.status === 404 || error.status === 400) {
+          // No hay suscripción, esto es normal
+        } else {
+          console.error('Error obteniendo suscripción:', error);
+        }
+      }
       
-      // Verificar que la suscripción esté pendiente
       if (!pendingSubscription || pendingSubscription.status !== 'pending') {
-        this.showErrorToast('No tienes una solicitud de plan pendiente de pago');
+        await loading.dismiss();
+        this.showErrorToast('No tienes una solicitud de plan pendiente. Por favor solicita un plan primero.');
         return;
       }
-    } catch (error: any) {
-      if (error.status === 404 || error.status === 400) {
-        // No hay suscripción, esto es normal
-      } else {
-        console.error('Error obteniendo suscripción:', error);
-      }
-    }
-    
-    if (!pendingSubscription || pendingSubscription.status !== 'pending') {
-      this.showErrorToast('No tienes una solicitud de plan pendiente. Por favor solicita un plan primero.');
-      return;
-    }
 
-    // 🔥 Obtener el método de pago usado en la compra pendiente
-    let paymentMethod = null;
-    try {
-      // Buscar la compra pendiente para obtener el método de pago
-      const purchases = await this.subscriptionService.getPurchaseHistory();
-      const pendingPurchase = purchases.find(p => p.paymentStatus === 'pending');
-      
-      if (pendingPurchase && pendingPurchase.paymentMethod) {
-        // Buscar el método de pago en la lista de métodos disponibles
-        paymentMethod = this.paymentMethods.find(m => m.code === pendingPurchase.paymentMethod);
+      // 🔥 Obtener el método de pago usado en la compra pendiente
+      let paymentMethod = null;
+      try {
+        // Buscar la compra pendiente para obtener el método de pago
+        const purchases = await this.subscriptionService.getPurchaseHistory();
+        const pendingPurchase = purchases.find(p => p.paymentStatus === 'pending');
+        
+        if (pendingPurchase && pendingPurchase.paymentMethod) {
+          // Buscar el método de pago en la lista de métodos disponibles
+          paymentMethod = this.paymentMethods.find(m => m.code === pendingPurchase.paymentMethod);
+        }
+      } catch (error) {
+        console.error('Error obteniendo método de pago:', error);
+      }
+
+      // Si no se encuentra el método, usar el primero disponible (fallback)
+      if (!paymentMethod && this.paymentMethods.length > 0) {
+        paymentMethod = this.paymentMethods[0];
+      }
+
+      await loading.dismiss();
+
+      // 🔥 Abrir modal de reporte de pago
+      const modal = await this.modalController.create({
+        component: PaymentReportModalComponent,
+        componentProps: {
+          subscription: pendingSubscription,
+          paymentMethod: paymentMethod
+        },
+        cssClass: 'payment-report-modal'
+      });
+
+      await modal.present();
+
+      const { data } = await modal.onDidDismiss();
+
+      if (data?.success) {
+        if (data?.subscription) {
+          this.currentSubscription = data.subscription;
+        }
+        
+        await this.loadSubscription();
+        this.showSuccessToast('Pago reportado exitosamente. Tu pago está en verificación y el plan se activará pronto.');
       }
     } catch (error) {
-      console.error('Error obteniendo método de pago:', error);
+      await loading.dismiss();
+      console.error('Error preparing payment report:', error);
+      this.showErrorToast('Error preparando el formulario de pago');
     }
-
-    // Si no se encuentra el método, usar el primero disponible (fallback)
-    if (!paymentMethod && this.paymentMethods.length > 0) {
-      paymentMethod = this.paymentMethods[0];
-    }
-
-    // 🔥 Abrir modal de reporte de pago
-    const modal = await this.modalController.create({
-      component: PaymentReportModalComponent,
-      componentProps: {
-        subscription: pendingSubscription,
-        paymentMethod: paymentMethod
-      },
-      cssClass: 'payment-report-modal'
-    });
-
-    await modal.present();
-
-                const { data } = await modal.onDidDismiss();
-
-                if (data?.success) {
-                  if (data?.subscription) {
-                    this.currentSubscription = data.subscription;
-                  }
-                  
-                  await this.loadSubscription();
-                  this.showSuccessToast('Pago reportado exitosamente. Tu pago está en verificación y el plan se activará pronto.');
-                }
   }
 
   getLimitDisplay(limit: number): string {

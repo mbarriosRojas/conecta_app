@@ -1,6 +1,6 @@
 import { Component, OnInit, ViewChild, ElementRef, AfterViewInit, OnDestroy } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { LoadingController, ToastController, AlertController, ActionSheetController, Platform, IonicModule, IonContent, IonInfiniteScroll } from '@ionic/angular';
+import { LoadingController, ToastController, AlertController, ActionSheetController, ModalController, Platform, IonicModule, IonContent, IonInfiniteScroll } from '@ionic/angular';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../services/api.service';
@@ -10,6 +10,8 @@ import { GeocodingService, LocationSuggestion } from '../../services/geocoding.s
 import { AuthService } from '../../services/auth.service';
 import { PromotionTrackingService } from '../../services/promotion-tracking.service';
 import { Provider, Product, Schedule } from '../../models/provider.model';
+import { Review } from '../../models/review.model';
+import { RatingModalComponent } from '../../components/rating-modal/rating-modal.component';
 import { environment } from '../../../environments/environment';
 import { mapConfig } from '../../../environments/environment.maps';
 import Swiper from 'swiper';
@@ -55,12 +57,17 @@ export class ProviderDetailPage implements OnInit, AfterViewInit, OnDestroy {
   currentPage = 1;
   hasMoreProducts = true;
   isLoadingProducts = false;
-  activeSection = 'info'; // 'info', 'catalog', 'promo'
+  activeSection = 'info'; // 'info', 'catalog', 'promo', 'reviews'
   
   // 🚀 NUEVO: Variables para promociones
   promotions: any[] = [];
   isLoadingPromotions = false;
   showDetailedStats = false; // Para mostrar/ocultar desglose de fuentes
+  
+  // ⭐ NUEVO: Variables para reseñas y calificaciones
+  reviews: Review[] = [];
+  isLoadingReviews = false;
+  currentUserId: string | null = null; // ID del usuario actual
   
   // Swiper configurations
   imagesSwiperConfig: SwiperOptions = {
@@ -120,17 +127,18 @@ export class ProviderDetailPage implements OnInit, AfterViewInit, OnDestroy {
       enabled: true,
     },
     navigation: {
-      nextEl: '.swiper-button-next',
-      prevEl: '.swiper-button-prev',
+      nextEl: '.gallery-swiper .swiper-button-next',
+      prevEl: '.gallery-swiper .swiper-button-prev',
     },
     pagination: {
-      el: '.swiper-pagination',
-      clickable: true,
+      el: '.gallery-container .swiper-pagination',
+      clickable: false,
       type: 'fraction',
     },
     zoom: {
-      maxRatio: 3,
+      maxRatio: 5, // Aumentar el zoom máximo a 5x
       minRatio: 1,
+      toggle: true, // Permitir toggle del zoom con doble tap
     },
     effect: 'slide',
     speed: 300,
@@ -160,6 +168,7 @@ export class ProviderDetailPage implements OnInit, AfterViewInit, OnDestroy {
     private toastController: ToastController,
     private alertController: AlertController,
     private actionSheetController: ActionSheetController,
+    private modalController: ModalController,
     private sanitizer: DomSanitizer
   ) {}
 
@@ -181,6 +190,7 @@ export class ProviderDetailPage implements OnInit, AfterViewInit, OnDestroy {
     });
     
     await this.loadCurrentLocation();
+    await this.loadCurrentUser();
     await this.loadProvider();
     
     // 🔥 Después de cargar el provider, cargar el contenido del tab activo
@@ -192,6 +202,11 @@ export class ProviderDetailPage implements OnInit, AfterViewInit, OnDestroy {
     if (this.activeSection === 'catalog') {
       console.log('📱 Cargando catálogo desde URL...');
       await this.loadProducts(true);
+    }
+    
+    if (this.activeSection === 'reviews') {
+      console.log('📱 Cargando reseñas desde URL...');
+      await this.loadReviews();
     }
   }
 
@@ -221,16 +236,50 @@ export class ProviderDetailPage implements OnInit, AfterViewInit, OnDestroy {
 
   private initGoogleMap(providerLat: number, providerLng: number, userLat?: number, userLng?: number, mapElement?: HTMLElement) {
     try {
-      const mapEl = mapElement || this.providerMap?.nativeElement;
-      if (!mapEl) return;
+      // Intentar obtener el elemento de múltiples formas
+      let mapEl = mapElement || this.providerMap?.nativeElement;
+      
+      // Si no está disponible por ViewChild, intentar por ID
+      if (!mapEl) {
+        mapEl = document.getElementById('providerMap');
+      }
+      
+      if (!mapEl) {
+        console.error('❌ [MAP] Elemento del mapa no encontrado');
+        console.error('❌ [MAP] ViewChild:', this.providerMap);
+        console.error('❌ [MAP] Elemento por ID:', document.getElementById('providerMap'));
+        return;
+      }
+      
+      console.log('🗺️ [MAP] Usando elemento:', mapEl, {
+        id: mapEl.id,
+        className: mapEl.className,
+        height: mapEl.offsetHeight,
+        width: mapEl.offsetWidth
+      });
 
+      // Verificar que Google Maps esté disponible
       const google = (window as any).google;
+      if (!google || !google.maps) {
+        console.error('❌ [MAP] Google Maps API no está disponible');
+        return;
+      }
+
+      console.log('🗺️ [MAP] Inicializando mapa en elemento:', mapEl);
+      
       const center = { lat: providerLat, lng: providerLng };
       const map = new google.maps.Map(mapEl, {
         center,
         zoom: 15,
         disableDefaultUI: true,
+        zoomControl: true,
+        mapTypeControl: false,
+        streetViewControl: false,
+        fullscreenControl: false,
       });
+
+      console.log('✅ [MAP] Mapa inicializado correctamente');
+      this.googleMapsAvailable = true;
 
       // Business marker
       new google.maps.Marker({
@@ -283,6 +332,15 @@ export class ProviderDetailPage implements OnInit, AfterViewInit, OnDestroy {
   ngAfterViewInit() {
     setTimeout(() => {
       this.initializeSwipers();
+      
+      // Intentar inicializar el mapa si el provider ya está cargado
+      // Usar un delay más largo para asegurar que el *ngIf haya renderizado el elemento
+      if (this.provider && this.provider.address?.location) {
+        setTimeout(() => {
+          console.log('🗺️ [MAP] ngAfterViewInit: Intentando inicializar mapa');
+          this.updateMapUrl();
+        }, 800);
+      }
     }, 500);
   }
 
@@ -308,6 +366,35 @@ export class ProviderDetailPage implements OnInit, AfterViewInit, OnDestroy {
     } catch (error) {
       console.error('Error getting current location:', error);
     }
+  }
+
+  async loadCurrentUser() {
+    try {
+      if (this.authService.isAuthenticated()) {
+        const currentUser = await firstValueFrom(this.authService.currentUser$);
+        this.currentUserId = currentUser?.id || null;
+      }
+    } catch (error) {
+      console.error('Error loading current user:', error);
+      this.currentUserId = null;
+    }
+  }
+
+  /**
+   * Verificar si el usuario actual es el propietario del negocio
+   */
+  isOwner(): boolean {
+    if (!this.provider?.userId || !this.currentUserId) {
+      return false;
+    }
+    return this.provider.userId.toString() === this.currentUserId.toString();
+  }
+
+  /**
+   * Verificar si el usuario puede calificar este negocio
+   */
+  canRate(): boolean {
+    return this.authService.isAuthenticated() && !this.isOwner();
   }
 
   async loadProvider() {
@@ -339,8 +426,15 @@ export class ProviderDetailPage implements OnInit, AfterViewInit, OnDestroy {
 
       if (this.provider) {
         console.log("data provider....", this.provider);
-        // Actualizar URL del mapa
-        this.updateMapUrl();
+        // Actualizar URL del mapa después de que la vista esté renderizada
+        // Usar setTimeout más largo para asegurar que el DOM esté completamente renderizado
+        // Especialmente importante porque el mapa está dentro de un *ngIf
+        setTimeout(() => {
+          if (this.provider?.address?.location) {
+            console.log('🗺️ [MAP] loadProvider: Intentando inicializar mapa después de cargar provider');
+            this.updateMapUrl();
+          }
+        }, 1000);
         
         // Registrar vista del proveedor (en background, no bloqueante)
         firstValueFrom(this.apiService.addView(providerId)).catch(err => 
@@ -545,6 +639,32 @@ export class ProviderDetailPage implements OnInit, AfterViewInit, OnDestroy {
     if (section === 'promo' && this.promotions.length === 0) {
       this.loadPromotions();
     }
+    
+    // Las reseñas son públicas, cargar sin verificar autenticación
+    if (section === 'reviews' && this.reviews.length === 0) {
+      this.loadReviews();
+    }
+    
+    // Cuando se vuelve al tab de información, reinicializar el mapa si es necesario
+    // El mapa está dentro de un *ngIf, por lo que el elemento se recrea al cambiar de tab
+    if (section === 'info' && this.provider?.address?.location) {
+      console.log('🗺️ [MAP] setActiveSection: Cambiado a tab info, reinicializando mapa...');
+      // Esperar un poco para que Angular renderice el elemento del mapa
+      setTimeout(() => {
+        // Verificar si el mapa ya está disponible/visible
+        const mapEl = this.providerMap?.nativeElement || document.getElementById('providerMap');
+        if (mapEl) {
+          console.log('🗺️ [MAP] setActiveSection: Elemento del mapa encontrado, actualizando mapa');
+          this.updateMapUrl();
+        } else {
+          console.log('🗺️ [MAP] setActiveSection: Elemento del mapa aún no disponible, reintentando...');
+          // Intentar de nuevo después de un delay adicional
+          setTimeout(() => {
+            this.updateMapUrl();
+          }, 500);
+        }
+      }, 300);
+    }
   }
 
   onCategoryChange() {
@@ -552,58 +672,143 @@ export class ProviderDetailPage implements OnInit, AfterViewInit, OnDestroy {
     this.loadProducts(true);
   }
 
-  async callProvider() {
+  /**
+   * Mapeo de países a códigos de país para teléfonos
+   */
+  private getCountryCode(countryName: string): string {
+    const countryMap: { [key: string]: string } = {
+      'Venezuela': '+58',
+      'Colombia': '+57',
+      'México': '+52',
+      'Argentina': '+54',
+      'Perú': '+51',
+      'Chile': '+56',
+      'Ecuador': '+593',
+      'Bolivia': '+591',
+      'Paraguay': '+595',
+      'Uruguay': '+598',
+      'Brasil': '+55',
+      'Estados Unidos': '+1',
+      'España': '+34',
+      'Italia': '+39',
+      'Francia': '+33',
+      'Alemania': '+49',
+      'Reino Unido': '+44',
+      'Canadá': '+1'
+    };
+    
+    return countryMap[countryName] || '+58'; // Por defecto Venezuela
+  }
+
+  /**
+   * Formatear número de teléfono con código de país
+   */
+  private formatPhoneWithCountryCode(phone: string, countryName?: string): string {
+    // Limpiar el número: quitar espacios, paréntesis, guiones y + si existen
+    let cleanedPhone = phone.replace(/[^0-9]/g, '');
+    
+    // Si ya tiene código de país (empieza con código conocido), retornarlo tal cual
+    if (cleanedPhone.startsWith('58') || cleanedPhone.startsWith('57') || 
+        cleanedPhone.startsWith('52') || cleanedPhone.startsWith('54') ||
+        cleanedPhone.startsWith('51') || cleanedPhone.startsWith('56') ||
+        cleanedPhone.startsWith('593') || cleanedPhone.startsWith('591') ||
+        cleanedPhone.startsWith('595') || cleanedPhone.startsWith('598') ||
+        cleanedPhone.startsWith('55') || cleanedPhone.startsWith('1') ||
+        cleanedPhone.startsWith('34') || cleanedPhone.startsWith('39') ||
+        cleanedPhone.startsWith('33') || cleanedPhone.startsWith('49') ||
+        cleanedPhone.startsWith('44')) {
+      // Si ya tiene código de país pero no tiene el +, agregarlo
+      if (!phone.startsWith('+')) {
+        return '+' + cleanedPhone;
+      }
+      return phone.startsWith('+') ? phone : '+' + cleanedPhone;
+    }
+    
+    // Si no tiene código de país, agregarlo según el país del negocio
+    if (countryName && this.provider?.address?.country) {
+      const countryCode = this.getCountryCode(this.provider.address.country);
+      return countryCode + cleanedPhone;
+    }
+    
+    // Si no hay país, usar código por defecto de Venezuela
+    return '+58' + cleanedPhone;
+  }
+
+  async contactProvider() {
     if (!this.provider?.phone_contact && !this.provider?.phone_number) {
       this.showErrorToast('Número de teléfono no disponible');
       return;
     }
 
-    const phoneNumber = this.provider.phone_contact || this.provider.phone_number;
+    const rawPhone = this.provider.phone_contact || this.provider.phone_number || '';
+    const countryName = this.provider?.address?.country;
+    
+    // Normalizar y formatear con código de país
+    const formattedPhone = this.formatPhoneWithCountryCode(rawPhone, countryName);
+    
+    // Limpiar solo números para verificar validez
+    const phoneDigits = formattedPhone.replace(/[^0-9]/g, '');
+    if (!phoneDigits || phoneDigits.length < 10) {
+      this.showErrorToast('Número de teléfono inválido');
+      return;
+    }
+
+    // Mostrar ActionSheet para elegir entre Llamar o WhatsApp
     const actionSheet = await this.actionSheetController.create({
-      header: 'Llamar a ' + this.provider.name,
+      header: '¿Cómo deseas contactar?',
       buttons: [
         {
           text: 'Llamar',
           icon: 'call',
           handler: () => {
-            window.open(`tel:${phoneNumber}`, '_self');
+            this.callProvider(formattedPhone);
           }
         },
         {
           text: 'WhatsApp',
           icon: 'logo-whatsapp',
           handler: () => {
-            const message = encodeURIComponent(`Hola, me interesa conocer más sobre sus servicios.`);
-            window.open(`https://wa.me/${phoneNumber}?text=${message}`, '_blank');
+            this.openWhatsApp(formattedPhone);
           }
         },
         {
           text: 'Cancelar',
-          icon: 'close',
           role: 'cancel'
         }
       ]
     });
+
     await actionSheet.present();
   }
 
-  contactProvider() {
-    if (!this.provider?.phone_contact && !this.provider?.phone_number) {
-      this.showErrorToast('Número de teléfono no disponible');
-      return;
-    }
-
-    const raw = this.provider.phone_contact || this.provider.phone_number || '';
-    // Normalizar: quitar espacios, paréntesis, guiones y + si existen
-    const phoneNumber = (raw || '').toString().replace(/[^0-9]/g, '');
-    if (!phoneNumber) {
-      this.showErrorToast('Número de teléfono inválido');
-      return;
-    }
-
+  /**
+   * Abrir WhatsApp con número formateado
+   */
+  private openWhatsApp(phoneNumber: string) {
+    // Limpiar el número para WhatsApp (solo números, sin +)
+    const cleanPhone = phoneNumber.replace(/[^0-9]/g, '');
     const message = encodeURIComponent(`Hola, me interesa conocer más sobre sus servicios.`);
-    // Abrir WhatsApp web/mobile
-    window.open(`https://wa.me/${phoneNumber}?text=${message}`, '_blank');
+    window.open(`https://wa.me/${cleanPhone}?text=${message}`, '_blank');
+  }
+
+  /**
+   * Llamar al proveedor (método público para mantener compatibilidad)
+   */
+  async callProvider(phoneNumber?: string) {
+    // Si no se proporciona número, usar el del proveedor
+    if (!phoneNumber) {
+      if (!this.provider?.phone_contact && !this.provider?.phone_number) {
+        this.showErrorToast('Número de teléfono no disponible');
+        return;
+      }
+      
+      const rawPhone = this.provider.phone_contact || this.provider.phone_number || '';
+      const countryName = this.provider?.address?.country;
+      phoneNumber = this.formatPhoneWithCountryCode(rawPhone, countryName);
+    }
+    
+    // Usar tel: para abrir el marcador
+    window.location.href = `tel:${phoneNumber}`;
   }
 
   openGallery(index: number = 0) {
@@ -807,29 +1012,97 @@ export class ProviderDetailPage implements OnInit, AfterViewInit, OnDestroy {
     // Métodos para el mapa
     // Configura Google Maps y la marca del proveedor + usuario
     async updateMapUrl() {
-      if (!this.provider || !this.provider.address || !this.provider.address.location) return;
+      if (!this.provider || !this.provider.address || !this.provider.address.location) {
+        console.warn('⚠️ [MAP] No hay ubicación del proveedor disponible');
+        return;
+      }
 
       const providerLat = this.provider.address.location.coordinates[1];
       const providerLng = this.provider.address.location.coordinates[0];
       const userLat = this.currentLocation?.latitude;
       const userLng = this.currentLocation?.longitude;
 
+      console.log('🗺️ [MAP] Inicializando mapa:', {
+        provider: { lat: providerLat, lng: providerLng },
+        user: { lat: userLat, lng: userLng }
+      });
+
       if (!this.googleMapsKey) {
-        console.warn('Google Maps API key not configured (mapConfig.googleMapsApiKey)');
+        console.warn('⚠️ [MAP] Google Maps API key not configured');
         this.showErrorToast('Google Maps API key no configurada. Añade la clave en environment.maps.');
         return;
       }
 
       try {
         await this.loadGoogleMapsScript(this.googleMapsKey);
-        // Esperar un poco a que el DOM refleje el contenedor
-        setTimeout(() => {
-          this.initGoogleMap(providerLat, providerLng, userLat, userLng);
-        }, 250);
+        console.log('✅ [MAP] Script de Google Maps cargado');
+        
+        // Esperar a que el elemento esté disponible en el DOM
+        await this.waitForMapElement();
+        
+        // Inicializar el mapa
+        this.initGoogleMap(providerLat, providerLng, userLat, userLng);
       } catch (err) {
-        console.error('Error cargando Google Maps:', err);
+        console.error('❌ [MAP] Error cargando Google Maps:', err);
         this.showErrorToast('Error cargando Google Maps');
       }
+    }
+
+    /**
+     * Esperar a que el elemento del mapa esté disponible en el DOM
+     */
+    private async waitForMapElement(maxAttempts: number = 20, delay: number = 200): Promise<void> {
+      return new Promise((resolve, reject) => {
+        let attempts = 0;
+        
+        const checkElement = () => {
+          attempts++;
+          
+          // Intentar obtener el elemento de múltiples formas
+          let mapEl = this.providerMap?.nativeElement;
+          
+          // Si no está disponible por ViewChild, intentar por ID
+          if (!mapEl) {
+            mapEl = document.getElementById('providerMap');
+          }
+          
+          // Verificar que el elemento existe y tiene dimensiones
+          if (mapEl) {
+            const hasDimensions = mapEl.offsetHeight > 0 || mapEl.offsetWidth > 0;
+            const isVisible = window.getComputedStyle(mapEl).display !== 'none';
+            
+            if (hasDimensions && isVisible) {
+              console.log('✅ [MAP] Elemento del mapa encontrado y visible', {
+                height: mapEl.offsetHeight,
+                width: mapEl.offsetWidth,
+                display: window.getComputedStyle(mapEl).display
+              });
+              resolve();
+              return;
+            } else {
+              console.log(`⏳ [MAP] Elemento encontrado pero sin dimensiones (intento ${attempts}/${maxAttempts})`, {
+                height: mapEl.offsetHeight,
+                width: mapEl.offsetWidth,
+                display: window.getComputedStyle(mapEl).display
+              });
+            }
+          } else {
+            console.log(`⏳ [MAP] Elemento del mapa no encontrado (intento ${attempts}/${maxAttempts})`);
+          }
+          
+          if (attempts >= maxAttempts) {
+            console.error('❌ [MAP] Timeout esperando elemento del mapa');
+            console.error('❌ [MAP] ViewChild disponible:', !!this.providerMap);
+            console.error('❌ [MAP] Elemento por ID:', !!document.getElementById('providerMap'));
+            reject(new Error('Elemento del mapa no disponible después de múltiples intentos'));
+            return;
+          }
+          
+          setTimeout(checkElement, delay);
+        };
+        
+        checkElement();
+      });
     }
 
     openDirections() {
@@ -1159,5 +1432,118 @@ export class ProviderDetailPage implements OnInit, AfterViewInit, OnDestroy {
     };
     
     return normalizeDay(schedule.day) === normalizeDay(currentDay);
+  }
+
+  // ==================== CALIFICACIONES Y RESEÑAS ====================
+
+  /**
+   * Cargar reseñas del proveedor
+   */
+  async loadReviews() {
+    if (!this.provider?._id) return;
+
+    this.isLoadingReviews = true;
+    try {
+      this.reviews = await this.apiService.getProviderReviews(this.provider._id);
+      console.log('✅ Reseñas cargadas:', this.reviews.length);
+    } catch (error) {
+      console.error('❌ Error cargando reseñas:', error);
+      this.reviews = [];
+    } finally {
+      this.isLoadingReviews = false;
+    }
+  }
+
+  /**
+   * Abrir modal de calificación
+   */
+  async openRatingModal() {
+    if (!this.provider?._id) {
+      const toast = await this.toastController.create({
+        message: 'Error: No se puede calificar este establecimiento',
+        duration: 2000,
+        color: 'danger',
+        position: 'top'
+      });
+      await toast.present();
+      return;
+    }
+
+    if (!this.authService.isAuthenticated()) {
+      const toast = await this.toastController.create({
+        message: 'Debes iniciar sesión para calificar',
+        duration: 2000,
+        color: 'warning',
+        position: 'top'
+      });
+      await toast.present();
+      this.router.navigate(['/login'], { queryParams: { returnUrl: this.router.url } });
+      return;
+    }
+
+    // Verificar que el usuario no sea el propietario del negocio
+    if (this.isOwner()) {
+      const toast = await this.toastController.create({
+        message: 'No puedes calificar tu propio negocio',
+        duration: 3000,
+        color: 'warning',
+        position: 'top'
+      });
+      await toast.present();
+      return;
+    }
+
+    const modal = await this.modalController.create({
+      component: RatingModalComponent,
+      componentProps: {
+        providerId: this.provider._id,
+        providerName: this.provider.name
+      }
+    });
+
+    await modal.present();
+
+    const { data } = await modal.onDidDismiss();
+    if (data?.success) {
+      // Recargar reseñas y actualizar provider
+      await this.loadReviews();
+      await this.loadProvider(); // Recargar provider para actualizar rating
+      
+      const toast = await this.toastController.create({
+        message: '¡Gracias por tu calificación!',
+        duration: 2000,
+        color: 'success',
+        position: 'top'
+      });
+      await toast.present();
+    }
+  }
+
+  /**
+   * Obtener rating para mostrar
+   */
+  getDisplayRating(): string {
+    if (!this.provider?.rating) {
+      return 'N/A';
+    }
+    return this.provider.rating.toFixed(1);
+  }
+
+  /**
+   * Manejar error al cargar imagen de perfil en reseña
+   */
+  onReviewImageError(event: Event): void {
+    const img = event.target as HTMLImageElement;
+    if (img) {
+      img.style.display = 'none';
+      // Buscar el siguiente elemento (ion-icon) y mostrarlo
+      const parent = img.parentElement;
+      if (parent) {
+        const icon = parent.querySelector('ion-icon');
+        if (icon) {
+          (icon as HTMLElement).style.display = 'block';
+        }
+      }
+    }
   }
 }

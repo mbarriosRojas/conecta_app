@@ -8,6 +8,7 @@ export interface Provider {
   phone_number: string;
   phone?: string; // Alias para compatibilidad
   categoryId: string | Category;
+  userId?: string; // ID del propietario del negocio
   stand_out: boolean;
   verified: boolean;
   email: string;

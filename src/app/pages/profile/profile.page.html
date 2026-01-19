@@ -137,8 +137,9 @@
       </ion-card>
 
       <!-- 💳 Sección de Plan y Suscripción -->
+      <!-- 🔥 Ocultar sección completa mientras carga la suscripción -->
       <!-- Cuando el usuario tiene un plan activo -->
-      <ion-card *ngIf="!isEditing && currentSubscription">
+      <ion-card *ngIf="!isEditing && !isLoadingSubscription && currentSubscription">
         <ion-card-header>
           <ion-card-title>
             <ion-icon name="card-outline" style="color: #6b7280;"></ion-icon>
@@ -240,7 +241,7 @@
       </ion-card>
 
       <!-- Cuando el usuario NO tiene un plan activo -->
-      <ion-card *ngIf="!isEditing && !currentSubscription && availablePlans.length > 0">
+      <ion-card *ngIf="!isEditing && !isLoadingSubscription && !currentSubscription && availablePlans.length > 0">
         <ion-card-header>
           <ion-card-title>
             <ion-icon name="card-outline" style="color: #6b7280;"></ion-icon>
@@ -271,7 +272,7 @@
       </ion-card>
 
       <!-- Cuando no hay planes disponibles -->
-      <ion-card *ngIf="!isEditing && !currentSubscription && availablePlans.length === 0">
+      <ion-card *ngIf="!isEditing && !isLoadingSubscription && !currentSubscription && availablePlans.length === 0">
         <ion-card-header>
           <ion-card-title>
             <ion-icon name="card-outline"></ion-icon>

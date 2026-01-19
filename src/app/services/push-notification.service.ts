@@ -612,10 +612,10 @@ export class PushNotificationService {
    */
   private async handleNotificationTapped(notification: ActionPerformed): Promise<void> {
     try {
-      const data = notification.notification.data;
+    const data = notification.notification.data;
       console.log('👆 [NOTIFICATION] Notificación tocada, datos:', data);
 
-      if (data?.type === 'promotion' && data?.businessID) {
+    if (data?.type === 'promotion' && data?.businessID) {
         const businessID = data.businessID;
         const promotionId = data.promotionId; // 🔥 NUEVO: Obtener promotionId si está disponible
 
@@ -625,15 +625,15 @@ export class PushNotificationService {
           businessName: data.businessName
         });
 
-        // Registrar tracking
-        try {
-          const userID = await this.getUserID();
+      // Registrar tracking
+      try {
+        const userID = await this.getUserID();
           await this.trackPromotionOpened(businessID, userID);
-        } catch (error) {
+      } catch (error) {
           console.warn('⚠️ [NOTIFICATION] Error en tracking (no crítico):', error);
-          // No bloquear navegación por error de tracking
-        }
-        
+        // No bloquear navegación por error de tracking
+      }
+      
         // 🔥 MEJORADO: Preparar queryParams con promotionId si está disponible
         const queryParams: any = { tab: 'promo' };
         if (promotionId) {
@@ -643,9 +643,9 @@ export class PushNotificationService {
         // Navegar al detalle del proveedor con tab de promociones
         this.router.navigate(['/provider-detail', businessID], {
           queryParams
-        }).catch(err => {
+      }).catch(err => {
           console.error('❌ [NOTIFICATION] Error navegando:', err);
-        });
+      });
       } else {
         console.log('ℹ️ [NOTIFICATION] Tipo de notificación no reconocido o falta businessID');
       }

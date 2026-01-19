@@ -134,19 +134,36 @@ export class AuthService {
   }
 
   async logout(): Promise<void> {
+    console.log('🔐 AuthService.logout: Iniciando proceso de logout...');
+    
     // Intentar cerrar sesión en Firebase/Google también si está disponible
+    // Usar Promise.allSettled para que no falle si Firebase tiene problemas
     try {
       if (this.googleAuthService) {
-        await this.googleAuthService.signOut();
+        console.log('🔐 AuthService.logout: Cerrando sesión en Firebase/Google...');
+        // No esperar el resultado, solo intentarlo
+        this.googleAuthService.signOut().catch((error) => {
+          console.warn('AuthService.logout: error closing firebase session (no crítico):', error);
+        });
       }
     } catch (error) {
-      console.warn('AuthService.logout: error closing firebase session', error);
+      console.warn('AuthService.logout: error closing firebase session (no crítico):', error);
     }
 
+    // Limpiar datos locales (esto siempre debe ejecutarse)
+    console.log('🔐 AuthService.logout: Limpiando datos locales...');
+    try {
     await this.storageService.remove('auth_token');
     await this.storageService.remove('user_data');
     this.currentUserSubject.next(null);
     this.isAuthenticatedSubject.next(false);
+      console.log('✅ AuthService.logout: Logout completado exitosamente');
+    } catch (error) {
+      console.error('❌ AuthService.logout: Error limpiando datos locales:', error);
+      // Aun así, limpiar los subjects
+      this.currentUserSubject.next(null);
+      this.isAuthenticatedSubject.next(false);
+    }
   }
 
   private async setAuthData(user: User, token: string): Promise<void> {

@@ -13,8 +13,8 @@
   <div class="images-section" *ngIf="hasImages()">
     <div class="images-slider" #imagesSlider>
       <div class="swiper-wrapper">
-        <div class="swiper-slide" *ngFor="let image of provider?.images">
-          <div class="image-container" (click)="openGallery()">
+        <div class="swiper-slide" *ngFor="let image of provider?.images; let i = index">
+          <div class="image-container" (click)="openGallery(i)">
             <img [src]="image" [alt]="provider?.name" loading="lazy">
             <div class="image-overlay">
               <ion-icon name="expand-outline"></ion-icon>
@@ -22,6 +22,8 @@
           </div>
         </div>
       </div>
+      <!-- Paginación: solo mostrar si hay más de una imagen -->
+      <div class="swiper-pagination" *ngIf="provider?.images && (provider?.images?.length ?? 0) > 1"></div>
     </div>
   </div>
 
@@ -42,8 +44,13 @@
           <h2 class="item-title">{{ provider.name }}</h2>
           <div class="business-rating">
             <ion-icon name="star" color="warning"></ion-icon>
-            <span class="rating-value">{{ provider.rating || 'N/A' }}</span>
-            <span class="rating-count">({{ provider.views || 0 }} vistas)</span>
+            <span class="rating-value">{{ getDisplayRating() }}</span>
+            <span class="rating-count" *ngIf="provider.count_rating > 0">
+              ({{ provider.count_rating }} {{ provider.count_rating === 1 ? 'calificación' : 'calificaciones' }})
+            </span>
+            <span class="rating-count" *ngIf="provider.count_rating === 0">
+              (Sin calificaciones)
+            </span>
           </div>
         </ion-label>
       </ion-item>
@@ -79,11 +86,17 @@
       <ion-icon name="grid-outline"></ion-icon>
       <span>Catálogo</span>
     </div>
-    <div class="nav-item" 
+        <div class="nav-item" 
          [class.active]="activeSection === 'promo'"
          (click)="setActiveSection('promo')">
       <ion-icon name="pricetag-outline"></ion-icon>
       <span>Promo</span>
+    </div>
+    <div class="nav-item" 
+         [class.active]="activeSection === 'reviews'"
+         (click)="setActiveSection('reviews')">
+      <ion-icon name="star-outline"></ion-icon>
+      <span>Reseñas</span>
     </div>
   </div>
 
@@ -91,15 +104,28 @@
   <div class="section-content" *ngIf="activeSection === 'info'">
     
 
- <div class="contact-item" *ngIf="provider?.phone_contact || provider?.phone_number">
-          <ion-button
-            expand="block"
-            fill="solid"
-            color="success"
-            (click)="contactProvider()">
-            Contacto
-          </ion-button>
-        </div>
+    <!-- Botones de acción: Contacto y Calificar -->
+    <div class="action-buttons-container" *ngIf="(provider?.phone_contact || provider?.phone_number) || authService.isAuthenticated()">
+      <ion-button
+        *ngIf="provider?.phone_contact || provider?.phone_number"
+        class="action-button contact-button"
+        fill="solid"
+        color="success"
+        (click)="contactProvider()">
+        Contacto
+      </ion-button>
+      
+      <ion-button
+        *ngIf="canRate()"
+        class="action-button rating-button"
+        fill="outline"
+        color="warning"
+        (click)="openRatingModal()">
+        <ion-icon name="star" slot="start"></ion-icon>
+        Calificar
+      </ion-button>
+    </div>
+
     <!-- Horarios de atención -->
     <ion-card class="schedule-card" *ngIf="provider?.schedule">
       <ion-card-header>
@@ -145,7 +171,12 @@
         <!-- Mapa con Google Maps (siempre) -->
         <div class="map-container" *ngIf="provider?.address?.location">
           <div class="map-wrapper">
-            <div id="providerMap" #providerMap style="width:100%; height:300px; border-radius:12px;"></div>
+            <div id="providerMap" #providerMap style="width:100%; height:300px; border-radius:12px; background-color: #f0f0f0; display: flex; align-items: center; justify-content: center;">
+              <div *ngIf="!googleMapsAvailable" style="text-align: center; color: #666;">
+                <ion-spinner name="crescent"></ion-spinner>
+                <p>Cargando mapa...</p>
+              </div>
+            </div>
 
             <div class="map-overlay" (click)="openFullScreenMap()">
               <ion-icon name="expand-outline"></ion-icon>
@@ -160,6 +191,83 @@
             <div class="route-info" *ngIf="currentLocation" (click)="openDirections()" style="cursor: pointer;">
               <ion-icon name="location-outline"></ion-icon>
               <span>Ruta desde tu ubicación</span>
+            </div>
+          </div>
+        </div>
+      </ion-card-content>
+    </ion-card>
+  </div>
+
+  <!-- Sección de Reseñas -->
+  <div class="section-content" *ngIf="activeSection === 'reviews'">
+    <!-- Botón para calificar -->
+    <ion-card class="rating-card" *ngIf="canRate()">
+      <ion-card-content>
+        <ion-button
+          expand="block"
+          fill="outline"
+          color="warning"
+          (click)="openRatingModal()">
+          <ion-icon name="star" slot="start"></ion-icon>
+          Calificar este establecimiento
+        </ion-button>
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Lista de reseñas -->
+    <ion-card class="reviews-card">
+      <ion-card-header>
+        <ion-card-title>
+          <ion-icon name="star" color="warning"></ion-icon>
+          Calificaciones y Reseñas
+          <span class="reviews-count" *ngIf="reviews.length > 0">
+            ({{ reviews.length }})
+          </span>
+        </ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <div *ngIf="isLoadingReviews" class="loading-reviews">
+          <ion-spinner></ion-spinner>
+          <p>Cargando reseñas...</p>
+        </div>
+
+        <div *ngIf="!isLoadingReviews && reviews.length === 0" class="no-reviews">
+          <ion-icon name="star-outline" size="large"></ion-icon>
+          <p>No hay reseñas aún</p>
+          <p class="subtitle">Sé el primero en calificar este establecimiento</p>
+        </div>
+
+        <div *ngIf="!isLoadingReviews && reviews.length > 0" class="reviews-list">
+          <div class="review-item" *ngFor="let review of reviews">
+            <div class="review-header">
+              <div class="review-author">
+                <ion-avatar>
+                  <!-- 🔥 Mostrar foto de perfil del usuario, si no hay, mostrar icono -->
+                  <img 
+                    *ngIf="review.userProfileImage" 
+                    [src]="review.userProfileImage" 
+                    [alt]="review.name"
+                    (error)="onReviewImageError($event)">
+                  <ion-icon name="person" *ngIf="!review.userProfileImage"></ion-icon>
+                </ion-avatar>
+                <div class="review-info">
+                  <h3>{{ review.name || 'Usuario anónimo' }}</h3>
+                  <p class="review-date">{{ review.createdAt }}</p>
+                </div>
+              </div>
+              <div class="review-rating">
+                <ion-icon 
+                  *ngFor="let star of [1,2,3,4,5]"
+                  [name]="star <= review.rating ? 'star' : 'star-outline'"
+                  [color]="star <= review.rating ? 'warning' : 'medium'">
+                </ion-icon>
+              </div>
+            </div>
+            <div class="review-content" *ngIf="review.comment">
+              <p>{{ review.comment }}</p>
+            </div>
+            <div class="review-image" *ngIf="review.image">
+              <img [src]="review.image" [alt]="'Imagen de ' + review.name">
             </div>
           </div>
         </div>
@@ -517,24 +625,19 @@
 <!-- Modal de galería de imágenes - Estilo Tinder -->
 <ion-modal [isOpen]="isGalleryModalOpen" (didDismiss)="closeGalleryModal()" [presentingElement]="null">
   <ng-template>
-    <!-- Header flotante transparente -->
-    <ion-header [translucent]="true" class="gallery-header">
-      <ion-toolbar transparent>
-        <ion-buttons slot="end">
-          <ion-button (click)="closeGalleryModal()" fill="clear" class="close-button">
-            <ion-icon name="close" color="light"></ion-icon>
-          </ion-button>
-        </ion-buttons>
-      </ion-toolbar>
-    </ion-header>
-    
     <!-- Contenido de pantalla completa -->
     <div class="gallery-container" *ngIf="provider?.images?.length">
+      <!-- Botón de cerrar flotante -->
+      <ion-button (click)="closeGalleryModal()" fill="clear" class="gallery-close-button">
+        <ion-icon name="close" color="light"></ion-icon>
+      </ion-button>
       <div class="swiper gallery-swiper" #gallerySlider>
         <div class="swiper-wrapper">
           <div class="swiper-slide" *ngFor="let image of provider?.images; let i = index">
-            <div class="gallery-image-container">
-              <img [src]="image" [alt]="'Imagen ' + (i + 1)" class="gallery-image">
+            <div class="swiper-zoom-container">
+              <div class="gallery-image-container">
+                <img [src]="image" [alt]="'Imagen ' + (i + 1)" class="gallery-image">
+              </div>
             </div>
           </div>
         </div>
@@ -542,10 +645,10 @@
         <!-- Navegación discreta -->
         <div class="swiper-button-next"></div>
         <div class="swiper-button-prev"></div>
-        
-        <!-- Contador de imágenes -->
-        <div class="swiper-pagination"></div>
       </div>
+      
+      <!-- Contador de imágenes (fuera del swiper para mejor posicionamiento) -->
+      <div class="swiper-pagination"></div>
     </div>
   </ng-template>
 </ion-modal>
