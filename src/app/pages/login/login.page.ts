@@ -17,6 +17,7 @@ interface FormData {
   email: string;
   password: string;
   confirmPassword?: string;
+  acceptedTermsAndPrivacy?: boolean;
 }
 
 @Component({
@@ -46,7 +47,8 @@ export class LoginPage implements OnInit {
     name: '',
     lastname: '',
     phone: '',
-    confirmPassword: ''
+    confirmPassword: '',
+    acceptedTermsAndPrivacy: false
   };
 
 
@@ -242,13 +244,20 @@ export class LoginPage implements OnInit {
       if (phone && phone.length < 10) {
         throw new Error('El número de teléfono debe tener al menos 10 caracteres');
       }
+
+      // Validar aceptación de términos y política
+      if (!this.formData.acceptedTermsAndPrivacy) {
+        throw new Error('Debes aceptar los Términos y Condiciones de Uso y la Política de Privacidad para continuar');
+      }
       
       const response = await firstValueFrom(this.authService.register({
         name: this.formData.name.trim(),
         lastname: this.formData.lastname.trim(),
         email: this.formData.email,
         password: this.formData.password,
-        phone: phone || undefined // Enviar undefined si está vacío
+        phone: phone || undefined, // Enviar undefined si está vacío
+        acceptedTerms: true,
+        acceptedPrivacy: true
       }));
       
       console.log('✅ Registro exitoso:', response);

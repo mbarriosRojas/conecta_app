@@ -5,7 +5,6 @@ import { map, catchError } from 'rxjs/operators';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { Provider, Category, ProviderFilters, ApiResponse, PaginatedResponse, Product } from '../models/provider.model';
-import { Review, CreateReviewRequest, CreateReviewResponse, ReviewsResponse } from '../models/review.model';
 import { LocationService } from './location.service';
 import { StorageService } from './storage.service';
 
@@ -214,7 +213,7 @@ export class ApiService {
     this.setLoading(true);
     let params = new HttpParams();
     
-    // Agregar parámetros de ubicación si están disponibles
+    // Si se proporcionan coordenadas específicas, usarlas
     if (lat !== undefined && lng !== undefined) {
       params = params.set('lat', lat.toString());
       params = params.set('lng', lng.toString());
@@ -230,13 +229,10 @@ export class ApiService {
       );
   }
 
-  /**
-   * 🔥 NUEVO: Registrar click en un banner (para estadísticas)
-   */
+  // Registrar click en un banner
   registerBannerClick(bannerId: string): Observable<any> {
-    return this.http.post<ApiResponse<any>>(`${this.baseUrl}/api/banners/${bannerId}/click`, {})
+    return this.http.post<any>(`${this.baseUrl}/api/banners/${bannerId}/click`, {})
       .pipe(
-        map(response => response.data || {}),
         catchError(this.handleError.bind(this))
       );
   }
@@ -248,6 +244,28 @@ export class ApiService {
       .pipe(
         catchError(this.handleError.bind(this))
       );
+  }
+
+  // Reviews endpoints
+  createReview(reviewData: { providerId: string; rating: number; comment?: string; userProfileImage?: string }): Promise<any> {
+    return firstValueFrom(
+      this.http.post<any>(`${this.baseUrl}/api/provider/calification`, reviewData)
+        .pipe(
+          catchError(this.handleError.bind(this))
+        )
+    );
+  }
+
+  getProviderReviews(providerId: string): Promise<any[]> {
+    return firstValueFrom(
+      this.http.get<ApiResponse<any[]>>(`${this.baseUrl}/api/provider/providerReviewById/${providerId}`)
+        .pipe(
+          map(response => {
+            return response.data || [];
+          }),
+          catchError(this.handleError.bind(this))
+        )
+    );
   }
 
   addMapView(providerId: string): Observable<any> {
@@ -375,18 +393,10 @@ export class ApiService {
   // ===== PRODUCTOS ENDPOINTS =====
   
   // Obtener productos de un proveedor específico
-  // 🔥 NUEVO: Parámetro opcional para incluir productos inactivos (para propietarios al editar)
-  getProductsByProvider(providerId: string, options?: { includeInactive?: boolean }): Observable<ApiResponse<any[]>> {
+  getProductsByProvider(providerId: string): Observable<ApiResponse<any[]>> {
     this.setLoading(true);
-    let url = `${this.baseUrl}/api/product/provider/${providerId}`;
-    
-    // Agregar parámetro includeInactive si se solicita
-    if (options?.includeInactive) {
-      url += '?includeInactive=true';
-    }
-    
-    console.log(`ApiService - getProductsByProvider: ${url}`);
-    return this.http.get<ApiResponse<any[]>>(url)
+    console.log(`${this.baseUrl}/api/product/provider/${providerId}`);
+    return this.http.get<ApiResponse<any[]>>(`${this.baseUrl}/api/product/provider/${providerId}`)
       .pipe(
         map(response => {
           console.log('ApiService - getProductsByProvider: response:', response);
@@ -544,71 +554,5 @@ export class ApiService {
       .pipe(
         catchError(this.handleError.bind(this))
       );
-  }
-
-  // ==================== REVIEWS / CALIFICACIONES ====================
-
-  /**
-   * Obtener todas las calificaciones/reseñas de un provider
-   */
-  async getProviderReviews(providerId: string): Promise<Review[]> {
-    try {
-      const response = await firstValueFrom(
-        this.http.get<ReviewsResponse>(`${this.baseUrl}/api/provider/getCalification/provider/${providerId}`)
-      );
-      return response.data || [];
-    } catch (error) {
-      console.error('Error obteniendo reseñas:', error);
-      return [];
-    }
-  }
-
-  /**
-   * Crear una nueva calificación/reseña
-   */
-  async createReview(request: CreateReviewRequest): Promise<CreateReviewResponse> {
-    const headers = await this.getAuthHeaders();
-    const formData = new FormData();
-    
-    formData.append('providerId', request.providerId);
-    formData.append('rating', request.rating.toString());
-    
-    if (request.comment) {
-      formData.append('comment', request.comment);
-    }
-    
-    // 🔥 NUEVO: Incluir foto de perfil del usuario si está disponible
-    if (request.userProfileImage) {
-      formData.append('userProfileImage', request.userProfileImage);
-    }
-    
-    if (request.image) {
-      // Si la imagen es una data URL, convertirla a File
-      if (request.image.startsWith('data:')) {
-        const response = await fetch(request.image);
-        const blob = await response.blob();
-        const file = new File([blob], 'review-image.jpg', { type: 'image/jpeg' });
-        formData.append('image', file);
-      } else {
-        // Si es una URL, descargarla y convertirla
-        const response = await fetch(request.image);
-        const blob = await response.blob();
-        const file = new File([blob], 'review-image.jpg', { type: 'image/jpeg' });
-        formData.append('image', file);
-      }
-    }
-
-    // Actualizar headers para FormData
-    const formHeaders = new HttpHeaders();
-    const token = await this.storageService.get('auth_token');
-    if (token) {
-      formHeaders.set('Authorization', `Bearer ${token}`);
-    }
-
-    return await firstValueFrom(
-      this.http.post<CreateReviewResponse>(`${this.baseUrl}/api/provider/calification`, formData, {
-        headers: formHeaders
-      })
-    );
   }
 }

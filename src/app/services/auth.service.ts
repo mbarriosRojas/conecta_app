@@ -20,6 +20,8 @@ export interface RegisterRequest {
   email: string;
   password: string;
   phone?: string;
+  acceptedTerms?: boolean;
+  acceptedPrivacy?: boolean;
 }
 
 export interface LoginResponse {

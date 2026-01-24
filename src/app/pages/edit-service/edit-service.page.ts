@@ -67,84 +67,12 @@ export class EditServicePage implements OnInit {
     'TRANSPORTE', 'TURISMO', 'EVENTOS', 'FOTOGRAFÍA', 'DISEÑO',
     // Otros
     'OTROS', 'PROMOCIONES', 'OFERTAS'
-  ].sort(); // 🔥 Ordenar alfabéticamente
-  
-  // 🔥 NUEVO: Variables para el modal de categorías con búsqueda
-  isCategoryModalOpen = false;
-  categorySearchTerm = '';
-  filteredProductCategories: string[] = [];
+  ];
   isProductModalOpen = false;
   editingProduct: any = null;
-  productImagesPreviews: string[] = []; // Previsualizaciones de imágenes de productos seleccionadas
   isLoadingProduct = false;
   productTagsInput = '';
   canCreateProduct = true; // 🔥 NUEVO: Controla si el usuario puede crear productos
-
-  /**
-   * Mapeo de países a códigos de país para teléfonos
-   */
-  private getCountryCode(countryName: string): string {
-    const countryMap: { [key: string]: string } = {
-      'Venezuela': '+58',
-      'Colombia': '+57',
-      'México': '+52',
-      'Argentina': '+54',
-      'Perú': '+51',
-      'Chile': '+56',
-      'Ecuador': '+593',
-      'Bolivia': '+591',
-      'Paraguay': '+595',
-      'Uruguay': '+598',
-      'Brasil': '+55',
-      'Estados Unidos': '+1',
-      'España': '+34',
-      'Italia': '+39',
-      'Francia': '+33',
-      'Alemania': '+49',
-      'Reino Unido': '+44',
-      'Canadá': '+1'
-    };
-    
-    return countryMap[countryName] || '+58'; // Por defecto Venezuela
-  }
-
-  /**
-   * Formatear número de teléfono con código de país
-   */
-  private formatPhoneWithCountryCode(phone: string, countryName?: string): string {
-    if (!phone || !phone.trim()) {
-      return '';
-    }
-
-    // Limpiar el número: quitar espacios, paréntesis, guiones y + si existen
-    let cleanedPhone = phone.replace(/[^0-9]/g, '');
-    
-    // Si ya tiene código de país (empieza con código conocido), retornarlo tal cual
-    if (cleanedPhone.startsWith('58') || cleanedPhone.startsWith('57') || 
-        cleanedPhone.startsWith('52') || cleanedPhone.startsWith('54') ||
-        cleanedPhone.startsWith('51') || cleanedPhone.startsWith('56') ||
-        cleanedPhone.startsWith('593') || cleanedPhone.startsWith('591') ||
-        cleanedPhone.startsWith('595') || cleanedPhone.startsWith('598') ||
-        cleanedPhone.startsWith('55') || cleanedPhone.startsWith('1') ||
-        cleanedPhone.startsWith('34') || cleanedPhone.startsWith('39') ||
-        cleanedPhone.startsWith('33') || cleanedPhone.startsWith('49') ||
-        cleanedPhone.startsWith('44')) {
-      // Si ya tiene código de país pero no tiene el +, agregarlo
-      if (!phone.startsWith('+')) {
-        return '+' + cleanedPhone;
-      }
-      return phone.startsWith('+') ? phone : '+' + cleanedPhone;
-    }
-    
-    // Si no tiene código de país, agregarlo según el país del negocio
-    if (countryName) {
-      const countryCode = this.getCountryCode(countryName);
-      return countryCode + cleanedPhone;
-    }
-    
-    // Si no hay país, usar código por defecto de Venezuela
-    return '+58' + cleanedPhone;
-  }
   
   // Formulario de producto
   productFormData = {
@@ -294,12 +222,11 @@ export class EditServicePage implements OnInit {
 
   async loadProducts() {
     try {
-      // 🔥 NUEVO: Cargar TODOS los productos (activos e inactivos) para el propietario al editar
-      const response = await firstValueFrom(this.apiService.getProductsByProvider(this.providerId, { includeInactive: true }));
+      const response = await firstValueFrom(this.apiService.getProductsByProvider(this.providerId));
       // Los productos están en response.data.products
       this.products = (response?.data as any)?.products || [];
       this.filteredProducts = [...this.products]; // Inicializar productos filtrados
-      console.log('EditService - Products loaded (including inactive):', this.products);
+      console.log('EditService - Products loaded:', this.products);
     } catch (error) {
       console.error('Error loading products:', error);
       this.showErrorToast('Error al cargar los productos');
@@ -698,15 +625,8 @@ export class EditServicePage implements OnInit {
         const response = await fetch(image.webPath);
         const blob = await response.blob();
         const file = new File([blob], `product_photo_${Date.now()}.jpg`, { type: 'image/jpeg' });
-        this.productFormData.images.push(file);
-        
-        // Crear preview de la imagen
-        const reader = new FileReader();
-        reader.onload = (e: any) => {
-          this.productImagesPreviews.push(e.target.result);
-        };
-        reader.readAsDataURL(file);
-        
+        // 🚀 CAMBIO: Reemplazar imagen en lugar de agregar
+        this.productFormData.images = [file];
         this.showSuccessToast('Foto del producto tomada correctamente');
       }
     } catch (error) {
@@ -728,15 +648,8 @@ export class EditServicePage implements OnInit {
         const response = await fetch(image.webPath);
         const blob = await response.blob();
         const file = new File([blob], `product_gallery_${Date.now()}.jpg`, { type: 'image/jpeg' });
-        this.productFormData.images.push(file);
-        
-        // Crear preview de la imagen
-        const reader = new FileReader();
-        reader.onload = (e: any) => {
-          this.productImagesPreviews.push(e.target.result);
-        };
-        reader.readAsDataURL(file);
-        
+        // 🚀 CAMBIO: Reemplazar imagen en lugar de agregar
+        this.productFormData.images = [file];
         this.showSuccessToast('Imagen del producto seleccionada correctamente');
       }
     } catch (error) {
@@ -857,21 +770,8 @@ export class EditServicePage implements OnInit {
       formData.append('name', this.formData.name);
       formData.append('description', this.formData.description);
       formData.append('category', this.formData.categoryId);
-      
-      // 🔥 Agregar código de país a los números de teléfono
-      const formattedPhoneContact = this.formatPhoneWithCountryCode(
-        this.formData.phone_contact.trim(),
-        this.formData.address.country
-      );
-      const formattedPhoneNumber = this.formData.phone_number.trim() 
-        ? this.formatPhoneWithCountryCode(
-            this.formData.phone_number.trim(),
-            this.formData.address.country
-          )
-        : '';
-      
-      formData.append('phone_contact', formattedPhoneContact);
-      formData.append('phone_number', formattedPhoneNumber);
+      formData.append('phone_contact', this.formData.phone_contact);
+      formData.append('phone_number', this.formData.phone_number);
       formData.append('email', this.formData.email);
       formData.append('site_web', this.formData.site_web);
       formData.append('video', this.formData.video);
@@ -966,7 +866,7 @@ export class EditServicePage implements OnInit {
       message,
       duration: 3000,
       color: 'danger',
-      position: 'top'
+      position: 'bottom'
     });
     await toast.present();
   }
@@ -976,53 +876,15 @@ export class EditServicePage implements OnInit {
       message,
       duration: 2000,
       color: 'success',
-      position: 'top'
+      position: 'bottom'
     });
     await toast.present();
   }
 
   // ===== MÉTODOS PARA GESTIÓN DE PRODUCTOS =====
 
-  // 🔥 NUEVO: Métodos para el modal de categorías con búsqueda
-  openCategoryModal() {
-    this.isCategoryModalOpen = true;
-    this.categorySearchTerm = '';
-    this.filterProductCategories();
-  }
-
-  closeCategoryModal() {
-    this.isCategoryModalOpen = false;
-    this.categorySearchTerm = '';
-    this.filterProductCategories();
-  }
-
-  onCategorySearchChange(event: any) {
-    this.categorySearchTerm = event.detail.value?.toLowerCase() || '';
-    this.filterProductCategories();
-  }
-
-  filterProductCategories() {
-    if (!this.categorySearchTerm) {
-      this.filteredProductCategories = [...this.productCategories];
-    } else {
-      this.filteredProductCategories = this.productCategories.filter(category =>
-        category.toLowerCase().includes(this.categorySearchTerm)
-      );
-    }
-  }
-
-  selectProductCategory(category: string) {
-    this.productFormData.category = category;
-    this.closeCategoryModal();
-  }
-
   openProductModal(product?: any) {
     this.editingProduct = product || null;
-    // Limpiar previews al abrir modal (se regenerarán al seleccionar nuevas imágenes)
-    this.productImagesPreviews = [];
-    
-    // 🔥 NUEVO: Inicializar categorías filtradas (ya están ordenadas alfabéticamente)
-    this.filteredProductCategories = [...this.productCategories];
     
     if (product) {
       // Editar producto existente
@@ -1121,23 +983,15 @@ export class EditServicePage implements OnInit {
       images: []
     };
     this.productTagsInput = '';
-    // Limpiar previews de imágenes
-    this.productImagesPreviews = [];
-  }
-
-  /**
-   * Eliminar imagen de producto seleccionada
-   */
-  removeProductImage(index: number) {
-    if (index >= 0 && index < this.productFormData.images.length) {
-      this.productFormData.images.splice(index, 1);
-      this.productImagesPreviews.splice(index, 1);
-    }
   }
 
   onProductImagesSelected(event: any) {
     const files = Array.from(event.target.files) as File[];
-    this.productFormData.images = files;
+    // 🚀 CAMBIO: Solo UNA imagen - tomar solo la primera
+    if (files.length > 0) {
+      this.productFormData.images = [files[0]];
+      this.showSuccessToast('Imagen seleccionada. Puedes cambiarla si te equivocaste.');
+    }
   }
 
   async saveProduct() {
@@ -1228,12 +1082,11 @@ export class EditServicePage implements OnInit {
         formData.append('tags', JSON.stringify(tags));
       }
 
-      // 🔥 Imágenes - Agregar logging para debugging
-      console.log('📸 Agregando imágenes al FormData:', this.productFormData.images.length);
-      this.productFormData.images.forEach((image, index) => {
-        console.log(`📸 Imagen ${index + 1}:`, image.name, image.size, 'bytes');
-        formData.append('images', image);
-      });
+      // 🚀 CAMBIO: Solo UNA imagen - enviar solo la primera
+      if (this.productFormData.images && this.productFormData.images.length > 0) {
+        console.log('📸 Agregando imagen al FormData:', this.productFormData.images[0].name);
+        formData.append('images', this.productFormData.images[0]);
+      }
 
       let response;
       if (this.editingProduct) {
@@ -1279,9 +1132,10 @@ export class EditServicePage implements OnInit {
       return false;
     }
     
-    // 🔥 IMPORTANTE: Validar que se hayan seleccionado imágenes
-    if (!this.productFormData.images || this.productFormData.images.length === 0) {
-      this.showErrorToast('Debe seleccionar al menos una imagen para el producto');
+    // 🔥 IMPORTANTE: Validar que se haya seleccionado una imagen (solo para productos nuevos)
+    // Si está editando, puede mantener la imagen existente
+    if (!this.editingProduct && (!this.productFormData.images || this.productFormData.images.length === 0)) {
+      this.showErrorToast('Debe seleccionar una imagen para el producto');
       return false;
     }
     

@@ -107,11 +107,34 @@
         </app-shared-input>
       </div>
 
+      <!-- Aceptación de Términos (solo en registro) -->
+      <div class="form-group legal-checkboxes" *ngIf="!isLogin" [@slideIn]>
+        <ion-item class="checkbox-item">
+          <ion-checkbox 
+            [(ngModel)]="formData.acceptedTermsAndPrivacy" 
+            name="acceptedTermsAndPrivacy"
+            [required]="true"
+            slot="start">
+          </ion-checkbox>
+          <ion-label class="checkbox-label">
+            Acepto los 
+            <a href="https://akicerca.app/terminos-condiciones" target="_blank" class="legal-link">
+              Términos y Condiciones de Uso
+            </a>
+            y la 
+            <a href="https://akicerca.app/politica-privacidad" target="_blank" class="legal-link">
+              Política de Privacidad y Tratamiento de Datos
+            </a>
+            *
+          </ion-label>
+        </ion-item>
+      </div>
+
       <!-- Botón principal -->
       <ion-button 
         expand="block" 
         type="submit"
-        [disabled]="!loginForm.form.valid || isLoading"
+        [disabled]="!loginForm.form.valid || isLoading || (!isLogin && !formData.acceptedTermsAndPrivacy)"
         class="submit-button">
         <ion-spinner *ngIf="isLoading" name="crescent"></ion-spinner>
         <span *ngIf="!isLoading">{{ isLogin ? 'Iniciar Sesión' : 'Crear Cuenta' }}</span>

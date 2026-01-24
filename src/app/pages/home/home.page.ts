@@ -1383,7 +1383,7 @@ export class HomePage implements OnInit, AfterViewInit {
         const bannerId = typeof banner._id === 'object' ? banner._id.toString() : banner._id;
         this.apiService.registerBannerClick(bannerId).subscribe({
           next: () => console.log('✅ Click de banner registrado'),
-          error: (error) => console.error('Error registrando click del banner:', error)
+          error: (error: any) => console.error('Error registrando click del banner:', error)
         });
       }
       

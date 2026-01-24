@@ -28,24 +28,39 @@
           <ion-icon [name]="expandedSections.basic ? 'chevron-up' : 'chevron-down'" class="expand-icon"></ion-icon>
         </ion-card-header>
         <ion-card-content *ngIf="expandedSections.basic" class="expandable-content">
-          <ion-item>
-            <ion-label position="stacked">Nombre del servicio *</ion-label>
-            <ion-input [(ngModel)]="formData.name" name="name" required></ion-input>
-          </ion-item>
+          <div class="settings-item">
+            <div class="item-icon">
+              <ion-icon name="business"></ion-icon>
+            </div>
+            <div class="item-content">
+              <div class="item-label">Nombre del servicio</div>
+              <ion-input [(ngModel)]="formData.name" name="name" required placeholder="Nombre de tu servicio"></ion-input>
+            </div>
+          </div>
 
-          <ion-item>
-            <ion-label position="stacked">Descripción *</ion-label>
-            <ion-textarea [(ngModel)]="formData.description" name="description" required rows="4"></ion-textarea>
-          </ion-item>
+          <div class="settings-item">
+            <div class="item-icon">
+              <ion-icon name="document-text"></ion-icon>
+            </div>
+            <div class="item-content">
+              <div class="item-label">Descripción</div>
+              <ion-textarea [(ngModel)]="formData.description" name="description" required rows="3" placeholder="Describe tu servicio"></ion-textarea>
+            </div>
+          </div>
 
-          <ion-item>
-            <ion-label position="stacked">Categoría *</ion-label>
-            <ion-select [(ngModel)]="formData.categoryId" name="categoryId" required>
-              <ion-select-option *ngFor="let category of categories" [value]="category._id">
-                {{ category.name }}
-              </ion-select-option>
-            </ion-select>
-          </ion-item>
+          <div class="settings-item">
+            <div class="item-icon">
+              <ion-icon name="grid"></ion-icon>
+            </div>
+            <div class="item-content">
+              <div class="item-label">Categoría</div>
+              <ion-select [(ngModel)]="formData.categoryId" name="categoryId" required placeholder="Selecciona una categoría">
+                <ion-select-option *ngFor="let category of categories" [value]="category._id">
+                  {{ category.name }}
+                </ion-select-option>
+              </ion-select>
+            </div>
+          </div>
         </ion-card-content>
       </ion-card>
 
@@ -59,25 +74,45 @@
           <ion-icon [name]="expandedSections.contact ? 'chevron-up' : 'chevron-down'" class="expand-icon"></ion-icon>
         </ion-card-header>
         <ion-card-content *ngIf="expandedSections.contact" class="expandable-content">
-          <ion-item>
-            <ion-label position="stacked">Teléfono de contacto *</ion-label>
-            <ion-input [(ngModel)]="formData.phone_contact" name="phone_contact" type="tel" required></ion-input>
-          </ion-item>
+          <div class="settings-item">
+            <div class="item-icon">
+              <ion-icon name="call"></ion-icon>
+            </div>
+            <div class="item-content">
+              <div class="item-label">Teléfono de contacto</div>
+              <ion-input [(ngModel)]="formData.phone_contact" name="phone_contact" type="tel" required placeholder="Número principal"></ion-input>
+            </div>
+          </div>
 
-          <ion-item>
-            <ion-label position="stacked">Teléfono adicional</ion-label>
-            <ion-input [(ngModel)]="formData.phone_number" name="phone_number" type="tel"></ion-input>
-          </ion-item>
+          <div class="settings-item">
+            <div class="item-icon">
+              <ion-icon name="phone-portrait"></ion-icon>
+            </div>
+            <div class="item-content">
+              <div class="item-label">Teléfono adicional</div>
+              <ion-input [(ngModel)]="formData.phone_number" name="phone_number" type="tel" placeholder="Número secundario"></ion-input>
+            </div>
+          </div>
 
-          <ion-item>
-            <ion-label position="stacked">Email</ion-label>
-            <ion-input [(ngModel)]="formData.email" name="email" type="email"></ion-input>
-          </ion-item>
+          <div class="settings-item">
+            <div class="item-icon">
+              <ion-icon name="mail"></ion-icon>
+            </div>
+            <div class="item-content">
+              <div class="item-label">Email</div>
+              <ion-input [(ngModel)]="formData.email" name="email" type="email" placeholder="correo@ejemplo.com"></ion-input>
+            </div>
+          </div>
 
-          <ion-item>
-            <ion-label position="stacked">Sitio web</ion-label>
-            <ion-input [(ngModel)]="formData.site_web" name="site_web" type="url" placeholder="https://"></ion-input>
-          </ion-item>
+          <div class="settings-item">
+            <div class="item-icon">
+              <ion-icon name="globe"></ion-icon>
+            </div>
+            <div class="item-content">
+              <div class="item-label">Sitio web</div>
+              <ion-input [(ngModel)]="formData.site_web" name="site_web" type="url" placeholder="https://mi-sitio.com"></ion-input>
+            </div>
+          </div>
         </ion-card-content>
       </ion-card>
 
@@ -91,25 +126,45 @@
           <ion-icon [name]="expandedSections.social ? 'chevron-up' : 'chevron-down'" class="expand-icon"></ion-icon>
         </ion-card-header>
         <ion-card-content *ngIf="expandedSections.social" class="expandable-content">
-          <ion-item>
-            <ion-label position="stacked">Facebook</ion-label>
-            <ion-input [(ngModel)]="formData.facebook" name="facebook" placeholder="https://facebook.com/mi-pagina"></ion-input>
-          </ion-item>
+          <div class="settings-item">
+            <div class="item-icon facebook">
+              <ion-icon name="logo-facebook"></ion-icon>
+            </div>
+            <div class="item-content">
+              <div class="item-label">Facebook</div>
+              <ion-input [(ngModel)]="formData.facebook" name="facebook" placeholder="https://facebook.com/mi-pagina"></ion-input>
+            </div>
+          </div>
 
-          <ion-item>
-            <ion-label position="stacked">Instagram</ion-label>
-            <ion-input [(ngModel)]="formData.instagram" name="instagram" placeholder="https://instagram.com/mi-cuenta"></ion-input>
-          </ion-item>
+          <div class="settings-item">
+            <div class="item-icon instagram">
+              <ion-icon name="logo-instagram"></ion-icon>
+            </div>
+            <div class="item-content">
+              <div class="item-label">Instagram</div>
+              <ion-input [(ngModel)]="formData.instagram" name="instagram" placeholder="https://instagram.com/mi-cuenta"></ion-input>
+            </div>
+          </div>
 
-          <ion-item>
-            <ion-label position="stacked">TikTok</ion-label>
-            <ion-input [(ngModel)]="formData.tiktok" name="tiktok" placeholder="https://tiktok.com/@mi-cuenta"></ion-input>
-          </ion-item>
+          <div class="settings-item">
+            <div class="item-icon tiktok">
+              <ion-icon name="logo-tiktok"></ion-icon>
+            </div>
+            <div class="item-content">
+              <div class="item-label">TikTok</div>
+              <ion-input [(ngModel)]="formData.tiktok" name="tiktok" placeholder="https://tiktok.com/@mi-cuenta"></ion-input>
+            </div>
+          </div>
 
-          <ion-item>
-            <ion-label position="stacked">LinkedIn</ion-label>
-            <ion-input [(ngModel)]="formData.linkedin" name="linkedin" placeholder="https://linkedin.com/in/mi-perfil"></ion-input>
-          </ion-item>
+          <div class="settings-item">
+            <div class="item-icon linkedin">
+              <ion-icon name="logo-linkedin"></ion-icon>
+            </div>
+            <div class="item-content">
+              <div class="item-label">LinkedIn</div>
+              <ion-input [(ngModel)]="formData.linkedin" name="linkedin" placeholder="https://linkedin.com/in/mi-perfil"></ion-input>
+            </div>
+          </div>
         </ion-card-content>
       </ion-card>
 
@@ -176,56 +231,46 @@
               </ion-searchbar>
             </div>
 
-            <!-- Lista de productos (estilo WhatsApp) -->
-            <div class="products-list whatsapp-style">
-              <div *ngFor="let product of filteredProducts; let i = index" class="product-item-whatsapp">
-                <!-- Avatar/Imagen del producto -->
-                <div class="product-avatar">
-                  <div class="avatar-container" *ngIf="product.images && product.images.length > 0">
-                    <img [src]="product.images[0]" [alt]="product.name" (error)="onImageError($event)">
-                    <div class="featured-badge" *ngIf="product.featured">
-                      <ion-icon name="star"></ion-icon>
+            <!-- Scroll de fotos de productos -->
+            <div class="products-photos-scroll">
+              <div class="products-photos-container">
+                <div *ngFor="let product of filteredProducts; let i = index" 
+                     class="product-photo-item" 
+                     (click)="selectProduct(product)"
+                     [class.selected]="selectedProduct?.id === product.id">
+                  <div class="product-photo">
+                    <img *ngIf="product.images && product.images.length > 0" 
+                         [src]="product.images[0]" 
+                         [alt]="product.name"
+                         (error)="onImageError($event)">
+                    <div *ngIf="!product.images || product.images.length === 0" class="no-image">
+                      <ion-icon name="cube-outline"></ion-icon>
                     </div>
                   </div>
-                  <div class="avatar-container default" *ngIf="!product.images || product.images.length === 0">
-                    <ion-icon name="cube-outline"></ion-icon>
+                  <div class="product-photo-name">{{ product.name }}</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Lista de productos -->
+            <div class="products-list">
+              <div *ngFor="let product of filteredProducts; let i = index" class="product-item">
+                <div class="product-info">
+                  <div class="product-name">{{ product.name }}</div>
+                  <div class="product-description">{{ product.description }}</div>
+                  <div class="product-details">
+                    <span class="product-category">{{ product.category }}</span>
+                    <span *ngIf="product.price" class="product-price">${{ product.price | number }}</span>
+                    <span *ngIf="!product.price" class="product-price-consult">Consultar precio</span>
+                    <span *ngIf="product.featured" class="product-featured">⭐ Destacado</span>
                   </div>
                 </div>
-                
-                <!-- Información del producto -->
-                <div class="product-content-whatsapp" (click)="editProduct(product)">
-                  <div class="product-header-whatsapp">
-                    <h3 class="product-name-whatsapp">{{ product.name }}</h3>
-                    <span class="product-time" *ngIf="product.price">${{ product.price | number:'1.0-0' }}</span>
-                    <span class="product-time no-price" *ngIf="!product.price">Consultar</span>
-                  </div>
-                  
-                  <div class="product-preview-whatsapp">
-                    <p class="product-description-whatsapp" *ngIf="product.description">{{ product.description }}</p>
-                    <p class="product-description-whatsapp empty" *ngIf="!product.description">Sin descripción</p>
-                  </div>
-                  
-                  <div class="product-meta-whatsapp">
-                    <span class="product-category-badge">{{ product.category }}</span>
-                    <span class="product-featured-badge" *ngIf="product.featured">
-                      <ion-icon name="star"></ion-icon>
-                      Destacado
-                    </span>
-                    <!-- 🔥 NUEVO: Indicador visual para productos inactivos (solo visible para propietario) -->
-                    <span class="product-inactive-badge" *ngIf="!product.isActive" color="medium">
-                      <ion-icon name="eye-off-outline"></ion-icon>
-                      Inactivo
-                    </span>
-                  </div>
-                </div>
-                
-                <!-- Acciones (menú de opciones) -->
-                <div class="product-actions-whatsapp">
-                  <ion-button fill="clear" size="small" (click)="editProduct(product); $event.stopPropagation()">
-                    <ion-icon name="create-outline" slot="icon-only"></ion-icon>
+                <div class="product-actions">
+                  <ion-button fill="clear" (click)="editProduct(product)">
+                    <ion-icon name="create"></ion-icon>
                   </ion-button>
-                  <ion-button fill="clear" size="small" color="danger" (click)="deleteProduct(product._id, i); $event.stopPropagation()">
-                    <ion-icon name="trash-outline" slot="icon-only"></ion-icon>
+                  <ion-button fill="clear" color="danger" (click)="deleteProduct(product._id, i)">
+                    <ion-icon name="trash"></ion-icon>
                   </ion-button>
                 </div>
               </div>
@@ -245,21 +290,29 @@
         </ion-card-header>
         <ion-card-content *ngIf="expandedSections.schedule" class="expandable-content">
           <div *ngFor="let schedule of formData.schedule; let i = index" class="schedule-item">
-            <ion-item>
-              <ion-checkbox [(ngModel)]="schedule.active" name="schedule{{i}}active"></ion-checkbox>
-              <ion-label>{{ schedule.day }}</ion-label>
-            </ion-item>
-            
-            <div *ngIf="schedule.active" class="schedule-times">
-              <ion-item>
-                <ion-label position="stacked">Hora de inicio</ion-label>
-                <ion-input [(ngModel)]="schedule.start" name="start{{i}}" type="time"></ion-input>
-              </ion-item>
-
-              <ion-item>
-                <ion-label position="stacked">Hora de cierre</ion-label>
-                <ion-input [(ngModel)]="schedule.end" name="end{{i}}" type="time"></ion-input>
-              </ion-item>
+            <div class="settings-item">
+              <div class="item-icon">
+                <ion-icon name="time"></ion-icon>
+              </div>
+              <div class="item-content">
+                <div class="schedule-day">
+                  <ion-checkbox [(ngModel)]="schedule.active" name="schedule{{i}}active"></ion-checkbox>
+                  <span class="day-name">{{ schedule.day }}</span>
+                </div>
+                
+                <div *ngIf="schedule.active" class="schedule-times">
+                  <div class="time-inputs">
+                    <div class="time-input">
+                      <label>Inicio</label>
+                      <ion-input [(ngModel)]="schedule.start" name="start{{i}}" type="time"></ion-input>
+                    </div>
+                    <div class="time-input">
+                      <label>Cierre</label>
+                      <ion-input [(ngModel)]="schedule.end" name="end{{i}}" type="time"></ion-input>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </ion-card-content>
@@ -277,26 +330,39 @@
         </ion-card-header>
         <ion-card-content *ngIf="expandedSections.questions" class="expandable-content">
           <div *ngFor="let question of formData.questions; let i = index" class="question-item">
-            <ion-item>
-              <ion-label position="stacked">Pregunta</ion-label>
-              <ion-input [(ngModel)]="question.question" name="question{{i}}"></ion-input>
-            </ion-item>
+            <div class="settings-item">
+              <div class="item-icon">
+                <ion-icon name="help-circle"></ion-icon>
+              </div>
+              <div class="item-content">
+                <div class="question-content">
+                  <div class="question-input">
+                    <label>Pregunta</label>
+                    <ion-input [(ngModel)]="question.question" name="question{{i}}" placeholder="¿Cuál es tu pregunta?"></ion-input>
+                  </div>
 
-            <ion-item>
-              <ion-label position="stacked">Respuesta</ion-label>
-              <ion-textarea [(ngModel)]="question.answer" name="answer{{i}}" rows="3"></ion-textarea>
-            </ion-item>
+                  <div class="answer-input">
+                    <label>Respuesta</label>
+                    <ion-textarea [(ngModel)]="question.answer" name="answer{{i}}" rows="2" placeholder="Escribe la respuesta aquí"></ion-textarea>
+                  </div>
 
-            <ion-button fill="clear" color="danger" (click)="removeQuestion(i)" *ngIf="formData.questions.length > 1">
-              <ion-icon name="trash" slot="start"></ion-icon>
-              Eliminar
-            </ion-button>
+                  <ion-button fill="clear" color="danger" (click)="removeQuestion(i)" *ngIf="formData.questions.length > 1">
+                    <ion-icon name="trash" slot="start"></ion-icon>
+                    Eliminar
+                  </ion-button>
+                </div>
+              </div>
+            </div>
           </div>
 
-          <ion-button fill="outline" (click)="addQuestion()">
-            <ion-icon name="add" slot="start"></ion-icon>
-            Agregar pregunta
-          </ion-button>
+          <div class="settings-item">
+            <div class="item-icon" (click)="addQuestion()">
+              <ion-icon name="add-circle"></ion-icon>
+            </div>
+            <div class="item-content">
+              <div class="item-label add-new" (click)="addQuestion()">Agregar nueva pregunta</div>
+            </div>
+          </div>
         </ion-card-content>
       </ion-card>
 
@@ -549,21 +615,11 @@
 
               <ion-item>
                 <ion-label position="stacked">Categoría *</ion-label>
-                <ion-input 
-                  [(ngModel)]="productFormData.category" 
-                  name="productCategory" 
-                  readonly
-                  required
-                  placeholder="Selecciona una categoría"
-                  (click)="openCategoryModal()">
-                </ion-input>
-                <ion-button 
-                  fill="clear" 
-                  slot="end" 
-                  (click)="openCategoryModal()"
-                  class="category-select-button">
-                  <ion-icon name="chevron-down-outline"></ion-icon>
-                </ion-button>
+                <ion-select [(ngModel)]="productFormData.category" name="productCategory" required>
+                  <ion-select-option *ngFor="let category of productCategories" [value]="category">
+                    {{ category }}
+                  </ion-select-option>
+                </ion-select>
               </ion-item>
 
               <ion-item>
@@ -618,50 +674,50 @@
               <ion-card-title>Imágenes del Producto</ion-card-title>
             </ion-card-header>
             <ion-card-content>
-              <!-- Imágenes actuales del producto (si está editando) -->
+              <!-- Imagen actual del producto (si está editando) -->
               <div *ngIf="editingProduct?.images && editingProduct.images.length > 0" class="current-product-images">
-                <h5>Imágenes actuales</h5>
+                <h5>Imagen actual</h5>
                 <div class="product-images-grid">
-                  <div *ngFor="let image of editingProduct.images; let i = index" class="product-image-item">
-                    <img [src]="image" [alt]="editingProduct.name" class="product-image">
+                  <div class="product-image-item">
+                    <img [src]="editingProduct.images[0]" [alt]="editingProduct.name" class="product-image">
                   </div>
                 </div>
+                <ion-note color="medium" style="display: block; margin-top: 8px;">
+                  Selecciona una nueva imagen para reemplazarla
+                </ion-note>
               </div>
 
-              <!-- Seleccionar nuevas imágenes -->
+              <!-- Seleccionar imagen (solo UNA) -->
               <div class="product-images-section">
-                <h5>Agregar nuevas imágenes</h5>
-                
-                <!-- Grid de imágenes seleccionadas con previews -->
-                <div class="product-images-grid" *ngIf="productImagesPreviews.length > 0">
-                  <div class="image-preview" *ngFor="let preview of productImagesPreviews; let i = index">
-                    <img [src]="preview" alt="Product image preview" class="preview-image">
-                    <ion-button 
-                      fill="clear" 
-                      color="danger" 
-                      size="small" 
-                      class="remove-image-btn"
-                      (click)="removeProductImage(i)">
-                      <ion-icon name="trash"></ion-icon>
-                    </ion-button>
-                  </div>
-                </div>
-                
-                <!-- Botón para agregar imágenes -->
+                <h5>{{ editingProduct ? 'Cambiar imagen' : 'Seleccionar imagen' }}</h5>
                 <ion-button expand="block" fill="outline" (click)="selectProductImages()">
                   <ion-icon name="camera" slot="start"></ion-icon>
-                  {{ productFormData.images.length > 0 ? 'Agregar más imágenes' : 'Seleccionar imágenes' }}
+                  {{ productFormData.images.length > 0 ? 'Cambiar imagen' : 'Seleccionar imagen' }}
                 </ion-button>
                 
-                <!-- Mensaje de cantidad seleccionada -->
-                <p *ngIf="productFormData.images.length > 0" class="file-selected">
-                  <ion-icon name="checkmark-circle" color="success"></ion-icon>
-                  {{ productFormData.images.length }} imagen(es) seleccionada(s)
+                <p *ngIf="productFormData.images.length === 0" class="no-file-selected">
+                  {{ editingProduct ? 'La imagen actual se mantendrá. Selecciona una nueva para reemplazarla.' : 'Ningún archivo seleccionado' }}
                 </p>
+                <div *ngIf="productFormData.images.length > 0" class="selected-product-files">
+                  <p class="file-selected">
+                    <ion-icon name="checkmark-circle" color="success"></ion-icon>
+                    Imagen seleccionada
+                  </p>
+                  <div class="selected-images-list">
+                    <ion-chip color="primary">
+                      <ion-icon name="image"></ion-icon>
+                      <ion-label>{{ productFormData.images[0].name }}</ion-label>
+                      <ion-icon name="close" (click)="productFormData.images = []"></ion-icon>
+                    </ion-chip>
+                  </div>
+                  <ion-note color="medium" style="display: block; margin-top: 8px;">
+                    Si te equivocaste, elimina esta imagen y selecciona otra
+                  </ion-note>
+                </div>
               </div>
 
               <ion-note color="medium">
-                Puedes subir múltiples imágenes para mostrar diferentes ángulos del producto.
+                Solo se permite una imagen por producto. Si te equivocas, elimina la imagen seleccionada y elige otra.
               </ion-note>
             </ion-card-content>
           </ion-card>
@@ -981,53 +1037,6 @@
           </div>
 
         </form>
-      </ion-content>
-    </ng-template>
-  </ion-modal>
-
-  <!-- Modal para selección de categoría con búsqueda -->
-  <ion-modal [isOpen]="isCategoryModalOpen" (didDismiss)="closeCategoryModal()">
-    <ng-template>
-      <ion-header>
-        <ion-toolbar>
-          <ion-title>Seleccionar Categoría</ion-title>
-          <ion-buttons slot="end">
-            <ion-button (click)="closeCategoryModal()">
-              <ion-icon name="close"></ion-icon>
-            </ion-button>
-          </ion-buttons>
-        </ion-toolbar>
-      </ion-header>
-      
-      <ion-content>
-        <!-- Buscador de categorías -->
-        <div class="category-search-container">
-          <ion-searchbar 
-            [(ngModel)]="categorySearchTerm" 
-            (ionInput)="onCategorySearchChange($event)"
-            placeholder="Buscar categoría..."
-            show-clear-button="focus">
-          </ion-searchbar>
-        </div>
-
-        <!-- Lista de categorías -->
-        <ion-list>
-          <ion-item 
-            *ngFor="let category of filteredProductCategories" 
-            button
-            (click)="selectProductCategory(category)"
-            [class.selected]="productFormData.category === category">
-            <ion-label>{{ category }}</ion-label>
-            <ion-icon *ngIf="productFormData.category === category" name="checkmark" slot="end" color="primary"></ion-icon>
-          </ion-item>
-
-          <!-- Mensaje cuando no hay resultados -->
-          <ion-item *ngIf="filteredProductCategories.length === 0">
-            <ion-label class="ion-text-center">
-              <p>No se encontraron categorías</p>
-            </ion-label>
-          </ion-item>
-        </ion-list>
       </ion-content>
     </ng-template>
   </ion-modal>

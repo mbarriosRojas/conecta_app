@@ -493,3 +493,77 @@ ion-button[disabled] {
   }
 }
 
+// Estilos para checkboxes legales
+.legal-checkboxes {
+  margin-top: 16px;
+  margin-bottom: 20px;
+
+  .checkbox-item {
+    --background: transparent;
+    --padding-start: 0;
+    --padding-end: 0;
+    --inner-padding-end: 0;
+    --inner-padding-start: 0;
+    --min-height: auto;
+    margin-bottom: 0;
+    border: none;
+    box-shadow: none;
+    padding: 12px;
+    border-radius: 8px;
+    transition: background-color 0.2s ease;
+
+    &:hover {
+      --background: rgba(var(--ion-color-primary-rgb, 42, 132, 115), 0.05);
+    }
+
+    ion-checkbox {
+      --size: 20px;
+      --checkbox-background-checked: var(--ion-color-primary, #2a8473);
+      --border-color-checked: var(--ion-color-primary, #2a8473);
+      margin-right: 12px;
+      flex-shrink: 0;
+    }
+
+    .checkbox-label {
+      font-size: 14px;
+      line-height: 1.6;
+      color: var(--ion-text-color, #333);
+      white-space: normal;
+      margin: 0;
+      display: inline;
+      word-wrap: break-word;
+
+      .legal-link {
+        color: var(--ion-color-primary, #2a8473);
+        text-decoration: none;
+        font-weight: 600;
+        border-bottom: 1px solid transparent;
+        transition: border-color 0.2s ease;
+
+        &:hover {
+          border-bottom-color: var(--ion-color-primary, #2a8473);
+        }
+      }
+    }
+  }
+}
+
+// Dark mode para checkboxes legales
+@media (prefers-color-scheme: dark) {
+  .legal-checkboxes {
+    .checkbox-item {
+      .checkbox-label {
+        color: var(--ion-text-color, #ffffff);
+
+        .legal-link {
+          color: #4dd0e1;
+
+          &:hover {
+            border-bottom-color: #4dd0e1;
+          }
+        }
+      }
+    }
+  }
+}
+
