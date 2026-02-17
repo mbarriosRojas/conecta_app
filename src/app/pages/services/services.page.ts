@@ -41,8 +41,15 @@ export class ServicesPage implements OnInit {
       this.router.navigate(['/login'], { queryParams: { returnUrl: '/tabs/tab2' } });
       return;
     }
-    
-    this.loadUserProviders();
+  }
+
+  /**
+   * Se ejecuta cada vez que el usuario entra a esta vista.
+   * Siempre invalida cache y recarga para mostrar servicios actualizados (incl. recién creados).
+   */
+  async ionViewWillEnter() {
+    if (!this.authService.isAuthenticated()) return;
+    await this.refresh();
   }
 
   async loadUserProviders() {

@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
-import { AlertController, LoadingController, ToastController } from '@ionic/angular';
+import { AlertController, LoadingController, ToastController, NavController } from '@ionic/angular';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { IonicModule } from '@ionic/angular';
@@ -157,6 +157,7 @@ export class CreateServicePage implements OnInit {
 
   constructor(
     public router: Router,
+    private navCtrl: NavController,
     private apiService: ApiService,
     private cacheService: CacheService,
     private authService: AuthService,
@@ -518,8 +519,9 @@ export class CreateServicePage implements OnInit {
         )
       );
       
-      // 🔥 MEJORADO: Validar respuesta del servidor
-      if (response && response.status === 'success') {
+      // Validar respuesta: el backend retorna { message, provider } en éxito (201)
+      const isSuccess = response && (response.status === 'success' || (response as any).provider);
+      if (isSuccess) {
         console.log('✅ Servicio creado exitosamente:', response);
         
         // Invalidar todos los caches relacionados con providers
@@ -527,15 +529,14 @@ export class CreateServicePage implements OnInit {
         
         console.log('✅ Cache invalidado - el servicio aparecerá inmediatamente');
         await loading.dismiss();
+        this.isLoading = false;
         await this.showSuccessToast('Servicio creado correctamente');
         
-        // Navegar después de mostrar el toast
-        setTimeout(() => {
-          this.router.navigate(['/tabs/services']);
-        }, 500);
+        // Navegar a Mis servicios (ionViewWillEnter forzará recarga de la lista)
+        this.navCtrl.navigateRoot(['/tabs/services']);
       } else {
         // Respuesta del servidor indica error
-        const errorMessage = response?.message || 'El servidor no respondió correctamente';
+        const errorMessage = (response as any)?.message || 'El servidor no respondió correctamente';
         console.error('❌ Error en respuesta del servidor:', response);
         await loading.dismiss();
         this.isLoading = false;

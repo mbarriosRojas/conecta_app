@@ -80,25 +80,38 @@ export class AuthService {
 
   private async initializeAuth() {
     try {
-      const token = await this.storageService.get('auth_token');
-      const userData = await this.storageService.get('user_data');
+      let token = await this.storageService.get('auth_token');
+      let userData = await this.storageService.get('user_data');
       
+      // Fallback a localStorage si Ionic Storage no devolvió token (ej. al refrescar en browser)
+      if (!token && typeof localStorage !== 'undefined') {
+        token = localStorage.getItem('auth_token');
+        if (token) {
+          const stored = localStorage.getItem('user_data');
+          if (stored) {
+            try {
+              userData = JSON.parse(stored);
+            } catch (_) {}
+          }
+        }
+      }
       
       if (token && userData) {
-        // Verificar si el token sigue siendo válido
-        const isValid = await this.validateToken();
+        const isValid = await this.validateToken(token);
         
         if (isValid) {
-          console.log('AuthService - Token is valid, setting user data');
+          console.log('AuthService - Token is valid, restoring session');
           this.currentUserSubject.next(userData);
           this.isAuthenticatedSubject.next(true);
+          // Sincronizar con Ionic Storage por si se usó fallback
+          await this.storageService.set('auth_token', token);
+          await this.storageService.set('user_data', userData);
           
-          // Cargar perfil actualizado en background
           this.loadUserProfile().catch(error => {
             console.error('Error loading user profile:', error);
           });
         } else {
-          console.log('AuthService - Token is invalid, logging out');
+          console.log('AuthService - Token is invalid or expired, logging out');
           await this.logout();
         }
       } else {
@@ -108,7 +121,9 @@ export class AuthService {
       }
     } catch (error) {
       console.error('Error initializing auth:', error);
-      await this.logout();
+      // No hacer logout en errores genéricos (ej. storage no listo) - evita cerrar sesión al refrescar
+      this.currentUserSubject.next(null);
+      this.isAuthenticatedSubject.next(false);
     }
   }
 
@@ -152,17 +167,20 @@ export class AuthService {
       console.warn('AuthService.logout: error closing firebase session (no crítico):', error);
     }
 
-    // Limpiar datos locales (esto siempre debe ejecutarse)
+    // Limpiar datos locales (Ionic Storage + localStorage)
     console.log('🔐 AuthService.logout: Limpiando datos locales...');
     try {
-    await this.storageService.remove('auth_token');
-    await this.storageService.remove('user_data');
-    this.currentUserSubject.next(null);
-    this.isAuthenticatedSubject.next(false);
+      await this.storageService.remove('auth_token');
+      await this.storageService.remove('user_data');
+      if (typeof localStorage !== 'undefined') {
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('user_data');
+      }
+      this.currentUserSubject.next(null);
+      this.isAuthenticatedSubject.next(false);
       console.log('✅ AuthService.logout: Logout completado exitosamente');
     } catch (error) {
       console.error('❌ AuthService.logout: Error limpiando datos locales:', error);
-      // Aun así, limpiar los subjects
       this.currentUserSubject.next(null);
       this.isAuthenticatedSubject.next(false);
     }
@@ -173,10 +191,11 @@ export class AuthService {
     await this.storageService.set('auth_token', token);
     await this.storageService.set('user_data', user);
     
-    // También guardar en localStorage como respaldo
+    // También guardar en localStorage como respaldo (persiste al refrescar en browser)
     try {
       localStorage.setItem('auth_token', token);
-      console.log('AuthService - setAuthData: token saved to localStorage');
+      localStorage.setItem('user_data', JSON.stringify(user));
+      console.log('AuthService - setAuthData: token and user saved to localStorage');
     } catch (error) {
       console.error('AuthService - setAuthData: error saving to localStorage:', error);
     }
@@ -240,32 +259,28 @@ export class AuthService {
     return token;
   }
 
-  // Método para verificar si el token sigue siendo válido
-  async validateToken(): Promise<boolean> {
+  /**
+   * Verifica si el token es válido (no expirado).
+   * @param tokenParam - Token a validar; si no se pasa, se obtiene de storage (evita deadlock en init).
+   */
+  async validateToken(tokenParam?: string | null): Promise<boolean> {
     try {
-      const token = await this.getToken();
+      const token = tokenParam ?? await this.getToken();
       if (!token) {
         return false;
       }
 
-      // Verificar si el token está expirado localmente
-      try {
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        const currentTime = Math.floor(Date.now() / 1000);
-        
-        if (payload.exp && payload.exp < currentTime) {
-          await this.logout();
-          return false;
-        }
-        
-        return true;
-      } catch (parseError) {
-        console.error('AuthService - Error parsing token:', parseError);
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      const currentTime = Math.floor(Date.now() / 1000);
+      
+      if (payload.exp && payload.exp < currentTime) {
         await this.logout();
         return false;
       }
-    } catch (error) {
-      console.error('AuthService - Error validating token:', error);
+      
+      return true;
+    } catch (parseError) {
+      console.error('AuthService - Error parsing token:', parseError);
       await this.logout();
       return false;
     }
