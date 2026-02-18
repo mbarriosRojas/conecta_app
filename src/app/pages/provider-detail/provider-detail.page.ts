@@ -1043,8 +1043,8 @@ export class ProviderDetailPage implements OnInit, AfterViewInit, OnDestroy {
         // Inicializar el mapa
         this.initGoogleMap(providerLat, providerLng, userLat, userLng);
       } catch (err) {
+        // No mostrar toast al usuario: suele ser timeout de espera del DOM o carga lenta de la API
         console.error('❌ [MAP] Error cargando Google Maps:', err);
-        this.showErrorToast('Error cargando Google Maps');
       }
     }
 
@@ -1231,11 +1231,8 @@ export class ProviderDetailPage implements OnInit, AfterViewInit, OnDestroy {
         `📝 Descripción: ${this.selectedProduct.description}\n\n` +
         `¿Podrías darme más información sobre disponibilidad y cómo puedo adquirirlo?`;
 
-      // Formatear número de teléfono (remover caracteres especiales y agregar código de país si es necesario)
-      let phoneNumber = providerPhone.replace(/[^\d]/g, '');
-      if (!phoneNumber.startsWith('57')) {
-        phoneNumber = '57' + phoneNumber;
-      }
+      // Usar el número tal como está guardado (solo dígitos); no añadir código de país por defecto
+      const phoneNumber = providerPhone.replace(/[^\d]/g, '');
 
       // Crear URL de WhatsApp
       const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
