@@ -137,7 +137,8 @@ ion-header ion-toolbar {
   --color: #ffffff !important;
   --border-width: 0;
   --min-height: calc(56px + env(safe-area-inset-top));
-  
+  --padding-top: env(safe-area-inset-top);
+
   ion-title {
     --color: #ffffff !important;
     font-weight: 600;
@@ -219,15 +220,12 @@ ion-app {
    SAFE AREA FIX - Solución para la barra de estado
    ======================================== */
 
-// Fix global para todos los headers
+// Fix global para todos los headers: no duplicar safe area (solo el toolbar lo gestiona)
 ion-header {
-  // Agregar padding superior para safe area
-  padding-top: env(safe-area-inset-top, 0);
+  padding-top: 0;
   
   ion-toolbar {
-    // Asegurar que el toolbar no tenga padding adicional
     padding-top: 0;
-    
     // El color de fondo se hereda correctamente del tema
     --background: var(--ion-toolbar-background, var(--ion-background-color, #fff));
   }
